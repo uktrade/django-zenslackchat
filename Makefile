@@ -27,6 +27,7 @@ all:
 
 install:
 	pip install -r requirements-test.txt
+	python setup.py develop
 
 clean:
 	rm -rf dist/ build/
