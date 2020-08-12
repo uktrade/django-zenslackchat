@@ -27,12 +27,14 @@ Spike to investigate this
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Zendesk API investigation.
+
 [] Get access credentials for API access to a Zendesk
 [] Choose a python Zendesk
 [] Create a zendesk ticket and investigate structure
 [] Update the existing 
 
 Slackbot investigation.
+
 [] Slackbot reading
 [] Skeletal slackbot and slack integration.
 [] Can bot respond to a user without using a slack command?
