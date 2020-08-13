@@ -39,6 +39,32 @@ Slackbot investigation.
  - [] Can bot respond in a thread?
 
 
+Zendesk integration
+~~~~~~~~~~~~~~~~~~~
+
+You need to enable and generate a token (not oauth):
+ - https://support.zendesk.com/hc/en-us/articles/226022787-Generating-a-new-API-token-
+
+Current experiment::
+
+    # Set up the credentials:
+    export ZENDESK_EMAIL=<user on support site> 
+    export ZENDESK_SUBDOMAIN=<support site subdomain>
+    read -srp "Zendesk Token: " ZENDESK_TOKEN ; export ZENDESK_TOKEN
+
+    workon zenslackchat
+    
+    # from a checkout of zenslackchat/ (python3)
+    python zenslackchat/main.py
+
+The token approach is functional, however its permissons are too broad using 
+this method. To get off the ground its fine, but we'll need to move to OAuth
+in production. I don't want to do this in a spike.
+
+Zendesk OAuth:
+- https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
+
+
 Development
 -----------
 
