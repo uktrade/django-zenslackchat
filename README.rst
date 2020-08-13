@@ -8,29 +8,35 @@ Helpdesk support using a slack chat bot and integration into zendesk.
 I use make, docker, docker-compose, python3 and virtualenvwrappers to manage 
 the project.
 
+Spike Investigation
+-------------------
 
-Project Objectives
-------------------
+Scenario / chat with Matt / Things to work out on SRE-725:
+- user types in question on the slack channel (without /<command> ideally).
+- Bot instantly replies in a thread that this got assigned a ticket ID X. Ticket is stored in Zendesk
+  - OM: creating a ticket I've figured out. I've also learned if the same text is put in again it will result in a zendesk error on create. I'll need to manage around this.
+- Ticket in zendesk filled in with end user email so that user gets updated on the progress. 
+  - OM: If I can recover this from slack they can be added as a CC to the issue.
+- Record URL to the conversation on slack
+  - OM: Your can add URL to slack thread as a custom field on zendesk.
+- SRE on call follows up with the conversation on slack
+- Bot replicates the conversation into zendesk ticket
+- SRE on call closes the ticket by typing “done” or similar within the thread
+- Can we avoid /<command> actions?
+- Ticket assigned to every thread.
+  - Webops metrics time open/cycle time.
+    - OM: Zendesk does have metrics, have to investigate.
+    - OM: Bot could reply with stats in response to query.
+  - Primary/Secondary people on support added to ticket.
+    - If you had a way to query some API for who is "on call", this could be added automatically as Ticket assignees.
 
-Jira ticket Epic for project https://uktrade.atlassian.net/jira/software/projects/SRE/boards/167?selectedIssue=SRE-725&text=slack
-
-The scenario:
- - user types in question on the slack channel.
- - Bot instantly replies in a thread that this got assigned a ticket ID X. Ticket is stored in Zendesk
- - Ticket in zendesk is filled in with end user email so that user gets updated on the progress. Also record URL to the conversation on slack
- - SRE on call follows up with the conversation on slack
- - Bot replicates the conversation into zendesk ticket
- - SRE on call closes the ticket by typing “done” or similar within the thread
-
-
-Spike to investigate this
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Todo
+~~~~
 
 Zendesk API investigation.
  - [X] |ss| Get access credentials for API access to a Zendesk |se|
  - [X] |ss| Choose a python Zendesk |se| 
- - [] Create a zendesk ticket and investigate structure
- - [] Update the existing 
+ - [x] |ss| Create a zendesk ticket and investigate structure |se| 
 
 Slackbot investigation.
  - [] Slackbot reading
@@ -55,7 +61,7 @@ Current experiment::
     workon zenslackchat
     
     # from a checkout of zenslackchat/ (python3)
-    python zenslackchat/main.py
+    python zenslackchat/zendesk_demo.py
 
 The token approach is functional, however its permissons are too broad using 
 this method. To get off the ground its fine, but we'll need to move to OAuth
