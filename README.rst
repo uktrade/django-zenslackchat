@@ -27,7 +27,7 @@ Spike to investigate this
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Zendesk API investigation.
- - [X] |ss|Get access credentials for API access to a Zendesk|se|
+ - [X] |ss| Get access credentials for API access to a Zendesk |se|
  - [] Choose a python Zendesk
  - [] Create a zendesk ticket and investigate structure
  - [] Update the existing 
