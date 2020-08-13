@@ -12,23 +12,24 @@ Spike Investigation
 -------------------
 
 Scenario / chat with Matt / Things to work out on SRE-725:
+
 - user types in question on the slack channel (without /<command> ideally).
 - Bot instantly replies in a thread that this got assigned a ticket ID X. Ticket is stored in Zendesk
-  - OM: creating a ticket I've figured out. I've also learned if the same text is put in again it will result in a zendesk error on create. I'll need to manage around this.
+   - OM: creating a ticket I've figured out. I've also learned if the same text is put in again it will result in a zendesk error on create. I'll need to manage around this.
 - Ticket in zendesk filled in with end user email so that user gets updated on the progress. 
-  - OM: If I can recover this from slack they can be added as a CC to the issue.
+   - OM: If I can recover this from slack they can be added as a CC to the issue.
 - Record URL to the conversation on slack
-  - OM: Your can add URL to slack thread as a custom field on zendesk.
+   - OM: Your can add URL to slack thread as a custom field on zendesk.
 - SRE on call follows up with the conversation on slack
 - Bot replicates the conversation into zendesk ticket
 - SRE on call closes the ticket by typing “done” or similar within the thread
 - Can we avoid /<command> actions?
 - Ticket assigned to every thread.
   - Webops metrics time open/cycle time.
-    - OM: Zendesk does have metrics, have to investigate.
-    - OM: Bot could reply with stats in response to query.
+     - OM: Zendesk does have metrics, have to investigate.
+     - OM: Bot could reply with stats in response to query.
   - Primary/Secondary people on support added to ticket.
-    - If you had a way to query some API for who is "on call", this could be added automatically as Ticket assignees.
+     - If you had a way to query some API for who is "on call", this could be added automatically as Ticket assignees.
 
 Todo
 ~~~~
