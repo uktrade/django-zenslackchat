@@ -27,7 +27,7 @@ Spike to investigate this
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Zendesk API investigation.
- - [] Get access credentials for API access to a Zendesk
+ - [X] |ss|Get access credentials for API access to a Zendesk|se|
  - [] Choose a python Zendesk
  - [] Create a zendesk ticket and investigate structure
  - [] Update the existing 
@@ -78,3 +78,12 @@ doing::
 
 You will need to have logged-in to AWS and recovered the credentials to allow
 docker to push.
+
+
+.. |ss| raw:: html
+
+   <strike>
+
+.. |se| raw:: html
+
+   </strike>
