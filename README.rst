@@ -71,6 +71,54 @@ in production. I don't want to do this in a spike.
 Zendesk OAuth:
 - https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
 
+Useful Reference docs:
+
+- https://developer.zendesk.com/rest_api/docs/support/tickets#json-format
+- https://developer.zendesk.com/rest_api/docs/support/ticket_comments
+- Zenpy: http://docs.facetoe.com.au/api_objects.html
+- http://docs.facetoe.com.au/zenpy.html
+
+
+Slack Bot
+~~~~~~~~~
+
+I'm going to see if I can use this open source python slackbot library:
+
+- https://github.com/lins05/slackbot.
+
+I'm currently experimenting using my own slack group so I can get an idea of what supporting this end-to-end will be like.
+
+Set up
+``````
+
+When signed into a workspace (correct admin rights?) go to:
+
+- https://my.slack.com/services/new/bot
+
+settings::
+
+    username: gofer
+    what this bot does: Run between slack and zendesk
+
+You can then recover the API_TOKEN slackbot needs.
+
+Current experiment::
+
+    # Set up the credentials:
+    read -srp "SLACKBOT_API_TOKEN: " SLACKBOT_API_TOKEN ; export SLACKBOT_API_TOKEN
+
+    workon zenslackchat
+    
+    # from a checkout of zenslackchat/ (python3)
+    python zenslackchat/goferbot.py
+
+I created a zenslackchat channel in my workspace. I had to invite the bot into before it will respond.
+
+On slack you can then see if the bot is running by looking at the status of the @gofer user. Alternatively you can say hello::    
+
+    oisin: @gofer hello
+    gofer: @oisin: hello sender!
+
 
 Development
 -----------

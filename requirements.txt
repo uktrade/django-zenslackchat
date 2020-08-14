@@ -1,2 +1,3 @@
 zenpy
 gunicorn
+slackbot
