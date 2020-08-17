@@ -1,4 +1,2 @@
 zenpy
-gunicorn
-slackbot
 slackclient
