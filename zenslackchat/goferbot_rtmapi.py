@@ -18,12 +18,25 @@ from zenpy.lib.api_objects import Ticket
 from zenpy.lib.api_objects import Comment
 
 
-WORKSPACE_URI  = os.environ.get(
-    'WORKSPACE_URI', 'https://ditdigitalteam.slack.com/archives/'
+SLACK_WORKSPACE_URI = os.environ.get(
+    'SLACK_WORKSPACE_URI', 
+    'https://ditdigitalteam.slack.com/archives/'
 )
-EMAIL = os.environ.get('ZENDESK_EMAIL', '<email@example.com>')
-TOKEN = os.environ.get('ZENDESK_TOKEN', '<token>')
-SUBDOMAIN = os.environ.get('ZENDESK_SUBDOMAIN', '<something>')
+ZENDESK_TICKET_URI = os.environ.get(
+    'ZENDESK_TICKET_URI', 
+    'https://ditstaging.zendesk.com/agent/tickets'
+)
+
+
+
+def slack_message_url(channel, message_id):
+    """Return the link that can be stored in zendesk."""
+    return urljoin(SLACK_WORKSPACE_URI, channel, message_id)
+
+
+def zendesk_ticket_url(channel, message_id):
+    """Return the link that can be stored in zendesk."""
+    return urljoin(ZENDESK_TICKET_URI, channel, message_id)
 
 
 def log(message):
@@ -33,19 +46,46 @@ def log(message):
     print(message)
 
 
-def has_ticket(chat_id):
-    """Check if the slack parent message is known about
+def zapi():
+    """Returns a configured Zenpy client instance ready for use.
+
+    This expects the environment to be set:
+
+        - ZENDESK_EMAIL
+        - ZENDESK_TOKEN
+        - ZENDESK_SUBDOMAIN
+
+    This currently uses the Token based Zendesk API key. We need to move to
+    OAuth based system for more granular access to just what is needed.
+
     """
-    zenpy_client = Zenpy(
+    EMAIL = os.environ.get('ZENDESK_EMAIL', '<email@example.com>')
+    TOKEN = os.environ.get('ZENDESK_TOKEN', '<token>')
+    SUBDOMAIN = os.environ.get('ZENDESK_SUBDOMAIN', '<something>')
+
+    return Zenpy(
         email=EMAIL,
         token=TOKEN,
         subdomain=SUBDOMAIN,
     )
 
-    for result in zenpy_client.search(chat_id, type='ticket'):
-        import ipdb; ipdb.set_trace()
+def get_ticket(chat_id):
+    """Recover the zendesk ticket for a given slack parent message.
 
-    return False
+    :param chat_id: The 'ts' payload used by slack to identify a message.
+
+    :returns: A Zenpy.Ticket instance or None if nothing was found.
+
+    """
+    returned = False
+
+
+    # There should only be one so 
+    results = [item for item in zenpy_client.search(chat_id, type='ticket')]
+    if results > 0:
+        returned = True
+
+    return returned
 
 
 def create_ticket(chat_id, recipient_email, subject, slack_message_url):
@@ -63,6 +103,7 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
         type='question', 
         external_id=chat_id,
         subject=subject, 
+        description=subject, 
         recipient=recipient_email,
         requestor_id=requestor.id,
     )
@@ -71,55 +112,47 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
     return ticket_audit
 
 
-def slack_message_url(channel, message_id):
-    """Return the link that can be stored in zendesk."""
-    return urljoin(WORKSPACE_URI, channel, message_id)
-
-
 def message_handler(payload):
     """Decided what to do with the message we have received.
     """
     p = pprint.pformat(payload)
     log(f'Payload:\n{p}\n')
 
+    # Fields that must be present for this to work:
     web_client = payload['web_client']
+    data = payload['data']
+    channel_id = data['channel']
 
-    data = {}
-    channel_id = '?'
-    if 'data' in payload:
-        data = payload['data']
-        channel_id = data['channel']
-
-    text = ''
-    if 'text' in data:
-        text = data['text']
-
+    text = data.get('text')
     if 'bot_id' in data:
         # This is usually us/a bot posting a reply to a message or thread. 
         # Without this we would end up in a loop replying to ourself.
         log(f"Ignoring bot <{data['bot_id']}> message: {text}")
         return
 
+    user_id = None
+    if 'message' in data:
+        # reply
+        text = data['message']['text']
+        user_id = data['message']['user']
+
+    else:
+        text = data['text']
+        user_id = data.get('user')
+
+    # ID for parent message (thread_ts is ID for message under the parent)
+    chat_id = data.get('ts', '')
+
     subtype = ''
     if 'subtype' in data:
         subtype = data['subtype']
-
-    message = {}
-    if 'message' in data:
-        message = data['message']
-
-    # ID for parent message.
-    thread_parent = data.get('ts', '')
-
-    # ID for message under parent.
-    thread_ts = data.get('thread_ts', '')
-
-    # Recover the slack channel message author's email address. I assume this
-    # is always set on all accounts.
-    user_id = data.get('user', '')
-    log(f"Recovering profile for user <{user_id}>")
-    resp = web_client.users_info(user_id)
-    recipient_email = resp.data['user']['profile']['email']
+        
+    if user_id:
+        # Recover the slack channel message author's email address. I assume 
+        # this is always set on all accounts.
+        log(f"Recovering profile for user <{user_id}>")
+        resp = web_client.users_info(user=user_id)
+        recipient_email = resp.data['user']['profile']['email']
 
     if subtype == 'message_replied':
         # Do anything here? 
@@ -137,13 +170,11 @@ def message_handler(payload):
     else:
         log(f"Received message from '{recipient_email}': {text}\n")
 
-        # Zendesk ID I can set. I'll use the parent conversation as the ID
-        # and tie the ticket back to this. I'll use Zendesk as the 
-        # "backend" store.
-        chat_id = thread_parent
+        # I'll use the parent conversation as the ID and tie the ticket back to 
+        # this. I'll use Zendesk as the "backend" store.
 
         # New issue: generate Zendesk ticket
-        slack_chat_url = slack_message_url(channel_id, thread_parent)
+        slack_chat_url = slack_message_url(channel_id, chat_id)
 
         if not has_ticket(chat_id):
             # No clear to create.
@@ -161,7 +192,7 @@ def message_handler(payload):
                 response = web_client.chat_postMessage(
                     channel=channel_id,
                     text=message,
-                    thread_ts=thread_parent if thread_parent else thread_ts
+                    thread_ts=chat_id
                 )
 
             except SlackApiError as e:
