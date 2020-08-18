@@ -25,3 +25,23 @@ def test_zapi_client_from_env_config(monkeypatch):
     assert config['email'] == 'tony@example.com'
     assert config['token'] == 'token1234'
     assert config['subdomain'] == 'helpsubdomain.example.com'
+
+
+def test_zendesk_ticket_url(monkeypatch):
+    """Verify the URL generated to point at (UI not API) ticket in zendesk.
+    """
+    monkeypatch.setenv(
+        'ZENDESK_SUBDOMAIN', 
+        'https://helpsubdomain.example.com/agent/tickets/'
+    )
+
+    url = zendesk_api.zendesk_ticket_url('ticket_id')
+    assert url == 'https://helpsubdomain.example.com/agent/tickets/ticket_id'
+
+    monkeypatch.setenv(
+        'ZENDESK_SUBDOMAIN', 
+        'https://helpsubdomain.example.com/agent/tickets'
+    )
+
+    url = zendesk_api.zendesk_ticket_url('17')
+    assert url == 'https://helpsubdomain.example.com/agent/tickets/17'

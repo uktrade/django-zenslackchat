@@ -38,7 +38,7 @@ def api():
     return Zenpy(**config())
 
 
-def zendesk_ticket_url(channel, message_id):
+def zendesk_ticket_url(ticket_id):
     """Return the link that can be stored in zendesk.
 
     This expects the environment variable ZENDESK_TICKET_URI to be set. 
