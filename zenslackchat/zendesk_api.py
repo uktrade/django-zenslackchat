@@ -46,10 +46,11 @@ def zendesk_ticket_url(ticket_id):
     """
     ZENDESK_TICKET_URI = os.environ.get(
         'ZENDESK_TICKET_URI', 
-        'https://ditstaging.zendesk.com/agent/tickets'
+        'https://zendesk.example.com/agent/tickets/'
     )
 
-    return urljoin(ZENDESK_TICKET_URI, channel, message_id)
+    # handle trailing slash being there or not (urljoin doesn't).
+    return '/'.join([ZENDESK_TICKET_URI.rstrip('/'), str(ticket_id)])
 
 
 def get_ticket(chat_id):
@@ -62,11 +63,14 @@ def get_ticket(chat_id):
     """
     returned = None
 
-    client = zapi()
+    client = api()
 
     # Return the first item found, in theory there should only be one.
+    #
+    # I can't seem to get tickets by external_id directly. I need to do a 
+    # search like this :(
     results = [item for item in client.search(chat_id, type='ticket')]
-    if results > 0:
+    if len(results) > 0:
         returned = results[0]
 
     return returned
@@ -75,13 +79,9 @@ def get_ticket(chat_id):
 def create_ticket(chat_id, recipient_email, subject, slack_message_url):
     """Create a new zendesk ticket in response to a new user question.
     """    
-    zenpy_client = Zenpy(
-        email=EMAIL,
-        token=TOKEN,
-        subdomain=SUBDOMAIN,
-    )
+    client = api()
 
-    requestor = zenpy_client.users.me()
+    requestor = client.users.me()
 
     issue = Ticket(
         type='question', 
@@ -91,6 +91,6 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
         recipient=recipient_email,
         requestor_id=requestor.id,
     )
-    ticket_audit = zenpy_client.tickets.create(issue)
+    ticket_audit = client.tickets.create(issue)
 
-    return ticket_audit
+    return ticket_audit.ticket
