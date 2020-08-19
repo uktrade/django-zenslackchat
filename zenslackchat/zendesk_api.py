@@ -91,6 +91,7 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
         recipient=recipient_email,
         requestor_id=requestor.id,
     )
+
     ticket_audit = client.tickets.create(issue)
 
     return ticket_audit.ticket
