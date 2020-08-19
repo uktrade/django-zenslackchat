@@ -19,6 +19,10 @@ def config():
         email=os.environ.get('ZENDESK_EMAIL', '<email@example.com>'),
         token=os.environ.get('ZENDESK_TOKEN', '<token>'),
         subdomain=os.environ.get('ZENDESK_SUBDOMAIN', '<something>'),
+        slack_url_field=os.environ.get(
+            'ZENDESK_SLACK_URL_FIELD', 
+            '360013308180'
+        ),
     )
 
 
@@ -35,7 +39,13 @@ def api():
     OAuth based system for more granular access to just what is needed.
 
     """
-    return Zenpy(**config())
+    cfg = config()
+
+    return Zenpy(
+        email=cfg['email'],
+        subdomain=cfg['subdomain'],
+        token=cfg['token']
+    )
 
 
 def zendesk_ticket_url(ticket_id):
@@ -79,6 +89,8 @@ def get_ticket(chat_id):
 def create_ticket(chat_id, recipient_email, subject, slack_message_url):
     """Create a new zendesk ticket in response to a new user question.
     """    
+    slack_url_field = config()['slack_url_field']
+
     client = api()
 
     requestor = client.users.me()
@@ -90,8 +102,29 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
         description=subject, 
         recipient=recipient_email,
         requestor_id=requestor.id,
+        custom_fields=[dict(
+            id=slack_url_field,
+            value=slack_message_url
+        )],
+        comment=Comment(
+            body=f'This is the message on slack {slack_message_url}.',
+            author_id=requestor.id
+        )        
     )
 
     ticket_audit = client.tickets.create(issue)
 
     return ticket_audit.ticket
+
+
+def close_ticket(chat_id):
+    """
+    """
+    client = api()
+
+    ticket = get_ticket(chat_id)
+    if ticket:
+        ticket.status = 'closed'
+        client.tickets.update(ticket)
+
+    return ticket

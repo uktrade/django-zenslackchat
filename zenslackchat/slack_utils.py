@@ -41,8 +41,12 @@ def message_url(channel, message_id):
         'https://slack.example.com/archives'
     )
 
+    # Convert to the ID slack uses on the web.
+    # e.g. 1597844917.045900 -> p1597844917045900
+    msg_id = 'p{}'.format(message_id.replace('.', ''))
+
     # handle trailing slash being there or not (urljoin doesn't).
-    return '/'.join([SLACK_WORKSPACE_URI.rstrip('/'), channel, message_id])
+    return '/'.join([SLACK_WORKSPACE_URI.rstrip('/'), channel, msg_id])
 
 
 def post_message(client, chat_id, channel_id, message):
@@ -68,30 +72,30 @@ def message_handler(payload):
     web_client = payload['web_client']
     data = payload['data']
     channel_id = data['channel']
+    text = data.get('text', '')
 
-    text = data.get('text')
     if 'bot_id' in data:
         # This is usually us/a bot posting a reply to a message or thread. 
         # Without this we would end up in a loop replying to ourself.
         logging.debug(f"Ignoring bot <{data['bot_id']}> message: {text}")
         return
 
+    subtype = data.get('subtype')
+    if subtype in ['message_changed', 'message_deleted']:
+        # Deleted messages I don't think I care about. Messages deleted inside
+        # a thread show up as changed. Again I'm not sure I care it might be 
+        # more work than its worth to keep up with these.
+        logging.debug(f"Ignoring subtype '{subtype}': {text}\n")
+        return
+
     user_id = None
     if 'message' in data:
         # reply
-        text = data['message']['text']
+        text = data['message'].get('text', '')
         user_id = data['message']['user']
 
     else:
-        text = data['text']
         user_id = data.get('user')
-
-    # ID for parent message (thread_ts is ID for message under the parent)
-    chat_id = data.get('ts', '')
-
-    subtype = ''
-    if 'subtype' in data:
-        subtype = data['subtype']
         
     if user_id:
         # Recover the slack channel message author's email address. I assume 
@@ -100,24 +104,63 @@ def message_handler(payload):
         resp = web_client.users_info(user=user_id)
         recipient_email = resp.data['user']['profile']['email']
 
-    if subtype == 'message_replied':
-        # Do anything here? 
-        #
-        # Yes, I need to look out for 'done' to indicate the issue should be
-        # closed. Possible look out for 'reopen' to undo mistaken 'done' or if
-        # the issue was not actually fixed.
-        # 
-        # I could check the conversation is synchronised. However I suspect 
-        # I'll need to implements webhooks or something to get updates on an 
-        # issue from Zendesk. Will need to research.
-        #
-        pass
+    # ID for parent message, thread_ts is ID for message under the parent.
+    chat_id = data.get('ts', '')
+    thread_id = data.get('thread_ts', '')
 
-    else:
-        logging.debug(f"Received message from '{recipient_email}': {text}\n")
+    # There is a https://api.slack.com/events/message/message_replied event,
+    # however its not reliable apparently due to a bug. The recommended 
+    # for thread dection is to check the ts (chat_id)/thread_ts (thread_id) 
+    # which I do. From observation this seems to work well.
+    #
+    if chat_id and thread_id:
+        # This is a new message in a thread, but not from a bot.
+        #
+        # Handle thread commands here e.g. done/reopen
+        #
+        url = message_url(channel_id, chat_id)
+        logging.debug(
+            f"Received thread message from '{recipient_email}': {text}\n"
+        )
 
-        # I'll use the parent conversation as the ID and tie the ticket back to 
-        # this. I'll use Zendesk as the "backend" store.
+        # Hmm, I'm seeing timeouts possibly due to rate limiting
+        #
+        # DEBUG:zenpy.lib.api:GET: https://oisinmulvihillhelp.zendesk.com/api/v2/search.json?query=1597849566.053700%20type%3Aticket - {'timeout': 60.0}
+        # DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): oisinmulvihillhelp.zendesk.com:443
+        # DEBUG:urllib3.connectionpool:https://oisinmulvihillhelp.zendesk.com:443 "GET /api/v2/search.json?query=1597849566.053700%20type%3Aticket HTTP/1.1" 200 None
+        # DEBUG:zenpy.lib.api:SearchResponseHandler matched: {'results': [], 'facets': None, 'next_page': None, 'previous_page': None, 'count': 0}
+        #
+        # How should I handle? Is it really an issue on an enterprise version 
+        # of Zendesk. I'm just using the free version.
+        #
+        ticket = zendesk_api.get_ticket(chat_id)
+        if ticket:
+            logging.debug(
+                f'Recoverd ticket {ticket.id} from slack thread {url}'
+            )
+            command = text.strip().lower()
+            if command == 'done':
+                # Time to close the ticket as the issue has been resolved.
+                logging.debug(
+                    f'Closing ticket {ticket.id} from slack thread {url}.'
+                )
+                zendesk_api.close_ticket(chat_id)
+                post_message(
+                    web_client, chat_id, channel_id, 'Ticket closed.'
+                )
+
+        else:
+            # This could be an old thread pre-bot days:
+            logging.warn(f'No ticket found in slack thread {url}. Old thread?')
+
+    elif chat_id:
+        # A potentially new message (not in a thread):
+        logging.debug(
+            f"Received message from '{recipient_email}': {text}\n"
+        )
+
+        # I'll use the parent conversation as the ID and tie the ticket 
+        # back to this. I'll use Zendesk as the "backend" store.
 
         # New issue: generate Zendesk ticket
         slack_chat_url = message_url(channel_id, chat_id)

@@ -24,7 +24,16 @@ Scenario / chat with Matt / Things to work out on SRE-725:
      recipient when creating the ticket. I'll need to see how this works in the
      field.
 - Record URL to the conversation on slack
-   - OM: Your can add URL to slack thread as a custom field on zendesk.
+   - OM: |ss| Your can add URL to slack thread as a custom field on zendesk. |se|
+      - I can add a custom field. Then you need to find its unique ID. To set
+        it you then user the custom_fields: [{'id': <id>, 'value': '...'}]. This
+        is a bit unweildy.
+      - When you set this in the code, it does populate the text box with the 
+        link however it is not clickable. I didn't see a HTML link option as a
+        field.
+   - OM: A better approach (in my view) I've added the link as the first 
+     ticket_comment. This is clickable and opens slack to reveal the message 
+     thread.
 - SRE on call follows up with the conversation on slack
 - Bot replicates the conversation into zendesk ticket
    - OM: I will need 
@@ -50,11 +59,11 @@ Zendesk / Slack investigation.
  - [X] |ss| Can bot respond to a user without using a slack command? |se|
  - [X] |ss| Can bot respond in a thread? |se|
  - [X] |ss| link from slack to zendesk in the thread |se|
- - [] link from zendesk UI to the slack message
+ - [X] |ss| link from zendesk UI to the slack message |se|
+ - [x] |ss| Close the issue on slack by saying 'done' in the thread |se|
+ - [] Synchronise state changes on a ticket from Zendesk(?).
  - [] ship conversation messages from slack to zendesk
  - [] ship messages from zendesk to slack
- - [] Close the issue on slack by saying 'done' in the thread
- - [] Reopen the issue on slack by saying 'reopen' in the thread
  
 
 Zenslackchat Bot
@@ -113,6 +122,9 @@ To run the demo bot::
     # zendesk
     export ZENDESK_EMAIL=<user on support site> 
     export ZENDESK_SUBDOMAIN=<support site subdomain>
+    # (As admin) you need to generate a custom field and get its id 
+    # https://<support site domain>.zendesk.com/agent/admin/ticket_fields
+    export ZENDESK_SLACK_URL_FIELD=<zendesk ID of custom slack url field>
     export ZENDESK_TICKET_URI=https://<support site>.zendesk.com/agent/tickets
     read -srp "Zendesk Token: " ZENDESK_TOKEN ; export ZENDESK_TOKEN
     # slack
