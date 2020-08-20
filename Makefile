@@ -80,6 +80,6 @@ docker_release:
 lint:
 	flake8 --ignore=E501 zenslackchat
 
-test: lint
-	python manage.py test tests/
+test:
+	pytest -s --cov=zenslackchat
 

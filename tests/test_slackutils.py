@@ -29,18 +29,25 @@ def test_slack_api_env_config():
 def test_slack_message_url():
     """Verify the URL generated to point at (UI not API) ticket in zendesk.
     """
+    # Test the conversion of the ID to its URL form
+    chat_id = '1597935682.010800'
+    env = {'SLACK_WORKSPACE_URI': 'https://example.com/'}
+    with patch.dict('os.environ', env, clear=True):    
+        url = slack_utils.message_url('C018JUAGGTS', chat_id)
+    assert url == 'https://example.com/C018JUAGGTS/p1597935682010800'
+
     # default: nothing set in env
     with patch.dict('os.environ', {}, clear=True):    
         url = slack_utils.message_url('channel', 'message123')
-    assert url == 'https://slack.example.com/archives/channel/message123'
+    assert url == 'https://slack.example.com/archives/channel/pmessage123'
 
     # check trailing and non-trailing slash set
     env = {'SLACK_WORKSPACE_URI': 'https://example.com/'}
     with patch.dict('os.environ', env, clear=True):    
         url = slack_utils.message_url('456', '123')
-    assert url == 'https://example.com/456/123'
+    assert url == 'https://example.com/456/p123'
 
     env = {'SLACK_WORKSPACE_URI': 'https://example.com'}
     with patch.dict('os.environ', env, clear=True):    
         url = slack_utils.message_url('ASK323K','QWD42D')
-    assert url == 'https://example.com/ASK323K/QWD42D'
+    assert url == 'https://example.com/ASK323K/pQWD42D'
