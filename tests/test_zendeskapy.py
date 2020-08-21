@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from zenslackchat import zendesk_api
 
 
-def test_zapi_client_default_config():
+def test_zapi_client_default_config(log):
     """Verify the default Zenpy config env variables.
     """
     # make sure no ZENDESK_* variables are set to interfere with test.
@@ -18,7 +18,7 @@ def test_zapi_client_default_config():
     assert config['subdomain'] == '<something>'
 
 
-def test_zapi_client_from_env_config():
+def test_zapi_client_from_env_config(log):
     """Verify the default Zenpy config env variables.
     """
     mock_env = {
@@ -35,7 +35,7 @@ def test_zapi_client_from_env_config():
     assert config['subdomain'] == 'helpsubdomain.example.com'
 
 
-def test_zendesk_ticket_url():
+def test_zendesk_ticket_url(log):
     """Verify the URL generated to point at (UI not API) ticket in zendesk.
     """
     # default: nothing set in env
@@ -71,7 +71,7 @@ class FakeApiSearch(object):
         return self.results
 
 
-def test_get_ticket_with_result():
+def test_get_ticket_with_result(log):
     """Verify get_ticket when I expect to get a result.
     """
     chat_id='some-message-id'
@@ -84,7 +84,7 @@ def test_get_ticket_with_result():
     assert returned == fake_ticket
 
 
-def test_get_ticket_with_no_result():
+def test_get_ticket_with_no_result(log):
     """Verify get_ticket when I do not expect to get a result.
     """
     chat_id='some-message-id'

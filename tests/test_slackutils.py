@@ -5,7 +5,7 @@ import pytest
 from zenslackchat import slack_utils
 
 
-def test_slack_api_env_config():
+def test_slack_api_env_config(log):
     """Verify the Slack config env variables.
     """
     # make sure no SLACK_* variables are set to interfere with test.
@@ -26,7 +26,7 @@ def test_slack_api_env_config():
     assert config['token'] == 'token1234'
 
 
-def test_slack_message_url():
+def test_slack_message_url(log):
     """Verify the URL generated to point at (UI not API) ticket in zendesk.
     """
     # Test the conversion of the ID to its URL form

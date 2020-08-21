@@ -36,8 +36,12 @@ Scenario / chat with Matt / Things to work out on SRE-725:
      thread.
 - SRE on call follows up with the conversation on slack
 - Bot replicates the conversation into zendesk ticket
-   - OM: I will need 
+   - OM: I'll need to look into webhooks at least for the zendesk to slack 
+     replication. So new comments in zendesk trigger the bot to put them in 
+     the slack chat.
 - SRE on call closes the ticket by typing “done” or similar within the thread
+   - OM: This works now, it could be any string. Maybe done is too vague. 
+     Should anyone be able to type "done" to close the issue?
 - Can we avoid /<command> actions?
   - OM: yes there is not need for these.
 - Ticket assigned to every thread.
@@ -45,7 +49,8 @@ Scenario / chat with Matt / Things to work out on SRE-725:
      - OM: Zendesk does have metrics, have to investigate.
      - OM: Bot could reply with stats in response to query.
   - Primary/Secondary people on support added to ticket.
-     - If you had a way to query some API for who is "on call", this could be added automatically as Ticket assignees.
+     - If you had a way to query some API for who is "on call", this could be 
+       added automatically as Ticket assignees.
 
 Todo
 ~~~~

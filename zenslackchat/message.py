@@ -10,6 +10,8 @@ Oisin Mulvihill
 """
 import logging
 
+import zenpy
+
 from zenslackchat.zendesk_api import get_ticket
 from zenslackchat.zendesk_api import close_ticket
 from zenslackchat.zendesk_api import create_ticket
@@ -34,18 +36,16 @@ def handler(payload):
     channel_id = data['channel']
     text = data.get('text', '')
 
+    # The docs https://api.slack.com/rtm for RTM API say a message should have
+    # 'type = messsage' field. Using the slack client RTM however shows this is
+    # not the case. I have noticed all other messages have a subtype. So I'm
+    # just going to ignore all of these and see how I get on. I can manage the
+    # message / message-reply based on the ts/thread_ts fields and whether they
+    # are populated or not. I'm calling ts: chat_id and thread_ts: thread_id.
+    #
     subtype = data.get('subtype')
-    if subtype in ['bot_message', 'message_changed', 'message_deleted']:
-        # Deleted messages I don't think I care about. Messages deleted inside
-        # a thread show up as changed. Again I'm not sure I care it might be 
-        # more work than its worth to keep up with these.
+    if subtype:
         log.debug(f"Ignoring subtype '{subtype}': {text}\n")
-        return False
-
-    elif subtype == "message_replied":
-        # ignore this too. We recieve the parent message first. The next 
-        # message is then the actual reply. I can manage which is which based
-        # on the on what I call the chat_id and thread_id.
         return False
 
     # A message
@@ -79,11 +79,19 @@ def handler(payload):
                 log.debug(
                     f'Closing ticket {ticket.id} from slack {slack_chat_url}.'
                 )
-                close_ticket(chat_id)
-                post_message(
-                    web_client, chat_id, channel_id, 
-                    '🤖 Understood. The ticket has been closed.'
-                )
+                url = zendesk_ticket_url(ticket.id)
+                try:
+                    close_ticket(thread_id)
+                except zenpy.lib.exception.APIException:
+                    post_message(
+                        web_client, thread_id, channel_id, 
+                        f'🤖 Ticket {url} is already closed.'
+                    )
+                else:
+                    post_message(
+                        web_client, thread_id, channel_id, 
+                        f'🤖 Understood. Ticket {url} has been closed.'
+                    )
 
         else:
             # This could be an old thread pre-bot days:
