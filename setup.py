@@ -12,7 +12,9 @@ setup(
     version='1.0.0',
     author='DIT',
     author_email='',
-    description='Helpdesk support using a slack chat bot and integration into zendesk.',
+    description=(
+        'Helpdesk support using a slack chat bot and integration into zendesk.'
+    ),
     long_description=long_description,
     include_package_data=True,
     keywords='web services',

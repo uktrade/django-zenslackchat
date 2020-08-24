@@ -139,7 +139,7 @@ def test_get_ticket_with_no_result(log):
 
 
 def test_create_ticket(log):
-    """
+    """Test out the behaviour when 'creating' a zendesk ticket.
     """
     user_id= 'some-user-id'
     chat_id = 'some-message-id'
@@ -153,7 +153,6 @@ def test_create_ticket(log):
         me=FakeUserResponse(user_id),
         ticket_audit=fake_ticket_audit
     )
-    assert fake_ticket.status == 'open'
 
     with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
         zendesk_api.create_ticket(

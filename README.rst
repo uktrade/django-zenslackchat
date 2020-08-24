@@ -5,8 +5,7 @@ Zenslackchat
 
 Helpdesk support using a slack chat bot and integration into zendesk.
 
-I use make, docker, docker-compose, python3 and virtualenvwrappers to manage 
-the project.
+I use make, docker, python3 and virtualenvwrappers to manage the project.
 
 Spike Investigation
 -------------------
