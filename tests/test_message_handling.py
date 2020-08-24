@@ -193,6 +193,83 @@ def test_message_with_existing_support_ticket_in_zendesk(
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')
 @patch('zenslackchat.message.post_message')
+def test_thread_message_with_support_ticket_in_zendesk(
+    post_message,
+    create_ticket,
+    close_ticket,
+    get_ticket,
+    log
+):
+    """Test in-thread messages is shipped to Zendesk.
+    """
+    mock_rtm_client = MagicMock()
+    mock_web_client = MagicMock()
+
+    # Set up the user details 'slack' will return    
+    mock_web_client.users_info.return_value = FakeUserResponse()
+
+    # Return the ticket which will indicate we know about this issue and
+    # not then go one to make a new message.
+    ticket = FakeTicket(ticket_id='32')
+    get_ticket.return_value = ticket
+
+    # This is a message reply in the thread on slack:
+    payload = {
+        'data': {
+            'blocks': [{
+                'block_id': 'Amzt',
+                'elements': [{
+                    'elements': [{
+                        'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
+                        'type': 'text'
+                    }],
+                    'type': 'rich_text_section'
+                }],
+                'type': 'rich_text'
+            }],
+            'channel': 'C019JUGAGTS',
+            'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
+            'event_ts': '1598022004.004900',
+            'source_team': 'TGFJG8VEZ',
+            'suppress_notification': False,
+            'team': 'TGFJG8VEZ',
+            'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
+            # ts & thread_ts set
+            'thread_ts': '1598021907.003600',
+            'ts': '1598022004.004900',
+            'user': 'UGF7MRWMS',
+            'user_team': 'TGFJG8VEZ'
+        },
+        'rtm_client': mock_rtm_client,
+        'web_client': mock_web_client
+    }
+    env = {
+        'SLACK_WORKSPACE_URI': 'https://example.com/',
+        'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
+    }
+    with patch.dict('os.environ', env, clear=True):    
+        is_handled = handler(payload)
+    assert is_handled is True
+
+    # Verify the calls to the various mock are as I expect:
+
+    # called with the content of data['user']
+    mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
+
+    # In this case the thread_ts is the parent chat id we use:
+    get_ticket.assert_called_with('1598021907.003600')
+
+    # Check how zendesk api was called:
+    create_ticket.assert_not_called()
+
+    # finally check the posted message:
+    post_message.assert_not_called()
+
+
+@patch('zenslackchat.message.get_ticket')
+@patch('zenslackchat.message.close_ticket')
+@patch('zenslackchat.message.create_ticket')
+@patch('zenslackchat.message.post_message')
 def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     post_message,
     create_ticket,

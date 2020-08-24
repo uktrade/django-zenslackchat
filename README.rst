@@ -127,9 +127,6 @@ To run the demo bot::
     # zendesk
     export ZENDESK_EMAIL=<user on support site> 
     export ZENDESK_SUBDOMAIN=<support site subdomain>
-    # (As admin) you need to generate a custom field and get its id 
-    # https://<support site domain>.zendesk.com/agent/admin/ticket_fields
-    export ZENDESK_SLACK_URL_FIELD=<zendesk ID of custom slack url field>
     export ZENDESK_TICKET_URI=https://<support site>.zendesk.com/agent/tickets
     read -srp "Zendesk Token: " ZENDESK_TOKEN ; export ZENDESK_TOKEN
     # slack

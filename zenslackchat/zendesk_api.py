@@ -20,10 +20,6 @@ def config():
         email=os.environ.get('ZENDESK_EMAIL', '<email@example.com>'),
         token=os.environ.get('ZENDESK_TOKEN', '<token>'),
         subdomain=os.environ.get('ZENDESK_SUBDOMAIN', '<something>'),
-        slack_url_field=os.environ.get(
-            'ZENDESK_SLACK_URL_FIELD', 
-            '360013308180'
-        ),
     )
 
 
@@ -94,7 +90,6 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
     """Create a new zendesk ticket in response to a new user question.
     """    
     log = logging.getLogger(__name__)
-    slack_url_field = config()['slack_url_field']
 
     client = api()
 
@@ -108,10 +103,6 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
         description=subject, 
         recipient=recipient_email,
         requestor_id=requestor.id,
-        custom_fields=[dict(
-            id=slack_url_field,
-            value=slack_message_url
-        )],
         comment=Comment(
             body=f'This is the message on slack {slack_message_url}.',
             author_id=requestor.id

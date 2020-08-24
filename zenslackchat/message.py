@@ -74,7 +74,7 @@ def handler(payload):
                 f'Recoverd ticket {ticket.id} from slack {slack_chat_url}'
             )
             command = text.strip().lower()
-            if command == 'done':
+            if command == 'resolve ticket':
                 # Time to close the ticket as the issue has been resolved.
                 log.debug(
                     f'Closing ticket {ticket.id} from slack {slack_chat_url}.'
@@ -94,7 +94,7 @@ def handler(payload):
                     )
 
         else:
-            # This could be an old thread pre-bot days:
+            # This could be an thread the happened before the bot was running:
             log.warn(
                 f'No ticket found in slack {slack_chat_url}. Old thread?'
             )
