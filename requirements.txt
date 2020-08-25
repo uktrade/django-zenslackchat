@@ -1,2 +1,4 @@
 zenpy
+flask
+uwsgi
 slackclient

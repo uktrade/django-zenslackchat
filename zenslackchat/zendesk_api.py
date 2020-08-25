@@ -6,6 +6,7 @@ Oisin Mulvihill
 
 """
 import os
+import time
 import logging
 from urllib.parse import urljoin
 
@@ -60,7 +61,7 @@ def zendesk_ticket_url(ticket_id):
     return '/'.join([ZENDESK_TICKET_URI.rstrip('/'), str(ticket_id)])
 
 
-def get_ticket(chat_id):
+def get_ticket(chat_id, retry=0, wait_period=1.5):
     """Recover the zendesk ticket for a given slack parent message.
 
     :param chat_id: The 'ts' payload used by slack to identify a message.
@@ -69,19 +70,35 @@ def get_ticket(chat_id):
 
     """
     log = logging.getLogger(__name__)
-    returned = None
 
     client = api()
 
-    # Return the first item found, in theory there should only be one.
-    #
-    # I can't seem to get tickets by external_id directly. I need to do a 
-    # search like this :(
-    results = [item for item in client.search(chat_id, type='ticket')]
-    if len(results) > 0:
-        returned = results[0]
+    def _get():
+        # Return the first item found, in theory there should only be one.
+        #
+        # I can't seem to get tickets by external_id directly. I need to do a 
+        # search like this :(
+        returned = None
+
+        results = [item for item in client.search(chat_id, type='ticket')]
+        if len(results) > 0:
+            returned = results[0]
+        else:
+            log.debug(f'No ticket found for chat_id:<{chat_id}>')
+
+        return returned
+
+    if retry:
+        retries = 10
+        while retries:
+            returned = _get()
+            if returned:
+                break
+            retries -= 1
+            time.sleep(wait_period)
+
     else:
-        log.debug(f'No ticket found for chat_id:<{chat_id}>')
+        returned = _get()
 
     return returned
 
@@ -116,6 +133,26 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
     log.debug(f'Ticket for subject:<{subject}> created ok:<{ticket_id}>')
 
     return ticket_audit.ticket
+
+
+def add_comment(ticket, comment):
+    """
+    """
+    log = logging.getLogger(__name__)
+    client = api()
+
+    requestor = client.users.me()
+    log.debug(f'Recovered my requestor id:<{requestor.id}>')
+
+    log.debug(f'Adding comment to ticket:<{ticket.id}>')
+    ticket.comment = Comment(
+        body=comment,
+        author_id=requestor.id
+    )
+    client.tickets.update(ticket)
+    log.debug(f'Added comment:<{comment}> to ticket:<{ticket.id}>')
+
+    return ticket
 
 
 def close_ticket(chat_id):
