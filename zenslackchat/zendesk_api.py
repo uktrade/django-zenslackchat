@@ -11,6 +11,7 @@ import logging
 from urllib.parse import urljoin
 
 from zenpy import Zenpy
+from zenpy.lib import exception
 from zenpy.lib.api_objects import Ticket
 from zenpy.lib.api_objects import Comment
 
@@ -61,10 +62,10 @@ def zendesk_ticket_url(ticket_id):
     return '/'.join([ZENDESK_TICKET_URI.rstrip('/'), str(ticket_id)])
 
 
-def get_ticket(chat_id, retry=0, wait_period=1.5):
+def get_ticket(external_id, retry=0, wait_period=1.5):
     """Recover the zendesk ticket for a given slack parent message.
 
-    :param chat_id: The 'ts' payload used by slack to identify a message.
+    :param external_id: The 'ts' payload used by slack to identify a message.
 
     :returns: A Zenpy.Ticket instance or None if nothing was found.
 
@@ -80,11 +81,11 @@ def get_ticket(chat_id, retry=0, wait_period=1.5):
         # search like this :(
         returned = None
 
-        results = [item for item in client.search(chat_id, type='ticket')]
+        results = [item for item in client.search(external_id, type='ticket')]
         if len(results) > 0:
             returned = results[0]
         else:
-            log.debug(f'No ticket found for chat_id:<{chat_id}>')
+            log.debug(f'No ticket found for external_id:<{external_id}>')
 
         return returned
 
@@ -103,7 +104,30 @@ def get_ticket(chat_id, retry=0, wait_period=1.5):
     return returned
 
 
-def create_ticket(chat_id, recipient_email, subject, slack_message_url):
+def get_ticket_by_id(ticket_id):
+    """Recover the ticket by it's ID in zendesk.
+
+    :param ticket_id: The Zendesk ID of the Ticket.
+
+    :returns: A Zenpy.Ticket instance or None if nothing was found.
+
+    """
+    log = logging.getLogger(__name__)
+    returned = None
+
+    client = api()
+
+    log.debug(f'Look for Ticket by is Zendesk ID:<{ticket_id}>')
+    try:
+        returned = client.tickets(id=ticket_id)
+
+    except exception.RecordNotFoundException:
+        log.debug(f'Ticket not found by is Zendesk ID:<{ticket_id}>')
+
+    return returned
+
+
+def create_ticket(external_id, recipient_email, subject, slack_message_url):
     """Create a new zendesk ticket in response to a new user question.
     """    
     log = logging.getLogger(__name__)
@@ -115,7 +139,7 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
 
     issue = Ticket(
         type='question', 
-        external_id=chat_id,
+        external_id=external_id,
         subject=subject, 
         description=subject, 
         recipient=recipient_email,
@@ -136,7 +160,14 @@ def create_ticket(chat_id, recipient_email, subject, slack_message_url):
 
 
 def add_comment(ticket, comment):
-    """
+    """Add a new comment to an existing ticket.
+
+    :param ticket: The Zenpy Ticket instance to use.
+
+    :param comment: The text for the Zendesk comment.
+
+    :returns: The update Zenpy Ticket instance.
+
     """
     log = logging.getLogger(__name__)
     client = api()
@@ -155,10 +186,10 @@ def add_comment(ticket, comment):
     return ticket
 
 
-def close_ticket(chat_id):
+def close_ticket(external_id):
     """Close a ticket in zendesk.
 
-    :param chat_id: The message id stored as the external_id in zendesk.
+    :param external_id: The message id stored as the external_id in zendesk.
 
     :returns: None or Ticket instance closed.
 
@@ -166,11 +197,11 @@ def close_ticket(chat_id):
     log = logging.getLogger(__name__)
     client = api()
 
-    log.debug(f'Looking for ticket with chat_id:<{chat_id}>')
-    ticket = get_ticket(chat_id)
+    log.debug(f'Looking for ticket with external_id:<{external_id}>')
+    ticket = get_ticket(external_id)
     if ticket:
         ticket.status = 'closed'
         client.tickets.update(ticket)
-        log.debug(f'Closed ticket:<{ticket.id}> for chat_id:<{chat_id}>')
+        log.debug(f'Closed ticket:<{ticket.id}> for external_id:<{external_id}>')
 
     return ticket

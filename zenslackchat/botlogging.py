@@ -15,6 +15,7 @@ config = {
             'level': 'NOTSET',
             'formatter': 'standard',
             'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stdout'
         },
     },
     'loggers': {

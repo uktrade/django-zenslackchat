@@ -13,13 +13,25 @@ import logging
 
 import zenpy
 
+from zenslackchat.zendesk_api import api
 from zenslackchat.zendesk_api import get_ticket
+from zenslackchat.zendesk_api import get_ticket_by_id
 from zenslackchat.zendesk_api import add_comment
 from zenslackchat.zendesk_api import close_ticket
 from zenslackchat.zendesk_api import create_ticket
 from zenslackchat.zendesk_api import zendesk_ticket_url
 from zenslackchat.slack_utils import message_url
 from zenslackchat.slack_utils import post_message
+
+
+def pack_external_id(channel_id, ts):
+    """Create external_id for the given channel and message id."""
+    return f'{channel_id}:{ts}'
+
+
+def unpack_external_id(external_id):
+    """Convert an external in the form 'channel_id:ts' to (channel_id, ts)."""
+    return external_id.split(':')
 
 
 def handler(payload):
@@ -65,8 +77,9 @@ def handler(payload):
     # Get any existing ticket from zendesk:
     if chat_id and thread_id:
         # This is a reply message, use the thread_id to recover from zendesk:
+        external_id = pack_external_id(channel_id, thread_id)
         slack_chat_url = message_url(channel_id, thread_id)
-        ticket = get_ticket(thread_id, retry=1)
+        ticket = get_ticket(external_id, retry=1)
         log.debug(
             f"Received thread message from '{recipient_email}': {text}\n"
         )
@@ -83,7 +96,7 @@ def handler(payload):
                 )
                 url = zendesk_ticket_url(ticket.id)
                 try:
-                    close_ticket(thread_id)
+                    close_ticket(external_id)
                 except zenpy.lib.exception.APIException:
                     post_message(
                         web_client, thread_id, channel_id, 
@@ -105,8 +118,9 @@ def handler(payload):
             )
 
     else:
+        external_id = pack_external_id(channel_id, chat_id)
         slack_chat_url = message_url(channel_id, chat_id)
-        ticket = get_ticket(chat_id)
+        ticket = get_ticket(external_id)
         # New issue?
         if not ticket:
             # Yes, new ticket time.
@@ -114,7 +128,7 @@ def handler(payload):
                 f"Received message from '{recipient_email}': {text}\n"
             )
             ticket = create_ticket(
-                chat_id=chat_id, 
+                external_id=external_id, 
                 recipient_email=recipient_email, 
                 subject=text, 
                 slack_message_url=slack_chat_url,
@@ -133,19 +147,29 @@ def handler(payload):
     return True
 
 
-def update_comments(event):
-    """Update Slack with the latest comments from Zendesk.
+import os
+import time
+import datetime
+from time import mktime
+
+from slack import WebClient
+from dateutil.parser import parse
+
+
+def ts_to_datetime(epoch):
+    """Convert raw UTC slack message epoch times to datetime.
+
+    :param epoch: 1598459584.013100
+
+    :returns: datetime.datetime(2020, 8, 26, 17, 33, 4)
+
     """
-    log = logging.getLogger(__name__)
-
-    chat_id = event['chat_id']
-    log.debug(f'Recovering ticket for chat_id:<{chat_id}>')
-    ticket = get_ticket(chat_id)
-    if ticket:
-        log.debug(f'Ticket Found. Get comments?')
+    dt = datetime.datetime.fromtimestamp(mktime(time.localtime(epoch)))
+    dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
 
 
-def update_comments_from_zendesk(raw_data):
+def update_with_comments_from_zendesk(event):
     """Handle the raw data from a Zendesk webhook and return without error.
 
     This will log all exceptions rather than cause zendesk reject 
@@ -153,7 +177,31 @@ def update_comments_from_zendesk(raw_data):
 
     """
     log = logging.getLogger(__name__)
-    try:
-        update_comments(json.loads(raw_data))
-    except:
-        log.exception(f"Failed handling '{raw_data}': ")
+    
+    external_id = event['external_id']
+    (channel_id, chat_id) = unpack_external_id(external_id)
+    ticket_id = event['ticket_id']
+
+    log.debug(f'Recovering ticket by its Zendesk ID:<{ticket_id}>')
+    ticket = get_ticket_by_id(ticket_id)
+    if not ticket:
+        log.debug(
+            f'No Ticket Found for Zendesk ID {ticket_id}.'
+        )
+        return
+
+    zendesk_client = api()
+    slack_client = WebClient(token=os.environ['SLACKBOT_API_TOKEN'])
+
+    # Recover the conversation for this channel and chat_id
+    resp = slack_client.conversations_replies(channel=channel_id, ts=chat_id)
+
+    messages = resp.data['messages']
+    latest_reply = None
+    if len(messages) > 1:
+        parent = messages[0]
+        latest_reply = ts_to_datetime(parent['latest_reply'])
+    
+    for comment in zendesk_client.tickets.comments(ticket=ticket.id):
+        created_at = parse(comment['created_at'])
+        import ipdb; ipdb.set_trace()

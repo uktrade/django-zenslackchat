@@ -64,11 +64,93 @@ Zendesk / Slack investigation.
  - [X] |ss| Can bot respond in a thread? |se|
  - [X] |ss| link from slack to zendesk in the thread |se|
  - [X] |ss| link from zendesk UI to the slack message |se|
- - [x] |ss| Close the issue on slack by saying 'done' in the thread |se|
+ - [X] |ss| Close the issue on slack by saying 'done' in the thread |se|
+ - [X] |ss| Ship conversation messages from slack to zendesk |se|
  - [] Synchronise state changes on a ticket from Zendesk(?).
- - [] ship conversation messages from slack to zendesk
  - [] ship messages from zendesk to slack
  
+
+Zendesk Webhook
+~~~~~~~~~~~~~~~
+
+This is the raw set up you need to enable comment shipping to slack from 
+Zendesk. 
+
+
+HTTP Target
+```````````
+
+You need to create a HTTP target which can then be used in the trigger set up. 
+From https://<your zendesk>.zendesk.com/agent/admin/extensions you click 
+"add target" and then set:
+
+- Title: Zenslackchat zendesk comment notification
+- URL: <Ngrok.io URI or Production URI>/zendesk/webhook/comment
+- Method: POST
+
+You can test the target if you have set up the end point in advance. Otherwise
+just select "Create Target" in the drop down. and move on to creating the 
+trigger for this HTTP target. More detail on how to set up a webhook can be
+found in the Zendesk:
+- https://support.zendesk.com/hc/en-us/articles/204890268-Creating-webhooks-with-the-HTTP-target
+
+
+Comment Trigger
+```````````````
+
+You need to create a trigger https://<your zendesk>.zendesk.com/agent/admin/triggers/<trigger id>
+and then do the following set up:
+
+- Trigger name: ticket-comment
+- Description: Ticket Comment that should be sent to zenslackchat
+- Meet any condition: 
+  - "comment text"
+  - "Does not contain the following string"
+  - "resolve request"
+- Actions
+  - Notifiy target
+  - Select the trigger created earlier
+  - Set the JSON body set up::
+   {
+      "chat_id": "{{ticket.external_id}}",
+      "ticket_id": "{{ticket.id}}"
+   }
+
+The "meet any condition" is a bit of a hack to get comments sent to us.
+
+
+Webhook Development
+```````````````````
+
+Sign-up for a free Ngrok.io account. This allows you to have a public 
+accessible HTTP endpoint to your local instance for development. Run ngrok
+locally as follows::
+
+   ngrok http 12380
+
+This should then give you a URL you can use in the HTTP Target. For example 
+http://ed8a1df2e030.ngrok.io. This changes each time its restarted so you will
+need to update the HTTP Target when this happens.
+
+Set up the webhook environment variables::
+
+   # set up the ENV variables which are the same as those used by the bot
+   export ZENDESK_EMAIL=...
+   export ZENDESK_SUBDOMAIN=...
+   export ZENDESK_TICKET_URI=...
+   export ZENDESK_TOKEN=...
+   export SLACK_WORKSPACE_URI=...
+   export SLACKBOT_API_TOKEN=...
+
+Now run the webhook using flask as follows. Note the port needs to be the same
+as the Ngrok tunnel::
+
+   workon zenslackchat
+
+   # (Python3)
+   FLASK_ENV=development FLASK_APP='zenslackchat.service:create_app()' \
+      flask run --port 12380
+
 
 Zenslackchat Bot
 ~~~~~~~~~~~~~~~~

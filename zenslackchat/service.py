@@ -27,15 +27,21 @@ def zendesk_webhook():
     headers = pprint.pformat(dict(request.headers))
     log.debug(f"Headers:\n{headers}")
 
-    # args = pprint.pformat(dict(request.args))
-    # log.debug(f"Query:\n{args}")
+    args = pprint.pformat(dict(request.args))
+    log.debug(f"Query:\n{args}")
 
     raw_data = request.get_data()        
     log.debug(f'Raw POSTed data:\n{raw_data}')
+    try:
+        event = json.loads(raw_data)
 
-    # This will handle regardless or errors and return without error 
-    # to zendesk. 
-    message.update_comments_from_zendesk(raw_data)
+    except json.decoder.JSONDecodeError:
+        log.exception(f'Cannot JSON decode:\n{raw_data}')
+
+    else:
+        # This will handle regardless or errors and return without error 
+        # to zendesk. 
+        message.update_with_comments_from_zendesk(event)
 
     return Response("Received OK, Thanks.")
 
@@ -49,6 +55,8 @@ def index():
 def create_app():
     """Create the flask app hooking up the 
     """
+    logging.basicConfig(level=logging.DEBUG)
+
     botlogging.log_setup()
 
     main_app = Flask(__name__)

@@ -2,3 +2,4 @@ zenpy
 flask
 uwsgi
 slackclient
+python-dateutil
