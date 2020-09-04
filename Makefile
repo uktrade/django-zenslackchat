@@ -2,8 +2,8 @@ GIT_COMMIT?=$(shell git rev-parse HEAD)
 BRANCH_NAME?=$(shell git rev-parse --abbrev-ref HEAD)
 BRANCH_TAG=$(subst /,_,$(BRANCH_NAME))
 
-DOCKER_REPO=someplaceonaws.dkr.ecr.eu-west-2.amazonaws.com
-DOCKER_NAME=zenslackchat_service
+DOCKER_REPO=localhost
+DOCKER_NAME=zenslackchat
 
 DOCKER_IMAGE=${DOCKER_NAME}:${GIT_COMMIT}
 DOCKER_BRANCH_IMAGE=${DOCKER_NAME}:${BRANCH_NAME}-latest
@@ -11,19 +11,25 @@ DOCKER_BRANCH_IMAGE=${DOCKER_NAME}:${BRANCH_NAME}-latest
 .DEFAULT_GOAL := all
 .PHONY: all install clean run test docker_build docker_test up down ps docs lint
 
-# Need to be set in the environment, these are only example values:
-export ZENDESK_EMAIL?=user@example.com
-export ZENDESK_SUBDOMAIN?=zendeskhelp.example.com
-export ZENDESK_TICKET_URI?=https://zendeskhelp.example.com/agent/tickets
-export SLACK_WORKSPACE_URI?=https://workspace.example.com/archives
-export SLACKBOT_API_TOKEN?=this-token-to-use
+export DB_HOST?=127.0.0.1
+export DB_NAME=service
+export DB_USER=service
+export DB_PASS=service
+export DB_PORT?=5432
+export POSTGRES_HOST?=127.0.0.1
+export POSTGRES_NAME=service
+export POSTGRES_USER=service
+export POSTGRES_PASS=service
+export POSTGRES_PORT?=5432
 
 all:
 	echo "Please choose a make target to run."
 
 install:
+	pip install -r requirements.txt
+
+test_install:
 	pip install -r requirements-test.txt
-	python setup.py develop
 
 clean:
 	rm -rf dist/ build/
@@ -45,22 +51,40 @@ docker_build: clean
 		--target test .
 
 run:
-	python zenslackchat/main.py
+	python manage.py runserver
+
+migrate:
+	python manage.py migrate
+
+up:
+	docker-compose --project-name ${DOCKER_NAME} up --remove-orphans
+
+ps:
+	docker-compose --project-name ${DOCKER_NAME} ps
+
+down:
+	docker-compose --project-name ${DOCKER_NAME} logs -t
+	docker-compose --project-name ${DOCKER_NAME} down --remove-orphans
 
 docker_test:
 	docker run \
 		--rm \
+		--network=${DOCKER_NAME}_default \
+		-e DB_HOST=postgres \
+		-e DB_USER=${DB_USER} \
+		-e DB_NAME=${DB_NAME} \
+		-e DB_PASS=${DB_PASS} \
+		-e DB_PORT=${DB_PORT} \
 		${DOCKER_IMAGE}-test \
 		bash -c "make test"
 
 docker_release:
-	echo "NOOP"
-	#docker push ${DOCKER_REPO}/${DOCKER_IMAGE}
-	#docker push ${DOCKER_REPO}/${DOCKER_BRANCH_IMAGE}
+	docker push ${DOCKER_REPO}/${DOCKER_IMAGE}
+	docker push ${DOCKER_REPO}/${DOCKER_BRANCH_IMAGE}
 
 lint:
-	flake8 --ignore=E501 zenslackchat
+	flake8 --ignore=E501 webapp
 
-test:
-	pytest -s --cov=zenslackchat
+test: lint
+	pytest
 

@@ -1,5 +1,7 @@
 zenpy
-flask
-uwsgi
 slackclient
 python-dateutil
+python-decouple
+psycopg2-binary
+django
+gunicorn

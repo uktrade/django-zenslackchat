@@ -62,49 +62,7 @@ def zendesk_ticket_url(ticket_id):
     return '/'.join([ZENDESK_TICKET_URI.rstrip('/'), str(ticket_id)])
 
 
-def get_ticket(external_id, retry=0, wait_period=1.5):
-    """Recover the zendesk ticket for a given slack parent message.
-
-    :param external_id: The 'ts' payload used by slack to identify a message.
-
-    :returns: A Zenpy.Ticket instance or None if nothing was found.
-
-    """
-    log = logging.getLogger(__name__)
-
-    client = api()
-
-    def _get():
-        # Return the first item found, in theory there should only be one.
-        #
-        # I can't seem to get tickets by external_id directly. I need to do a 
-        # search like this :(
-        returned = None
-
-        results = [item for item in client.search(external_id, type='ticket')]
-        if len(results) > 0:
-            returned = results[0]
-        else:
-            log.debug(f'No ticket found for external_id:<{external_id}>')
-
-        return returned
-
-    if retry:
-        retries = 10
-        while retries:
-            returned = _get()
-            if returned:
-                break
-            retries -= 1
-            time.sleep(wait_period)
-
-    else:
-        returned = _get()
-
-    return returned
-
-
-def get_ticket_by_id(ticket_id):
+def get_ticket(ticket_id):
     """Recover the ticket by it's ID in zendesk.
 
     :param ticket_id: The Zendesk ID of the Ticket.
