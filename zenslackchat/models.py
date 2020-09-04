@@ -1,7 +1,16 @@
 import logging
+from datetime import timezone
 from datetime import datetime
 
 from django.db import models
+
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
+
+class NotFoundError(Exception):
+    """Raised when a ZenSlackChat instance was not found."""
 
 
 class ZenSlackChat(models.Model):
@@ -12,9 +21,6 @@ class ZenSlackChat(models.Model):
     the conversation will be ignored.
 
     """
-    class Meta:
-        unique_together = (('channel_id', 'chat_id'),)
-
     # The channel which the slack message happening:
     # e.g. C019JUGAGTS
     channel_id = models.CharField(max_length=22)    
@@ -33,13 +39,16 @@ class ZenSlackChat(models.Model):
     # Useful for metrics on chats open/closed per period of time.
 
     # When the chat was first opened.
-    opened = models.DateTimeField(default=datetime.utcnow)
+    opened = models.DateTimeField(default=utcnow)
 
     # When the issue was resolved:
-    closed = models.DateTimeField(default=datetime.utcnow)
+    closed = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = (('channel_id', 'chat_id'),)
 
     @classmethod
-    def open(cls, channel_id, chat_id, ticket_id=None, created=None):
+    def open(cls, channel_id, chat_id, ticket_id=None, opened=None):
         """Create a new issue for the chat bot to monitor.
 
         :param channel_id: The slack channel the conversation is in.
@@ -48,11 +57,26 @@ class ZenSlackChat(models.Model):
 
         :param ticket_id: The optional Zendesk Ticket ID.
 
-        :param created: The optional datetime (default is UTC now).
+        :param opened: The optional datetime (default is UTC now).
 
         :returns: A ZenSlackChat instance.
 
         """
+        kwargs = dict(
+            channel_id=channel_id,
+            chat_id=chat_id,
+            ticket_id=ticket_id
+        )
+
+        if opened:
+            kwargs['opened'] = opened
+        else:
+            kwargs['opened'] = utcnow()
+
+        issue = cls(**kwargs)
+        issue.save()
+
+        return issue
 
     @classmethod
     def get(cls, channel_id, chat_id):
@@ -62,9 +86,47 @@ class ZenSlackChat(models.Model):
 
         :param chat_id: The conversation parent message identifier.
 
-        :returns: A ZenSlackChat instance or None.
+        :returns: A ZenSlackChat instance.
+        
+        If nothing is found for channel_id and chat_id then NotFoundError will
+        be raised.
+
+        """
+        try:
+            found = cls.objects.get(channel_id=channel_id, chat_id=chat_id)
+
+        except cls.DoesNotExist:
+            raise NotFoundError(
+                f"Nothing found for channel_id:<{channel_id}> and "
+                f"chat_id:<{chat_id}>"
+            )
+
+        return found
+
+    @classmethod
+    def get_by_ticket(cls, chat_id, ticket_id):
+        """Get a specific conversation.
+
+        :param chat_id: The conversation parent message identifier.
+
+        :param ticket_id: The Zendesk Ticket ID.
+
+        :returns: A ZenSlackChat instance.
+
+        If nothing is found for chat_id and ticket_id then NotFoundError will
+        be raised.
         
         """
+        try:
+            found = cls.objects.get(chat_id=chat_id, ticket_id=ticket_id)
+
+        except cls.DoesNotExist:
+            raise NotFoundError(
+                f"Nothing found for chat_id:<{chat_id}> and "
+                f"ticket_id:<{ticket_id}>"
+            )
+
+        return found
 
     @classmethod
     def resolve(cls, channel_id, chat_id, closed=None):
@@ -82,11 +144,27 @@ class ZenSlackChat(models.Model):
         should stop monitoring this chat.
 
         """
+        issue = cls.get(channel_id, chat_id)
+
+        issue.active = False
+        if closed:
+            issue.closed = closed
+        else:
+            issue.closed = utcnow()
+        issue.save()
+
+        return issue
 
     @classmethod
     def open_issues(cls):
         """Return a list of open issues the bot needs to monitor.
 
+        I order by the most recently opened issue first. I reckoned the most
+        recent needs the most attention.
+
         :returns: An empty list or list of ZenSlackChat instances.
 
         """
+        return list(
+            cls.objects.filter(active=True).order_by('-opened').all()
+        )

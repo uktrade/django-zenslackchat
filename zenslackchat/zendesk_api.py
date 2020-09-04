@@ -144,10 +144,10 @@ def add_comment(ticket, comment):
     return ticket
 
 
-def close_ticket(external_id):
+def close_ticket(ticket_id):
     """Close a ticket in zendesk.
 
-    :param external_id: The message id stored as the external_id in zendesk.
+    :param ticket_id: The Zendesk Ticket ID.
 
     :returns: None or Ticket instance closed.
 
@@ -155,11 +155,11 @@ def close_ticket(external_id):
     log = logging.getLogger(__name__)
     client = api()
 
-    log.debug(f'Looking for ticket with external_id:<{external_id}>')
-    ticket = get_ticket(external_id)
+    log.debug(f'Looking for ticket with ticket_id:<{ticket_id}>')
+    ticket = get_ticket(ticket_id)
     if ticket:
         ticket.status = 'closed'
         client.tickets.update(ticket)
-        log.debug(f'Closed ticket:<{ticket.id}> for external_id:<{external_id}>')
+        log.debug(f'Closed ticket:<{ticket.id}> for ticket_id:<{ticket_id}>')
 
     return ticket
