@@ -48,6 +48,11 @@ class FakeApi(object):
             self.parent.created_tickets.append(ticket)
             return self.ticket_audit
 
+        def __call__(self, id):
+            """Recover a specific ticket.
+            """
+            return self.ticket_audit
+
     def __init__(self, results=[], me=None, ticket_audit=None):
         self.results = results
         self.users = self.FakeUsers(me)
@@ -116,14 +121,14 @@ def test_zendesk_ticket_url(log):
 def test_get_ticket_with_result(log):
     """Verify get_ticket when I expect to get a result.
     """
-    chat_id='some-message-id'
-    fake_ticket = FakeTicket(ticket_id=chat_id)
-    fake_api = FakeApi(results=[fake_ticket])
+    fake_ticket = FakeTicket(ticket_id=12345)
+    fake_ticket_audit = FakeTicketAudit(fake_ticket)
+    fake_api = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
 
     with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
-        returned = zendesk_api.get_ticket(chat_id)
+        returned = zendesk_api.get_ticket(12345)
 
-    assert returned == fake_ticket
+    assert returned == fake_ticket_audit
 
 
 def test_get_ticket_with_no_result(log):
@@ -177,13 +182,13 @@ def test_create_ticket(log):
 def test_close_ticket(log):
     """Verify get_ticket when I expect to get a result.
     """
-    chat_id='some-message-id'
-    fake_ticket = FakeTicket(ticket_id=chat_id)
-    fake_api = FakeApi(results=[fake_ticket])
+    fake_ticket = FakeTicket(ticket_id=12345)
+    fake_ticket_audit = FakeTicketAudit(fake_ticket)
+    fake_api = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
     assert fake_ticket.status == 'open'
 
     with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
-        returned = zendesk_api.close_ticket(chat_id)
+        returned = zendesk_api.close_ticket(12345)
 
     assert returned == fake_ticket
     assert fake_ticket.status == 'closed'

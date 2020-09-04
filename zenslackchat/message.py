@@ -28,6 +28,7 @@ from zenslackchat.zendesk_api import zendesk_ticket_url
 from zenslackchat.slack_utils import message_url
 from zenslackchat.slack_utils import post_message
 from zenslackchat.models import ZenSlackChat
+from zenslackchat.models import NotFoundError
 
 
 def handler(payload):
@@ -70,29 +71,40 @@ def handler(payload):
     resp = web_client.users_info(user=user_id)
     recipient_email = resp.data['user']['profile']['email']
 
+    # zendesk ticket instance
+    ticket = None
+
     # Get any existing ticket from zendesk:
     if chat_id and thread_id:
-        # This is a reply message, use the thread_id to recover from zendesk:
-        slack_chat_url = message_url(channel_id, thread_id)
-        issue = ZenSlackChat.get(channel_id, thread_id)
-        ticket = None
-        if issue.ticket_id:
-            ticket = get_ticket(issue.ticket_id)
         log.debug(
             f"Received thread message from '{recipient_email}': {text}\n"
         )
-        if ticket:
+
+        # This is a reply message, use the thread_id to recover from zendesk:
+        slack_chat_url = message_url(channel_id, thread_id)
+        try:
+            issue = ZenSlackChat.get(channel_id, thread_id)
+
+        except NotFoundError:
+            # This could be an thread that happened before the bot was running:
+            log.warn(
+                f'No ticket found in slack {slack_chat_url}. Old thread?'
+            )
+
+        else:
+            ticket_id = issue.ticket_id
+
             # Handle thread commands here e.g. done/reopen
             log.debug(
-                f'Recoverd ticket {ticket.id} from slack {slack_chat_url}'
+                f'Recoverd ticket {ticket_id} from slack {slack_chat_url}'
             )
             command = text.strip().lower()
             if command == 'resolve ticket':
                 # Time to close the ticket as the issue has been resolved.
                 log.debug(
-                    f'Closing ticket {ticket.id} from slack {slack_chat_url}.'
+                    f'Closing ticket {ticket_id} from slack {slack_chat_url}.'
                 )
-                url = zendesk_ticket_url(ticket.id)
+                url = zendesk_ticket_url(ticket_id)
                 ZenSlackChat.resolve(channel_id, chat_id)
                 try:
                     close_ticket(issue)
@@ -108,23 +120,16 @@ def handler(payload):
                     )
 
             # Add comment to Zendesk:
+            ticket = get_ticket(ticket_id)
             add_comment(ticket, text)
-
-        else:
-            # This could be an thread the happened before the bot was running:
-            log.warn(
-                f'No ticket found in slack {slack_chat_url}. Old thread?'
-            )
 
     else:
         slack_chat_url = message_url(channel_id, chat_id)
-        issue = ZenSlackChat.get(channel_id, thread_id)
-        ticket = None
-        if issue.ticket_id:
-            ticket = get_ticket(issue.ticket_id)
-        # New issue?
-        if not ticket:
-            # Yes, new ticket time.
+        try:
+            issue = ZenSlackChat.get(channel_id, chat_id)
+
+        except NotFoundError:
+            # No issue found. It looks like its new issue:
             log.debug(
                 f"Received message from '{recipient_email}': {text}\n"
             )
@@ -134,6 +139,10 @@ def handler(payload):
                 subject=text, 
                 slack_message_url=slack_chat_url,
             )
+
+            # Store all the details in our DB:
+            ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
+
             # Once-off response to parent thread:
             url = zendesk_ticket_url(ticket.id)
             message = f"Hello, your new support request is {url}"

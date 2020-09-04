@@ -67,7 +67,7 @@ def get_ticket(ticket_id):
 
     :param ticket_id: The Zendesk ID of the Ticket.
 
-    :returns: A Zenpy.Ticket instance or None if nothing was found.
+    :returns: A Zenpy.TicketAudit instance or None if nothing was found.
 
     """
     log = logging.getLogger(__name__)
@@ -156,8 +156,9 @@ def close_ticket(ticket_id):
     client = api()
 
     log.debug(f'Looking for ticket with ticket_id:<{ticket_id}>')
-    ticket = get_ticket(ticket_id)
-    if ticket:
+    ticket_audit = get_ticket(ticket_id)
+    if ticket_audit:
+        ticket = ticket_audit.ticket
         ticket.status = 'closed'
         client.tickets.update(ticket)
         log.debug(f'Closed ticket:<{ticket.id}> for ticket_id:<{ticket_id}>')

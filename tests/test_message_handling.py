@@ -5,7 +5,7 @@ import pytest
 
 from zenslackchat import slack_utils
 from zenslackchat.message import handler
-
+from zenslackchat.models import ZenSlackChat
 
 
 class FakeTicket(object):
@@ -33,7 +33,8 @@ def test_new_support_message_creates_ticket(
     create_ticket,
     close_ticket,
     get_ticket,
-    log
+    log,
+    db
 ):
     """Test the path to creating a zendesk ticket from new message receipt.
     """
@@ -49,6 +50,9 @@ def test_new_support_message_creates_ticket(
     # Return out fake ticket when asked to create:
     ticket = FakeTicket(ticket_id='32')
     create_ticket.return_value = ticket
+
+    # There should be no entries here yet:
+    assert ZenSlackChat.objects.count() == 0
 
     # Send a new help message
     payload = {
@@ -86,18 +90,27 @@ def test_new_support_message_creates_ticket(
         is_handled = handler(payload)
     assert is_handled is True
 
+    # There should now be one instance here:
+    assert ZenSlackChat.objects.count() == 1
+    assert len(ZenSlackChat.open_issues()) == 1
+
+    # Verify what the stored issue should look like:
+    issue = ZenSlackChat.get('C019JUGAGTS', '1597940362.013100')
+    assert issue.active is True
+    assert issue.opened is not None
+    assert issue.closed is None
+    assert issue.channel_id == 'C019JUGAGTS'
+    assert issue.chat_id == '1597940362.013100'
+    assert issue.ticket_id == '32'
+
     # Verify the calls to the various mock are as I expect:
 
     # called with the content of data['user']
     mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
 
-    # called with the content of data['ts'] which in this test resulted in
-    # None being returned (no ticket found).
-    get_ticket.assert_called_with('1597940362.013100')
-
     # Check how zendesk api was called:
     create_ticket.assert_called_with(
-        chat_id='1597940362.013100',
+        external_id='1597940362.013100',
         recipient_email='bob@example.com',
         subject='My 🖨 is on 🔥',
         slack_message_url='https://example.com/C019JUGAGTS/p1597940362013100'
@@ -123,7 +136,8 @@ def test_message_with_existing_support_ticket_in_zendesk(
     create_ticket,
     close_ticket,
     get_ticket,
-    log
+    log,
+    db
 ):
     """Test further in-thread messages don't result in new zendesk tickets.
     """
@@ -135,8 +149,20 @@ def test_message_with_existing_support_ticket_in_zendesk(
 
     # Return the ticket which will indicate we know about this issue and
     # not then go one to make a new message.
-    ticket = FakeTicket(ticket_id='32')
+    ticket = FakeTicket(ticket_id='21')
     get_ticket.return_value = ticket
+
+    # There should be no entries here yet:
+    assert ZenSlackChat.objects.count() == 0
+
+    # For this situation we need an exiting support ticket present for the 
+    # message handler to detail with in our DB:
+    ZenSlackChat.open(
+        channel_id="C019JUGAGTS", 
+        chat_id="1598022004.004900", 
+        ticket_id="21", 
+    )
+    assert len(ZenSlackChat.open_issues()) == 1
 
     payload = {
         'data': {
@@ -173,22 +199,29 @@ def test_message_with_existing_support_ticket_in_zendesk(
         is_handled = handler(payload)
     assert is_handled is True
 
+    # There should not be any new issues as a result of this:
+    results = ZenSlackChat.open_issues()
+    assert len(results) == 1
+    issue = results[0]
+    assert issue.active is True
+    assert issue.opened is not None
+    assert issue.closed is None
+    assert issue.channel_id == 'C019JUGAGTS'
+    assert issue.chat_id == '1598022004.004900'
+    assert issue.ticket_id == '21'
+    
     # Verify the calls to the various mock are as I expect:
 
     # called with the content of data['user']
     mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
 
-    # called with the content of data['ts'] which in this test resulted in
-    # None being returned (no ticket found).
-    get_ticket.assert_called_with('1598022004.004900')
-
-    # Check how zendesk api was called:
+    # Quick check these should not have been called
+    get_ticket.assert_not_called()
     create_ticket.assert_not_called()
-
-    # finally check the posted message:
     post_message.assert_not_called()
 
 
+@patch('zenslackchat.message.add_comment')
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')
@@ -198,9 +231,11 @@ def test_thread_message_with_support_ticket_in_zendesk(
     create_ticket,
     close_ticket,
     get_ticket,
-    log
+    add_comment,
+    log,
+    db
 ):
-    """Test in-thread messages is shipped to Zendesk.
+    """Test in-thread conversation messages are shipped to Zendesk.
     """
     mock_rtm_client = MagicMock()
     mock_web_client = MagicMock()
@@ -210,8 +245,20 @@ def test_thread_message_with_support_ticket_in_zendesk(
 
     # Return the ticket which will indicate we know about this issue and
     # not then go one to make a new message.
-    ticket = FakeTicket(ticket_id='32')
+    ticket = FakeTicket(ticket_id='83')
     get_ticket.return_value = ticket
+
+    # There should be no entries here yet:
+    assert ZenSlackChat.objects.count() == 0
+
+    # For this situation we need an exiting support ticket present for the 
+    # message handler to detail with in our DB:
+    ZenSlackChat.open(
+        channel_id="C019JUGAGTS", 
+        chat_id="1598021907.003600", 
+        ticket_id="83", 
+    )
+    assert len(ZenSlackChat.open_issues()) == 1
 
     # This is a message reply in the thread on slack:
     payload = {
@@ -234,7 +281,8 @@ def test_thread_message_with_support_ticket_in_zendesk(
             'suppress_notification': False,
             'team': 'TGFJG8VEZ',
             'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
-            # ts & thread_ts set
+            # ts & thread_ts set i.e. this is a message in a conversation and
+            # thread_ts is the chat_id of the parent message.
             'thread_ts': '1598021907.003600',
             'ts': '1598022004.004900',
             'user': 'UGF7MRWMS',
@@ -251,21 +299,33 @@ def test_thread_message_with_support_ticket_in_zendesk(
         is_handled = handler(payload)
     assert is_handled is True
 
-    # Verify the calls to the various mock are as I expect:
+    # There should be no new issues as a result of this:
+    results = ZenSlackChat.open_issues()
+    assert len(results) == 1
+    issue = results[0]
+    assert issue.active is True
+    assert issue.opened is not None
+    assert issue.closed is None
+    assert issue.channel_id == 'C019JUGAGTS'
+    assert issue.chat_id == '1598021907.003600'
+    assert issue.ticket_id == '83'
+
+    # Verify the calls to the various mock are as I expect. The only thing that
+    # should happen here is the comment gets shipped to Zendesk
 
     # called with the content of data['user']
     mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
 
-    # In this case the thread_ts is the parent chat id we use:
-    get_ticket.assert_called_with('1598021907.003600')
+    # Check the ticket is "recovered" and the comment is "added" to it:
+    get_ticket.assert_called_with('83')
+    add_comment.assert_called_with(ticket, 'Oh, wait, my bad 🤦‍♀️, its ok now.')
 
-    # Check how zendesk api was called:
+    # These should not have been called:
     create_ticket.assert_not_called()
-
-    # finally check the posted message:
     post_message.assert_not_called()
 
 
+@patch('zenslackchat.message.add_comment')
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')
@@ -275,7 +335,9 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     create_ticket,
     close_ticket,
     get_ticket,
-    log
+    add_comment,
+    log,
+    db
 ):
     """Test when old message threads are replied to.
 
@@ -290,9 +352,10 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     # Set up the user details 'slack' will return    
     mock_web_client.users_info.return_value = FakeUserResponse()
 
-    # Return no ticket and set ts & thread_ts. This will indicate an old 
-    # message thread with new chatter on it. I'm going to ignore this.
+    # With no known issue for this and set ts & thread_ts, it will indicate an 
+    # old message thread with new chatter on it. I'm going to ignore this.
     get_ticket.return_value = None
+    assert len(ZenSlackChat.open_issues()) == 0
 
     # Send a new help message
     payload = {
@@ -339,13 +402,15 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
 
     # In a conversation the thread_ts is actually a reference to the parent 
     # message and ts refers to the message that has come in. Check this has 
-    # been taken into account:
-    get_ticket.assert_called_with('1598021907.003600')
+    # been taken into account.
 
-    # Check how zendesk api was called:
+    # No new issue should be created in this case
+    assert len(ZenSlackChat.open_issues()) == 0
+
+    # These won't be called as we don't have a record of this conversation:
+    add_comment.assert_not_called()
+    get_ticket.assert_not_called()
     create_ticket.assert_not_called()
-
-    # finally check the posted message:
     post_message.assert_not_called()
 
 
@@ -366,7 +431,8 @@ def test_message_events_that_are_ignored_by_handler(
     close_ticket,
     get_ticket,
     ignored_subtype,
-    log
+    log,
+    db
 ):
     """Verify that I don't handle various subtype messages.
     """
