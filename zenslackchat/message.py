@@ -47,16 +47,13 @@ def handler(payload):
     channel_id = data['channel']
     text = data.get('text', '')
 
-    # The docs https://api.slack.com/rtm for RTM API say a message should have
-    # 'type = messsage' field. Using the slack client RTM however shows this is
-    # not the case. I have noticed all other messages have a subtype. So I'm
-    # just going to ignore all of these and see how I get on. I can manage the
-    # message / message-reply based on the ts/thread_ts fields and whether they
-    # are populated or not. I'm calling ts: chat_id and thread_ts: thread_id.
+    # I'm ignoring all bot messages. I can manage the message / message-reply 
+    # based on the ts/thread_ts fields and whether they are populated or not. 
+    # I'm calling 'ts' chat_id and 'thread_ts' thread_id.
     #
     subtype = data.get('subtype')
-    if subtype:
-        log.debug(f"Ignoring subtype '{subtype}': {text}\n")
+    if subtype == 'bot_message' or 'bot_id' in data:
+        log.debug(f"Ignoring bot message: {text}\n")
         return False
 
     # A message
@@ -69,7 +66,9 @@ def handler(payload):
     # this is always set on all accounts.
     log.debug(f"Recovering profile for user <{user_id}>")
     resp = web_client.users_info(user=user_id)
-    recipient_email = resp.data['user']['profile']['email']
+    print(f"resp.data:\n{resp.data}\n")
+    #recipient_email = resp.data['user']['profile']['email']
+    recipient_email = resp.data['user']['real_name']
 
     # zendesk ticket instance
     ticket = None

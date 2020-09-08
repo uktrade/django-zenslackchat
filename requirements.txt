@@ -1,7 +1,10 @@
 zenpy
 slackclient
+slackeventsapi
 python-dateutil
 python-decouple
 psycopg2-binary
+requests
 django
+djangorestframework
 gunicorn

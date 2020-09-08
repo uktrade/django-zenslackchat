@@ -27,22 +27,40 @@ SECRET_KEY = os.environ.get(
     binascii.hexlify(os.urandom(64)).decode()
 )
 
+# Slack & Bot credentials:
+SLACK_CLIENT_ID = os.environ.get('SLACK_CLIENT_ID', 'YOUR CLIENT ID')
+SLACK_CLIENT_SECRET = os.environ.get(
+    'SLACK_CLIENT_SECRET', 'YOUR CLIENT SECRET'
+)
+SLACK_BOT_USER_TOKEN = os.environ.get(
+    'SLACK_BOT_USER_TOKEN', 'YOUR BOT USER TOKEN'
+)
+SLACK_VERIFICATION_TOKEN = os.environ.get(
+    'SLACK_VERIFICATION_TOKEN', 'YOUR VERIFICATION TOKEN'
+)
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '.ngrok.io',
+    'localhost',
+    '127.0.0.1'
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'zenslackchat.apps.ZenSlackChatConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'zenslackchat.apps.ZenSlackChatConfig',
 ]
 
 MIDDLEWARE = [
@@ -124,3 +142,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+from zenslackchat import botlogging
+
+LOGGING = botlogging.config
