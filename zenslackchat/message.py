@@ -11,9 +11,11 @@ Oisin Mulvihill
 import os
 import json
 import time
+import pprint
 import logging
 import datetime
 from time import mktime
+from operator import itemgetter
 
 import zenpy
 from slack import WebClient
@@ -29,6 +31,12 @@ from zenslackchat.slack_utils import message_url
 from zenslackchat.slack_utils import post_message
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.models import NotFoundError
+
+
+IGNORED_SUBTYPES = [
+    'channel_join', 'bot_message', 'channel_rename', 'message_changed', 
+    'message_deleted'    
+]
 
 
 def handler(payload):
@@ -53,7 +61,11 @@ def handler(payload):
     #
     subtype = data.get('subtype')
     if subtype == 'bot_message' or 'bot_id' in data:
-        log.debug(f"Ignoring bot message: {text}\n")
+        log.debug(f"Ignoring bot message: {text}")
+        return False
+
+    elif subtype in IGNORED_SUBTYPES:
+        log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
 
     # A message
@@ -66,9 +78,9 @@ def handler(payload):
     # this is always set on all accounts.
     log.debug(f"Recovering profile for user <{user_id}>")
     resp = web_client.users_info(user=user_id)
-    print(f"resp.data:\n{resp.data}\n")
-    #recipient_email = resp.data['user']['profile']['email']
-    recipient_email = resp.data['user']['real_name']
+    # print(f"resp.data:\n{resp.data}\n")
+    real_name = resp.data['user']['real_name']
+    recipient_email = resp.data['user']['profile']['email']
 
     # zendesk ticket instance
     ticket = None
@@ -120,7 +132,7 @@ def handler(payload):
 
             # Add comment to Zendesk:
             ticket = get_ticket(ticket_id)
-            add_comment(ticket, text)
+            add_comment(ticket, f"{real_name} (Slack): {text}")
 
     else:
         slack_chat_url = message_url(channel_id, chat_id)
@@ -164,9 +176,69 @@ def ts_to_datetime(epoch):
     :returns: datetime.datetime(2020, 8, 26, 17, 33, 4)
 
     """
-    dt = datetime.datetime.fromtimestamp(mktime(time.localtime(epoch)))
+    dt = datetime.datetime.fromtimestamp(mktime(time.localtime(float(epoch))))
     dt = dt.replace(tzinfo=datetime.timezone.utc)
     return dt
+
+
+def utc_to_datetime(iso8601_str):
+    """Convert raw UTC slack message epoch times to datetime.
+
+    :param iso8601_str: '2020-09-08T16:35:14Z'
+
+    An iso8601 string parse can interpret.
+
+    :returns: datetime.datetime(2020, 9, 8, 16, 35, 14, tzinfo=utc)
+
+    """
+    dt = parse(iso8601_str)
+    dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
+
+
+def messages_for_slack(slack, zendesk):
+    """Work out which messages from zendesk need to be added to the slack 
+    conversation.
+
+    :param slack: A list of slack messages.
+
+    :param zendesk: A list of zendesk comment message.
+
+    :returns: An empty list or list of messages to be added.
+
+    """
+    log = logging.getLogger(__name__)
+
+    slack = sorted(slack, key=itemgetter('created_at')) 
+    # log.debug(f"Slack messages:\n{pprint.pformat(slack)}")
+
+    zendesk = sorted(zendesk, key=itemgetter('created_at'), reverse=True) 
+    # log.debug(f"Zendesk messages:\n{pprint.pformat(zendesk)}")
+
+    # Ignore the first message which is the parent message. Also ignore the 
+    # second message which is our "link to zendesk ticket" message.
+    smsgs = []
+    lookup = {}
+    for msg in slack[2:]:
+        smsgs.append(msg)
+        # text = msg['text'].split('(Zendesk):')[-1].strip()
+        text = msg['text']
+        lookup[text] = 1
+    log.debug(f"messages to consider from slack:{len(slack)}")
+
+    log.debug(f"lookup:\n{lookup}")
+
+    # remove api messages which come from slack
+    for_slack = []
+    # import ipdb; ipdb.set_trace()
+    for msg in zendesk:
+        if msg['via']['channel'] == 'web' and msg['body'] not in lookup:
+            log.debug(f"msg to be added:{msg['body']}")
+            for_slack.append(msg)
+    for_slack.reverse()
+
+    log.debug(f"message for slack:\n{pprint.pformat(for_slack)}")
+    return for_slack
 
 
 def update_with_comments_from_zendesk(event):
@@ -178,34 +250,45 @@ def update_with_comments_from_zendesk(event):
     """
     log = logging.getLogger(__name__)
     
-    chat_id = event['external_id']
+    external_id = event['external_id']
     ticket_id = event['ticket_id']
+    if not external_id:
+        log.debug(f'external_id is empty, ignoring ticket comment.')    
+        return 
 
     log.debug(f'Recovering ticket by its Zendesk ID:<{ticket_id}>')
-    issue = ZenSlackChat.get_by_ticket(chat_id, ticket_id)
-    if not issue:
+    try:
+        issue = ZenSlackChat.get_by_ticket(external_id, ticket_id)
+
+    except NotFoundError:
         log.debug(
-            f'No Ticket Found for Zendesk ID {ticket_id}.'
-        )
-        return
+            f'external_id:<{external_id}> not found, ignoring ticket comment.'
+        )    
+        return 
 
     zendesk_client = api()
     slack_client = WebClient(token=os.environ['SLACKBOT_API_TOKEN'])
 
-    # Recover the conversation for this channel and chat_id
+    # Recover all messages from the slack conversation:
+    slack = []
     resp = slack_client.conversations_replies(
-        channel=issue.channel_id, ts=chat_id
+        channel=issue.channel_id, ts=external_id
     )
+    for message in resp.data['messages']:
+        message['created_at'] = ts_to_datetime(message['ts'])
+        slack.append(message)
 
-    messages = resp.data['messages']
-    latest_reply = None
-    if len(messages) > 1:
-        parent = messages[0]
-        latest_reply = ts_to_datetime(parent['latest_reply'])
-    
+    # Recover all comments on this ticket:
+    zendesk = []
     for comment in zendesk_client.tickets.comments(ticket=ticket_id):
-        created_at = parse(comment['created_at'])
+        comment = comment.to_dict()
+        comment['created_at'] = utc_to_datetime(comment['created_at'])
+        zendesk.append(comment)
 
-        import ipdb; ipdb.set_trace()
+    # Work out what needs to be posted to slack:
+    for_slack = messages_for_slack(slack, zendesk)
 
-
+    # Update the slack conversation:
+    for message in for_slack:
+        msg = f"(Zendesk): {message['body']}"
+        post_message(slack_client, external_id, issue.channel_id, msg)

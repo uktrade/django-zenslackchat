@@ -84,9 +84,12 @@ You need to create a HTTP target which can then be used in the trigger set up.
 From https://<your zendesk>.zendesk.com/agent/admin/extensions you click 
 "add target" and then set:
 
-- Title: Zenslackchat zendesk comment notification
-- URL: <Ngrok.io URI or Production URI>/zendesk/webhook/comment
+- Title: zenslackchat zendesk comment notification
+- URL: <Ngrok.io URI or Production URI>/zendesk/webhook
 - Method: POST
+- Check basic auth
+  - username: webhook_access
+  - password: <shared with webapp>
 
 You can test the target if you have set up the end point in advance. Otherwise
 just select "Create Target" in the drop down. and move on to creating the 
@@ -112,7 +115,7 @@ and then do the following set up:
   - Select the trigger created earlier
   - Set the JSON body set up::
    {
-      "chat_id": "{{ticket.external_id}}",
+      "external_id": "{{ticket.external_id}}",
       "ticket_id": "{{ticket.id}}"
    }
 
