@@ -5,10 +5,23 @@ Zenslackchat
 
 Helpdesk support using a slack chat bot and integration into zendesk.
 
-I use make, docker, python3 and virtualenvwrappers to manage the project.
+I'm going to use GOV.UK PaaS for this so will need to look at buildpacks and
+cloud foundry to aid me with this.
+
+- https://docs.cloud.service.gov.uk/deploying_apps.html#deploying-apps
+
+I'm using make, docker, docker-compose, python3 and virtualenvwrappers to 
+develop the project locally. I currently work of Mac OSX for development and 
+use Homebrew to install what I need. Your mileage may vary.
+
 
 Spike Investigation
 -------------------
+
+I've converted to a Django project as I needed proper storage. Zendesk 
+external_id hack wasn't working. The advantage of going Django is I can have
+a single app now which subscribes to events and handles Slack and Zendesk 
+OAuth.
 
 Scenario / chat with Matt / Things to work out on SRE-725:
 
@@ -47,6 +60,8 @@ Scenario / chat with Matt / Things to work out on SRE-725:
   - Webops metrics time open/cycle time.
      - OM: Zendesk does have metrics, have to investigate.
      - OM: Bot could reply with stats in response to query.
+     - OM: Now I also have opened/closed datetimes on issues in my DB. So you 
+       could generate reports for this.
   - Primary/Secondary people on support added to ticket.
      - If you had a way to query some API for who is "on call", this could be 
        added automatically as Ticket assignees.
@@ -66,16 +81,33 @@ Zendesk / Slack investigation.
  - [X] |ss| link from zendesk UI to the slack message |se|
  - [X] |ss| Close the issue on slack by saying 'done' in the thread |se|
  - [X] |ss| Ship conversation messages from slack to zendesk |se|
+ - [X] |ss| Ship messages from zendesk to slack |se|
  - [] Synchronise state changes on a ticket from Zendesk(?).
- - [] ship messages from zendesk to slack
  
 
-Zendesk Webhook
-~~~~~~~~~~~~~~~
+Zendesk
+~~~~~~~
+
+For Zendesk integration you need to enable and generate a token (not oauth):
+ - https://support.zendesk.com/hc/en-us/articles/226022787-Generating-a-new-API-token-
+
+The token approach is functional, however its permissons are too broad using 
+this method. To get off the ground its fine, but we'll need to move to OAuth
+in production. I'll move to this as I'm done this for Slack.
+
+Zendesk OAuth:
+- https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
+
+Useful Reference docs:
+
+- https://developer.zendesk.com/rest_api/docs/support/tickets#json-format
+- https://developer.zendesk.com/rest_api/docs/support/ticket_comments
+- Zenpy: http://docs.facetoe.com.au/api_objects.html
+- http://docs.facetoe.com.au/zenpy.html
+
 
 This is the raw set up you need to enable comment shipping to slack from 
 Zendesk. 
-
 
 HTTP Target
 ```````````
@@ -122,8 +154,8 @@ and then do the following set up:
 The "meet any condition" is a bit of a hack to get comments sent to us.
 
 
-Webhook Development
-```````````````````
+Webhook
+```````
 
 Sign-up for a free Ngrok.io account. This allows you to have a public 
 accessible HTTP endpoint to your local instance for development. Run ngrok
@@ -135,75 +167,64 @@ This should then give you a URL you can use in the HTTP Target. For example
 http://ed8a1df2e030.ngrok.io. This changes each time its restarted so you will
 need to update the HTTP Target when this happens.
 
-Set up the webhook environment variables::
-
-   # set up the ENV variables which are the same as those used by the bot
-   export ZENDESK_EMAIL=...
-   export ZENDESK_SUBDOMAIN=...
-   export ZENDESK_TICKET_URI=...
-   export ZENDESK_TOKEN=...
-   export SLACK_WORKSPACE_URI=...
-   export SLACKBOT_API_TOKEN=...
-
-Now run the webhook using flask as follows. Note the port needs to be the same
-as the Ngrok tunnel::
-
-   workon zenslackchat
-
-   # (Python3)
-   FLASK_ENV=development FLASK_APP='zenslackchat.service:create_app()' \
-      flask run --port 12380
+The webhook code is now integrated into the Django webapp. Running locally its
+found on "http://localhost:8000/zendesk/webhook/"
 
 
-Zenslackchat Bot
-~~~~~~~~~~~~~~~~
+Slack
+~~~~~
 
-I've merged what I've done so far into a single approach. I'm going to set up
-a demo to show progress and get user feedback end of the week. This will help
-decided whether to continue/drop.
+I've ditched the standalone bot and favour of using Django and subscribing a
+specific view to receive events. Django+Rest Framework projects are quite 
+common here so others can easily work on this project too.
 
-set up
-``````
+You need to create a Slack app
+``````````````````````````````
 
-For Zendesk integration ou need to enable and generate a token (not oauth):
- - https://support.zendesk.com/hc/en-us/articles/226022787-Generating-a-new-API-token-
+Go to https://api.slack.com/apps and create a slack app.
 
-The token approach is functional, however its permissons are too broad using 
-this method. To get off the ground its fine, but we'll need to move to OAuth
-in production. I don't want to do this in a spike.
+New App:
+- app name: ZenSlackChat
+- Development Slack Workspace: <workspace>
 
-Zendesk OAuth:
-- https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
+Now I need from the App Credentials
+- Client ID
+- Client Secret
+- Signing Secret
+- Verification Token
 
-Useful Reference docs:
+Display Information
+- App Name: zenslackchat
 
-- https://developer.zendesk.com/rest_api/docs/support/tickets#json-format
-- https://developer.zendesk.com/rest_api/docs/support/ticket_comments
-- Zenpy: http://docs.facetoe.com.au/api_objects.html
-- http://docs.facetoe.com.au/zenpy.html
+OAuth & Permissions
+Tokens for Worksapce
+- OAuth Access Token
+- Bot User OAuth Access Token
 
-For Slack integration I'm using the Python slackclient library. It has handy
-event based systen. You subscribe to a message event and then receive *all*
-messages including your own. 
+Redirect URLs
+- https://<location of running endpoint>/slack/oauth/
 
-To set up slack you need to do the following. When signed into a workspace 
-(correct admin rights?) go to:
+Scopes
 
-- https://my.slack.com/services/new/bot
+Bot Token Scopes: 
+- channels:history
+- groups:history
+- users:read
+- users:read.email
 
-settings::
+User Token Scopes
+  - channels:history
+    View messages and other content in the user’s public channels
 
-    username: gofer
-    what this bot does: Run between slack and zendesk
-
-You can then recover the API_TOKEN slackbot needs. I created a zenslackchat 
-channel in my workspace. I had to invite the bot before it could be used.
+Event Subscriptions
+- Enable Events: on
+- Request URL: https://<location of running endpoint>/slack/events/
 
 
-Demo
-````
+django-zenslackchat
+-------------------
 
-To run the demo bot::
+To run the webapp locally:
 
     workon zenslackchat
 
@@ -211,14 +232,19 @@ To run the demo bot::
     # zendesk
     export ZENDESK_EMAIL=<user on support site> 
     export ZENDESK_SUBDOMAIN=<support site subdomain>
+    export ZENDESK_TOKEN=<zendesk token> 
     export ZENDESK_TICKET_URI=https://<support site>.zendesk.com/agent/tickets
-    read -srp "Zendesk Token: " ZENDESK_TOKEN ; export ZENDESK_TOKEN
+
     # slack
+    export SLACK_CLIENT_ID=<slack app oauth client id>
+    export SLACK_CLIENT_SECRET=<slack app oauth client secret>
+    export SLACK_VERIFICATION_TOKEN=<slack app verification token>
+    export SLACK_SIGN_SECRET=<slack app sign secret>
+    export SLACK_BOT_USER_TOKEN=<slack app bot user token>
     export SLACK_WORKSPACE_URI=https://<workspace>.slack.com/archives
-    read -srp "SLACKBOT_API_TOKEN: " SLACKBOT_API_TOKEN ; export SLACKBOT_API_TOKEN
-    
+        
     # Run the bot (Python3)
-    python zenslackchat/main.py
+    python manage.py runserver
 
 
 Development
