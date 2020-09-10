@@ -11,18 +11,23 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 import binascii
-
 from pathlib import Path
+
+from zenslackchat import botlogging
+
+LOGGING = botlogging.config
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
+    'WEBAPP_SECRET_KEY',
     # generate random one if not given for working development
     binascii.hexlify(os.urandom(64)).decode()
 )
@@ -39,16 +44,15 @@ SLACK_VERIFICATION_TOKEN = os.environ.get(
     'SLACK_VERIFICATION_TOKEN', 'YOUR VERIFICATION TOKEN'
 )
 
+if DEBUG:
+    ALLOWED_HOSTS = [
+        '.ngrok.io',
+        'localhost',
+        '127.0.0.1'
+    ]
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = [
-    '.ngrok.io',
-    'localhost',
-    '127.0.0.1'
-]
-
+else:
+    ALLOWED_HOSTS = []    
 
 # Application definition
 
@@ -153,8 +157,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
-
-from zenslackchat import botlogging
-
-LOGGING = botlogging.config

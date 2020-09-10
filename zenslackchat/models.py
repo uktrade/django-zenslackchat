@@ -40,7 +40,7 @@ class ZenSlackChat(models.Model):
 
     # The Zendesk Ticket ID:
     # e.g. 3451
-    ticket_id = models.CharField(max_length=10)
+    ticket_id = models.CharField(max_length=20)
 
     # Set to True if the chat bot is monitoring this chat:
     active = models.BooleanField(default=True)

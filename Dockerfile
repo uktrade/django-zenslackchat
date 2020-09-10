@@ -15,18 +15,18 @@ ENV DB_USER service
 ENV DB_PASSWORD service
 
 # Slack App OAuth credentials
-SLACK_CLIENT_ID <some id>
-SLACK_CLIENT_SECRET <secret>
-SLACK_VERIFICATION_TOKEN <verification token>
-SLACK_SIGN_SECRET <sign secret>
-SLACK_BOT_USER_TOKEN <bot user token>
-SLACK_WORKSPACE_URI  <https://...slack.com/archives>
+ENV SLACK_CLIENT_ID <some id>
+ENV SLACK_CLIENT_SECRET <secret>
+ENV SLACK_VERIFICATION_TOKEN <verification token>
+ENV SLACK_SIGN_SECRET <sign secret>
+ENV SLACK_BOT_USER_TOKEN <bot user token>
+ENV SLACK_WORKSPACE_URI  <https://...slack.com/archives>
 
 # Zendesk
-ZENDESK_EMAIL <someone-at-uktrade@example.com>
-ZENDESK_SUBDOMAIN <staging-uktrade>
-ZENDESK_TOKEN <zendesk token>
-ZENDESK_TICKET_URI https://staging-uktrade.zendesk.com/agent/tickets
+ENV ZENDESK_EMAIL <someone-at-uktrade@example.com>
+ENV ZENDESK_SUBDOMAIN <staging-uktrade>
+ENV ZENDESK_TOKEN <zendesk token>
+ENV ZENDESK_TICKET_URI https://staging-uktrade.zendesk.com/agent/tickets
 
 FROM build as prod
 EXPOSE 8000
@@ -35,4 +35,4 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "webapp.wsgi"]`
 FROM build as test
 ADD requirements-test.txt .
 RUN pip install -r requirements-test.txt
-CMD ["pytest", "-s", ""]
+CMD ["pytest", "-s"]

@@ -17,6 +17,7 @@ class FakeUserResponse(object):
     def __init__(self):
         self.data = dict(
             user=dict(
+                real_name='Bob Sprocket',
                 profile=dict(
                     email='bob@example.com'
                 )
@@ -318,7 +319,9 @@ def test_thread_message_with_support_ticket_in_zendesk(
 
     # Check the ticket is "recovered" and the comment is "added" to it:
     get_ticket.assert_called_with('83')
-    add_comment.assert_called_with(ticket, 'Oh, wait, my bad 🤦‍♀️, its ok now.')
+    add_comment.assert_called_with(
+        ticket, 'Bob Sprocket (Slack): Oh, wait, my bad 🤦‍♀️, its ok now.'
+    )
 
     # These should not have been called:
     create_ticket.assert_not_called()
