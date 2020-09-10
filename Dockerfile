@@ -6,11 +6,27 @@ RUN pip install -r requirements.txt --no-cache-dir
 COPY . /app
 
 ENV DJANGO_SETTINGS_MODULE webapp.settings
+
+# DB access
 ENV DB_HOST 127.0.0.1
 ENV DB_PORT 5432
 ENV DB_NAME service
 ENV DB_USER service
 ENV DB_PASSWORD service
+
+# Slack App OAuth credentials
+SLACK_CLIENT_ID <some id>
+SLACK_CLIENT_SECRET <secret>
+SLACK_VERIFICATION_TOKEN <verification token>
+SLACK_SIGN_SECRET <sign secret>
+SLACK_BOT_USER_TOKEN <bot user token>
+SLACK_WORKSPACE_URI  <https://...slack.com/archives>
+
+# Zendesk
+ZENDESK_EMAIL <someone-at-uktrade@example.com>
+ZENDESK_SUBDOMAIN <staging-uktrade>
+ZENDESK_TOKEN <zendesk token>
+ZENDESK_TICKET_URI https://staging-uktrade.zendesk.com/agent/tickets
 
 FROM build as prod
 EXPOSE 8000
