@@ -36,18 +36,19 @@ clean:
 	rm -f README.pdf
 	find . -iname '*.pyc' -exec rm {} \; -print
 
+# 		-t ${DOCKER_REPO}/${DOCKER_IMAGE} \
+#		-t ${DOCKER_REPO}/${DOCKER_BRANCH_IMAGE} \
+#		-t ${DOCKER_REPO}/${DOCKER_IMAGE}-test \
+#		-t ${DOCKER_REPO}/${DOCKER_BRANCH_IMAGE}-test \
+#
 docker_build: clean
 	docker build \
 		-t ${DOCKER_IMAGE} \
 		-t ${DOCKER_BRANCH_IMAGE} \
-		-t ${DOCKER_REPO}/${DOCKER_IMAGE} \
-		-t ${DOCKER_REPO}/${DOCKER_BRANCH_IMAGE} \
 		--target prod .
 	docker build \
 		-t ${DOCKER_IMAGE}-test \
 		-t ${DOCKER_BRANCH_IMAGE}-test \
-		-t ${DOCKER_REPO}/${DOCKER_IMAGE}-test \
-		-t ${DOCKER_REPO}/${DOCKER_BRANCH_IMAGE}-test \
 		--target test .
 
 run:
@@ -84,7 +85,8 @@ docker_release:
 
 lint:
 	flake8 --ignore=E501 webapp
+	flake8 --ignore=E501 zenslackchat
 
-test: lint
+test:
 	pytest
 

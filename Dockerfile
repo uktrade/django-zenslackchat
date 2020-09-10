@@ -19,4 +19,4 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "webapp.wsgi"]`
 FROM build as test
 ADD requirements-test.txt .
 RUN pip install -r requirements-test.txt
-CMD ["pytest"]
+CMD ["pytest", "-s", ""]
