@@ -10,9 +10,9 @@ cloud foundry to aid me with this.
 
 - https://docs.cloud.service.gov.uk/deploying_apps.html#deploying-apps
 
-I'm using make, docker, docker-compose, python3 and virtualenvwrappers to 
-develop the project locally. I currently work of Mac OSX for development and 
-use Homebrew to install what I need. Your mileage may vary.
+I'm using make, docker-compose, python3 and virtualenvwrappers to develop the 
+project locally. I currently work of Mac OSX for development and use Homebrew 
+to install what I need. Your mileage may vary.
 
 
 Spike Investigation
@@ -224,7 +224,7 @@ Event Subscriptions
 django-zenslackchat
 -------------------
 
-To run the webapp locally:
+To run the webapp locally::
 
     workon zenslackchat
 
@@ -280,14 +280,9 @@ Release
 
 **Not set up yet**
 
-If all the tests pass then you can do a release to the AWS ECR repository by
-doing::
+::
 
     # rerun the tests to be sure:
-    make test docker_build docker_test docker_release
-
-You will need to have logged-in to AWS and recovered the credentials to allow
-docker to push.
 
 
 .. |ss| raw:: html

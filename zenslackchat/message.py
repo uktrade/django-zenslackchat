@@ -210,17 +210,21 @@ def messages_for_slack(slack, zendesk):
     log = logging.getLogger(__name__)
 
     slack = sorted(slack, key=itemgetter('created_at')) 
-    log.debug(f"Slack messages:\n{pprint.pformat(slack)}")
+    msgs = [s['text'] for s in slack]
+    log.debug(f"Raw Slack messages:\n{slack}")
+    log.debug(f"Slack messages:\n{msgs}")
 
     zendesk = sorted(zendesk, key=itemgetter('created_at'), reverse=True) 
-    log.debug(f"Zendesk messages:\n{pprint.pformat(zendesk)}")
+    msgs = [z['body'] for z in zendesk]
+    log.debug(f"Zendesk messages:\n{msgs}")
 
     # Ignore the first message which is the parent message. Also ignore the 
     # second message which is our "link to zendesk ticket" message.
     lookup = {}
     for msg in slack[2:]:
-        # text = msg['text'].split('(Zendesk):')[-1].strip()
-        text = msg['text']
+        # text = msg['text']
+        text = msg['text'].split('(Zendesk):')[-1].strip()
+        log.debug(f"slack msg to index:{text}")
         lookup[text] = 1
     # log.debug(f"messages to consider from slack:{len(slack)}")
     # log.debug(f"lookup:\n{lookup}")
@@ -229,8 +233,10 @@ def messages_for_slack(slack, zendesk):
     for_slack = []
     for msg in zendesk:
         if msg['via']['channel'] == 'web' and msg['body'] not in lookup:
-            # log.debug(f"msg to be added:{msg['body']}")
+            log.debug(f"msg to be added:{msg['body']}")
             for_slack.append(msg)
+        else:
+            log.debug(f"msg ignored:{msg['body']}")
     for_slack.reverse()
 
     log.debug(f"message for slack:\n{pprint.pformat(for_slack)}")
