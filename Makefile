@@ -24,18 +24,6 @@ run:
 migrate:
 	python manage.py migrate
 
-remove:
-	cf delete -r -f ${NAMESPACE}
-
-release:
-	# deploy to the organisation/space previous configured with cf target
-	cf push
-
-reinstall: remove release
-
-rlogs:
-	cf logs ${NAMESPACE}
-
 up:
 	docker-compose --project-name ${NAMESPACE} up --remove-orphans
 

@@ -1,17 +1,9 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>ZenSlackChat</title>
-  </head>
-  <body>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-sm-12 ">
     <h3>🤖 Welcome!</h3>
-    <ul>
-        <li>
-            <a href="https://slack.com/oauth/authorize?scope=bot&client_id={{ client_id }}">
-                Add bot to your Slack Workspace
-            </a>
-        </li>
-    </ul>
-  </body>
-</html>
+  </div>
+</div>
+{% endblock %}

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
+import sys
 import binascii
 from pathlib import Path
 
@@ -17,8 +18,10 @@ from zenslackchat import botlogging
 
 LOGGING = botlogging.config
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
+if os.environ.get("DEBUG_ENABLED", "0").strip() == "1":
+    sys.stderr.write("DEBUG_ENABLED=1 is set in environment!\n")
+    DEBUG = True
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,15 +47,16 @@ SLACK_VERIFICATION_TOKEN = os.environ.get(
     'SLACK_VERIFICATION_TOKEN', 'YOUR VERIFICATION TOKEN'
 )
 
-if DEBUG:
-    ALLOWED_HOSTS = [
-        '.ngrok.io',
-        'localhost',
-        '127.0.0.1'
-    ]
 
-else:
-    ALLOWED_HOSTS = []    
+# Who can connect:
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1"
+]
+PAAS_FQDN = os.environ.get("PAAS_FQDN", "").strip()
+if PAAS_FQDN:
+    ALLOWED_HOSTS.insert(0, PAAS_FQDN)
+
 
 # Application definition
 
@@ -69,6 +73,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -82,7 +87,7 @@ ROOT_URLCONF = 'webapp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -101,23 +106,10 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
+import dj_database_url
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'service'),
-        'USER': os.environ.get('DB_USER', 'service'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'service'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': int(os.environ.get('DB_PORT', 5432)),
-    }
-}
+DATABASES = {}
+DATABASES['default'] =  dj_database_url.config()
 
 
 # Password validation
@@ -138,6 +130,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGIN_REDIRECT_URL = '/'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -156,4 +150,5 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'

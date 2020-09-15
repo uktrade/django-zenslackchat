@@ -32,28 +32,17 @@ Scenario / chat with Matt / Things to work out on SRE-725:
 - Bot instantly replies in a thread that this got assigned a ticket ID X. Ticket is stored in Zendesk
    - OM: I've got this working as requireds.
 - Ticket in zendesk filled in with end user email so that user gets updated on the progress. 
-   - OM: I recover the slack message author's email. I then add this as the 
-     recipient when creating the ticket. I'll need to see how this works in the
-     field.
+   - OM: I recover the slack message author's email. I then add this as the recipient when creating the ticket. I'll need to see how this works in the field.
 - Record URL to the conversation on slack
    - OM: |ss| Your can add URL to slack thread as a custom field on zendesk. |se|
-      - I can add a custom field. Then you need to find its unique ID. To set
-        it you then user the custom_fields: [{'id': <id>, 'value': '...'}]. This
-        is a bit unweildy.
-      - When you set this in the code, it does populate the text box with the 
-        link however it is not clickable. I didn't see a HTML link option as a
-        field.
-   - OM: A better approach (in my view) I've added the link as the first 
-     ticket_comment. This is clickable and opens slack to reveal the message 
-     thread.
+      - I can add a custom field. Then you need to find its unique ID. To set it you then user the custom_fields: [{'id': <id>, 'value': '...'}]. This is a bit unweildy.
+      - When you set this in the code, it does populate the text box with the link however it is not clickable. I didn't see a HTML link option as a field.
+   - OM: A better approach (in my view) I've added the link as the first ticket_comment. This is clickable and opens slack to reveal the message thread.
 - SRE on call follows up with the conversation on slack
 - Bot replicates the conversation into zendesk ticket
-   - OM: I'll need to look into webhooks at least for the zendesk to slack 
-     replication. So new comments in zendesk trigger the bot to put them in 
-     the slack chat.
+   - OM: I'll need to look into webhooks at least for the zendesk to slack replication. So new comments in zendesk trigger the bot to put them in the slack chat.
 - SRE on call closes the ticket by typing “done” or similar within the thread
-   - OM: This works now, it could be any string. Maybe done is too vague. 
-     Should anyone be able to type "done" to close the issue?
+   - OM: This works now, it could be any string. Maybe done is too vague. Should anyone be able to type "done" to close the issue?
 - Can we avoid /<command> actions?
   - OM: yes there is not need for these.
 - Ticket assigned to every thread.
@@ -82,7 +71,6 @@ Zendesk / Slack investigation.
  - [X] |ss| Close the issue on slack by saying 'done' in the thread |se|
  - [X] |ss| Ship conversation messages from slack to zendesk |se|
  - [X] |ss| Ship messages from zendesk to slack |se|
- - [] Synchronise state changes on a ticket from Zendesk(?).
  
 
 Zendesk
@@ -228,6 +216,12 @@ To run the webapp locally::
 
     workon zenslackchat
 
+    # Needed in production. If not given this is randomly generated each time.
+    export WEBAPP_SECRET_KEY=<some key>
+
+    # Hostname of where its running (added to allowed hosts):
+    export PAAS_FQDN=
+
     # Set up the credentials:
     # zendesk
     export ZENDESK_EMAIL=<user on support site> 
@@ -274,15 +268,6 @@ follows::
 
     # Run basic model and view tests
     make test
-
-Release
--------
-
-**Not set up yet**
-
-::
-
-    # rerun the tests to be sure:
 
 
 .. |ss| raw:: html

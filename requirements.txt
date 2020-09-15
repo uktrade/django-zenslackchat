@@ -4,7 +4,9 @@ slackeventsapi
 python-dateutil
 python-decouple
 psycopg2-binary
+dj-database-url
 requests
 django
 djangorestframework
-gunicorn
+whitenoise
+waitress

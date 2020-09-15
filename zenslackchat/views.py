@@ -7,6 +7,7 @@ from django.template import loader
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
+from django.contrib.auth.decorators import login_required
 
 from zenslackchat.models import Team
 
@@ -46,13 +47,14 @@ def slack_oauth(request, url='https://slack.com/api/oauth.access'):
     return HttpResponse('Bot added to your Slack team!')
 
 
+@login_required
 def index(request):
     """Show the site root and button to add the bot to your slack workspace.
     """
     template = loader.get_template('zenslackchat/index.html')
 
     return HttpResponse(template.render(
-        dict(client_id=settings.SLACK_CLIENT_ID), 
+        dict(), 
         request
     ))
 
