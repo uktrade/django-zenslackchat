@@ -54,7 +54,7 @@ class Events(APIView):
                 web_client=WebClient(token=settings.SLACK_BOT_USER_TOKEN)
             )
             try:
-                log.debug(f'event received:\n{pprint.pformat(event)}\n')
+                # log.debug(f'event received:\n{pprint.pformat(event)}\n')
                 message.handler(payload)
         
             except:

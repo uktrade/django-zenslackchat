@@ -49,13 +49,9 @@ def slack_oauth(request, url='https://slack.com/api/oauth.access'):
 
 @login_required
 def index(request):
-    """Show the site root and button to add the bot to your slack workspace.
+    """A page Pingdom can log-in to test site uptime and DB readiness.
     """
     template = loader.get_template('zenslackchat/index.html')
-
-    return HttpResponse(template.render(
-        dict(), 
-        request
-    ))
+    return HttpResponse(template.render({}, request))
 
     

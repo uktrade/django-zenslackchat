@@ -185,6 +185,7 @@ Display Information
 - App Name: zenslackchat
 
 OAuth & Permissions
+
 Tokens for Worksapce
 - OAuth Access Token
 - Bot User OAuth Access Token
@@ -203,6 +204,10 @@ Bot Token Scopes:
 User Token Scopes
   - channels:history
     View messages and other content in the user’s public channels
+
+Install the app into workspace after set up the Scopes
+- Accept the permissions
+- Get the Bot user access token.
 
 Event Subscriptions
 - Enable Events: on
