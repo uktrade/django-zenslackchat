@@ -39,7 +39,6 @@ def test_new_support_message_creates_ticket(
 ):
     """Test the path to creating a zendesk ticket from new message receipt.
     """
-    mock_rtm_client = MagicMock()
     mock_web_client = MagicMock()
 
     # Set up the user details 'slack' will return    
@@ -57,38 +56,38 @@ def test_new_support_message_creates_ticket(
 
     # Send a new help message
     payload = {
-        'data': {
-            'blocks': [{
-                'block_id': 'Amzt',
+        'blocks': [{
+            'block_id': 'Amzt',
+            'elements': [{
                 'elements': [{
-                    'elements': [{
-                        'text': 'My 🖨 is on 🔥',
-                        'type': 'text'
-                    }],
-                    'type': 'rich_text_section'
+                    'text': 'My 🖨 is on 🔥',
+                    'type': 'text'
                 }],
-                'type': 'rich_text'
+                'type': 'rich_text_section'
             }],
-            'channel': 'C019JUGAGTS',
-            'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
-            'event_ts': '1597940362.013100',
-            'source_team': 'TGFJG8VEZ',
-            'suppress_notification': False,
-            'team': 'TGFJG8VEZ',
-            'text': 'My 🖨 is on 🔥',
-            'ts': '1597940362.013100',
-            'user': 'UGF7MRWMS',
-            'user_team': 'TGFJG8VEZ'
-        },
-        'rtm_client': mock_rtm_client,
-        'web_client': mock_web_client
+            'type': 'rich_text'
+        }],
+        'channel': 'C019JUGAGTS',
+        'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
+        'event_ts': '1597940362.013100',
+        'source_team': 'TGFJG8VEZ',
+        'suppress_notification': False,
+        'team': 'TGFJG8VEZ',
+        'text': 'My 🖨 is on 🔥',
+        'ts': '1597940362.013100',
+        'user': 'UGF7MRWMS',
+        'user_team': 'TGFJG8VEZ'
     }
     env = {
         'SLACK_WORKSPACE_URI': 'https://example.com/',
         'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
     }
     with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(payload)
+        is_handled = handler(
+            payload,
+            our_channel='C019JUGAGTS',
+            web_client=mock_web_client,
+        )
     assert is_handled is True
 
     # There should now be one instance here:
@@ -142,7 +141,6 @@ def test_message_with_existing_support_ticket_in_zendesk(
 ):
     """Test further in-thread messages don't result in new zendesk tickets.
     """
-    mock_rtm_client = MagicMock()
     mock_web_client = MagicMock()
 
     # Set up the user details 'slack' will return    
@@ -166,38 +164,38 @@ def test_message_with_existing_support_ticket_in_zendesk(
     assert len(ZenSlackChat.open_issues()) == 1
 
     payload = {
-        'data': {
-            'blocks': [{
-                'block_id': 'Amzt',
+        'blocks': [{
+            'block_id': 'Amzt',
+            'elements': [{
                 'elements': [{
-                    'elements': [{
-                        'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
-                        'type': 'text'
-                    }],
-                    'type': 'rich_text_section'
+                    'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
+                    'type': 'text'
                 }],
-                'type': 'rich_text'
+                'type': 'rich_text_section'
             }],
-            'channel': 'C019JUGAGTS',
-            'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
-            'event_ts': '1598022004.004900',
-            'source_team': 'TGFJG8VEZ',
-            'suppress_notification': False,
-            'team': 'TGFJG8VEZ',
-            'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
-            'ts': '1598022004.004900',
-            'user': 'UGF7MRWMS',
-            'user_team': 'TGFJG8VEZ'
-        },
-        'rtm_client': mock_rtm_client,
-        'web_client': mock_web_client
+            'type': 'rich_text'
+        }],
+        'channel': 'C019JUGAGTS',
+        'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
+        'event_ts': '1598022004.004900',
+        'source_team': 'TGFJG8VEZ',
+        'suppress_notification': False,
+        'team': 'TGFJG8VEZ',
+        'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
+        'ts': '1598022004.004900',
+        'user': 'UGF7MRWMS',
+        'user_team': 'TGFJG8VEZ'
     }
     env = {
         'SLACK_WORKSPACE_URI': 'https://example.com/',
         'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
     }
     with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(payload)
+        is_handled = handler(
+            payload,
+            our_channel='C019JUGAGTS',
+            web_client=mock_web_client,
+        )
     assert is_handled is True
 
     # There should not be any new issues as a result of this:
@@ -238,7 +236,6 @@ def test_thread_message_with_support_ticket_in_zendesk(
 ):
     """Test in-thread conversation messages are shipped to Zendesk.
     """
-    mock_rtm_client = MagicMock()
     mock_web_client = MagicMock()
 
     # Set up the user details 'slack' will return    
@@ -263,41 +260,41 @@ def test_thread_message_with_support_ticket_in_zendesk(
 
     # This is a message reply in the thread on slack:
     payload = {
-        'data': {
-            'blocks': [{
-                'block_id': 'Amzt',
+        'blocks': [{
+            'block_id': 'Amzt',
+            'elements': [{
                 'elements': [{
-                    'elements': [{
-                        'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
-                        'type': 'text'
-                    }],
-                    'type': 'rich_text_section'
+                    'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
+                    'type': 'text'
                 }],
-                'type': 'rich_text'
+                'type': 'rich_text_section'
             }],
-            'channel': 'C019JUGAGTS',
-            'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
-            'event_ts': '1598022004.004900',
-            'source_team': 'TGFJG8VEZ',
-            'suppress_notification': False,
-            'team': 'TGFJG8VEZ',
-            'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
-            # ts & thread_ts set i.e. this is a message in a conversation and
-            # thread_ts is the chat_id of the parent message.
-            'thread_ts': '1598021907.003600',
-            'ts': '1598022004.004900',
-            'user': 'UGF7MRWMS',
-            'user_team': 'TGFJG8VEZ'
-        },
-        'rtm_client': mock_rtm_client,
-        'web_client': mock_web_client
+            'type': 'rich_text'
+        }],
+        'channel': 'C019JUGAGTS',
+        'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
+        'event_ts': '1598022004.004900',
+        'source_team': 'TGFJG8VEZ',
+        'suppress_notification': False,
+        'team': 'TGFJG8VEZ',
+        'text': 'Oh, wait, my bad 🤦‍♀️, its ok now.',
+        # ts & thread_ts set i.e. this is a message in a conversation and
+        # thread_ts is the chat_id of the parent message.
+        'thread_ts': '1598021907.003600',
+        'ts': '1598022004.004900',
+        'user': 'UGF7MRWMS',
+        'user_team': 'TGFJG8VEZ'
     }
     env = {
         'SLACK_WORKSPACE_URI': 'https://example.com/',
         'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
     }
     with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(payload)
+        is_handled = handler(
+            payload,
+            our_channel='C019JUGAGTS',
+            web_client=mock_web_client,
+        )
     assert is_handled is True
 
     # There should be no new issues as a result of this:
@@ -349,7 +346,6 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     this. We just log that we ignore it and move on.
 
     """
-    mock_rtm_client = MagicMock()
     mock_web_client = MagicMock()
 
     # Set up the user details 'slack' will return    
@@ -362,40 +358,40 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
 
     # Send a new help message
     payload = {
-        'data': {
-            'blocks': [{
-                'block_id': 'Amzt',
+        'blocks': [{
+            'block_id': 'Amzt',
+            'elements': [{
                 'elements': [{
-                    'elements': [{
-                        'text': 'What 🕙 is it?',
-                        'type': 'text'
-                    }],
-                    'type': 'rich_text_section'
+                    'text': 'What 🕙 is it?',
+                    'type': 'text'
                 }],
-                'type': 'rich_text'
+                'type': 'rich_text_section'
             }],
-            'channel': 'C019JUGAGTS',
-            'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
-            'event_ts': '1598021977.004100',
-            'source_team': 'TGFJG8VEZ',
-            'suppress_notification': False,
-            'team': 'TGFJG8VEZ',
-            'text': 'What 🕙 is it?',
-            # ts & thread_ts set
-            'thread_ts': '1598021907.003600',
-            'ts': '1598021977.004100',
-            'user': 'UGF7MRWMS',
-            'user_team': 'TGFJG8VEZ'
-        },
-        'rtm_client': mock_rtm_client,
-        'web_client': mock_web_client
+            'type': 'rich_text'
+        }],
+        'channel': 'C019JUGAGTS',
+        'client_msg_id': '00676b39-4652-4a82-aa7a-7802355751cd',
+        'event_ts': '1598021977.004100',
+        'source_team': 'TGFJG8VEZ',
+        'suppress_notification': False,
+        'team': 'TGFJG8VEZ',
+        'text': 'What 🕙 is it?',
+        # ts & thread_ts set
+        'thread_ts': '1598021907.003600',
+        'ts': '1598021977.004100',
+        'user': 'UGF7MRWMS',
+        'user_team': 'TGFJG8VEZ'
     }
     env = {
         'SLACK_WORKSPACE_URI': 'https://example.com/',
         'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
     }
     with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(payload)
+        is_handled = handler(
+            payload,
+            our_channel='C019JUGAGTS',
+            web_client=mock_web_client,
+        )
     assert is_handled is True
 
     # Verify the calls to the various mock are as I expect:
@@ -442,14 +438,54 @@ def test_message_events_that_are_ignored_by_handler(
     mock_web_client = MagicMock()
     mock_web_client.users_info.return_value = {}
     payload = {
-        'data': {
-            'channel': 'C019JUGAGTS',
-            'subtype': ignored_subtype,
-            'ts': '1597937653.011100'
-        },
-        'rtm_client': 'rtm_client',
-        'web_client': mock_web_client
+        'channel': 'C019JUGAGTS',
+        'subtype': ignored_subtype,
+        'ts': '1597937653.011100'
     }
-    is_handled = handler(payload)
+    is_handled = handler(
+        payload,
+        our_channel='C019JUGAGTS',
+        web_client=mock_web_client,
+    )
     assert is_handled is False
     mock_web_client.users_info.assert_not_called()
+
+
+@patch('zenslackchat.message.add_comment')
+@patch('zenslackchat.message.get_ticket')
+@patch('zenslackchat.message.close_ticket')
+@patch('zenslackchat.message.create_ticket')
+@patch('zenslackchat.message.post_message')
+def test_channel_is_not_our_channel_so_message_is_ignored(
+    post_message,
+    create_ticket,
+    close_ticket,
+    get_ticket,
+    add_comment,
+    log,
+    db
+):
+    """Verify that I don't handle events not from our channel.
+    """
+    mock_web_client = MagicMock()
+    mock_web_client.users_info.return_value = {}
+    payload = {
+        'channel': 'C01A96HA9BR',
+        'event_ts': '1598021977.004100',
+        'source_team': 'TGFJG8VEZ',
+        'text': 'blah blah blah',
+        'ts': '1598021977.004100',
+        'user': 'UGF7MRWMS',
+    }
+    is_handled = handler(
+        payload,
+        our_channel='C019JUGAGTS',
+        web_client=mock_web_client,
+    )
+    assert is_handled is False
+    mock_web_client.users_info.assert_not_called()
+    add_comment.assert_not_called()
+    get_ticket.assert_not_called()
+    create_ticket.assert_not_called()
+    post_message.assert_not_called()
+

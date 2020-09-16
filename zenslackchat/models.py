@@ -14,12 +14,26 @@ class NotFoundError(Exception):
 
 
 class Team(models.Model):
-    """
+    """Used to store Slack OAuth client / bot details after successfull 
+    completion of the OAuth process.
+
     """
     team_name = models.CharField(max_length=200)
     team_id = models.CharField(max_length=20)
     bot_user_id = models.CharField(max_length=20)
     bot_access_token = models.CharField(max_length=100)
+    created_at = models.DateTimeField(default=utcnow)
+
+
+class ZendeskApp(models.Model):
+    """Used to store Zendesk OAuth client / app details after successfull 
+    completion of the OAuth process.
+    
+    """
+    access_token = models.CharField(max_length=512)
+    access_type = models.CharField(max_length=50)
+    scopes = models.CharField(max_length=50)
+    created_at = models.DateTimeField(default=utcnow)
 
 
 class ZenSlackChat(models.Model):

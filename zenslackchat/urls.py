@@ -16,6 +16,7 @@ urlpatterns = [
     path('slack/oauth/', views.slack_oauth, name='slack_oauth'),
     path('slack/events/', eventsview.Events.as_view(), name='slack_events'),
 
+    path('zendesk/oauth/', views.zendesk_oauth, name='zendesk_oauth'),
     path(
         'zendesk/webhook/', 
         zendesk_webhook_view.WebHook.as_view(), 

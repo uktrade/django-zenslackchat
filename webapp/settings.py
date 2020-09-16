@@ -46,7 +46,32 @@ SLACK_BOT_USER_TOKEN = os.environ.get(
 SLACK_VERIFICATION_TOKEN = os.environ.get(
     'SLACK_VERIFICATION_TOKEN', 'YOUR VERIFICATION TOKEN'
 )
+# where to exchange the request token for an access token:
+SLACK_OAUTH_URI = os.environ.get(
+    'SLACK_OAUTH_URI', 'https://slack.com/api/oauth.access'
+)
 
+
+# The channel events we listen for and ignore all other events.
+SRE_SUPPORT_CHANNEL = os.environ.get(
+    'SRE_SUPPORT_CHANNEL', 'YOUR SUPPORT CHANNEL ID'
+)
+
+ZENDESK_CLIENT_IDENTIFIER = os.environ.get(
+    'ZENDESK_CLIENT_IDENTIFIER', 'YOUR ZENDESK CLIENT UNIQUE IDENTIFIER'
+)
+ZENDESK_CLIENT_SECRET = os.environ.get(
+    'ZENDESK_CLIENT_SECRET', 'YOUR ZENDESK CLIENT SECRET'
+)
+ZENDESK_SUBDOMAIN = os.environ.get(
+    'ZENDESK_SUBDOMAIN', 'YOUR ZENDESK SUBDOMAIN'
+)
+
+# Used to work out our external URI for redirects. Also used as the entry in 
+# ALLOWED_HOSTS.
+PAAS_FQDN = os.environ.get(
+    'PAAS_FQDN', 'The fully qualified domain name of the PaaS webapp'
+)
 
 # Who can connect:
 ALLOWED_HOSTS = [

@@ -39,9 +39,17 @@ IGNORED_SUBTYPES = [
 ]
 
 
-def handler(payload):
+def handler(event, our_channel, web_client):
     """Decided what to do with the message we have received.
-    
+
+    :param event: The slack event received.
+
+    :param our_channel: The slack channel id we listen to.
+
+    All other events on different channels are silently ignored.
+
+    :param web_client: The slack web client instance.
+
     :returns: True or False.
 
     False means the message was ignored as its not one we handle.
@@ -49,36 +57,39 @@ def handler(payload):
     """
     log = logging.getLogger(__name__)
 
-    # Fields that must be present for this to work:
-    web_client = payload['web_client']
-    data = payload['data']
-    channel_id = data['channel']
-    text = data.get('text', '')
+    channel_id = event.get('channel', "").strip()
+    text = event.get('text', '')
+
+    if channel_id != our_channel:
+        # log.debug(f"Our Channel:{our_channel} ignored channel:{channel_id}")
+        return False
+    
+    else:
+        log.debug(f"New message on support {channel_id}: {text}")
 
     # I'm ignoring all bot messages. I can manage the message / message-reply 
     # based on the ts/thread_ts fields and whether they are populated or not. 
     # I'm calling 'ts' chat_id and 'thread_ts' thread_id.
-    #
-    subtype = data.get('subtype')
-    if subtype == 'bot_message' or 'bot_id' in data:
-        log.debug(f"Ignoring bot message: {text}")
+    subtype = event.get('subtype')
+    if subtype == 'bot_message' or 'bot_id' in event:
+        #log.debug(f"Ignoring bot message: {text}")
         return False
 
     elif subtype in IGNORED_SUBTYPES:
-        log.debug(f"Ignoring subtype we don't handle: {subtype}")
+        #log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
 
     # A message
-    user_id = data['user']
-    chat_id = data['ts']
+    user_id = event['user']
+    chat_id = event['ts']
     # won't be present in a new top-level message we will reply too
-    thread_id = data.get('thread_ts', '')
+    thread_id = event.get('thread_ts', '')
 
     # Recover the slack channel message author's email address. I assume 
     # this is always set on all accounts.
     log.debug(f"Recovering profile for user <{user_id}>")
     resp = web_client.users_info(user=user_id)
-    # print(f"resp.data:\n{resp.data}\n")
+    # print(f"resp.event:\n{resp.event}\n")
     real_name = resp.data['user']['real_name']
     recipient_email = resp.data['user']['profile']['email']
 
@@ -244,7 +255,7 @@ def messages_for_slack(slack, zendesk):
 
 
 def update_with_comments_from_zendesk(event):
-    """Handle the raw data from a Zendesk webhook and return without error.
+    """Handle the raw event from a Zendesk webhook and return without error.
 
     This will log all exceptions rather than cause zendesk reject 
     our endpoint.

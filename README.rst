@@ -172,38 +172,44 @@ You need to create a Slack app
 Go to https://api.slack.com/apps and create a slack app.
 
 New App:
+
 - app name: ZenSlackChat
 - Development Slack Workspace: <workspace>
 
 Now I need from the App Credentials
+
 - Client ID
 - Client Secret
 - Signing Secret
 - Verification Token
 
 Display Information
-- App Name: zenslackchat
+App Name: zenslackchat
 
 OAuth & Permissions
 
 Tokens for Worksapce
+
 - OAuth Access Token
 - Bot User OAuth Access Token
 
 Redirect URLs
+
 - https://<location of running endpoint>/slack/oauth/
 
 Scopes
 
 Bot Token Scopes: 
+
 - channels:history
 - groups:history
+- chat:write
 - users:read
 - users:read.email
 
 User Token Scopes
-  - channels:history
-    View messages and other content in the user’s public channels
+
+- channels:history
 
 Install the app into workspace after set up the Scopes
 - Accept the permissions

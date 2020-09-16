@@ -47,15 +47,15 @@ class Events(APIView):
 
         if 'event' in slack_message:
             event = slack_message.get('event')
-
-            # Make this compatible with the old RTM the code expects for now. 
-            payload = dict(
-                data=event,
-                web_client=WebClient(token=settings.SLACK_BOT_USER_TOKEN)
-            )
             try:
                 # log.debug(f'event received:\n{pprint.pformat(event)}\n')
-                message.handler(payload)
+                message.handler(
+                    event, 
+                    our_channel=settings.SRE_SUPPORT_CHANNEL,
+                    web_client=WebClient(
+                        token=settings.SLACK_BOT_USER_TOKEN
+                    )
+                )
         
             except:
                 log.exception("Slack message_handler error: ")
