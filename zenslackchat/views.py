@@ -63,29 +63,36 @@ def zendesk_oauth(request):
     request_url = f"https://{subdomain}.zendesk.com/oauth/tokens"
 
     fqdn = settings.PAAS_FQDN
-    redirect_url = f"https://{fqdn}/zendesk/oauth/"
+    redirect_uri = f"https://{fqdn}/zendesk/oauth/"
 
     code = request.GET['code']    
-    log.debug(f"Received Zendesk OAuth request code:<{code}>")
-    params = { 
-        'code': code,
-        'client_id': settings.ZENDESK_CLIENT_IDENTIFIER,
-        'client_secret': settings.ZENDESK_CLIENT_SECRET,
-        'redirect_uri': redirect_url
-    }
-    log.debug("Recovering access request from Slack...")
-    json_response = requests.get(request_url, params)
-    log.debug(f"Result status from Zendesk:<{json_response.status_code}>")
-    data = json.loads(json_response.text)
-
+    log.debug(
+        f"Received Zendesk OAuth request code:<{code}>. "
+        f"Recovering access token from {request_url}. "
+        f"Redirect URL is {redirect_uri}. "
+    )
+    response = requests.post(
+        request_url, 
+        data=json.dumps({ 
+            'code': code,
+            'client_id': settings.ZENDESK_CLIENT_IDENTIFIER,
+            'client_secret': settings.ZENDESK_CLIENT_SECRET,
+            'grant_type': 'authorization_code',
+            'redirect_uri': redirect_uri
+        }),
+        headers={"Content-Type": "application/json"}
+    )
+    log.debug(f"Result status from Zendesk:<{response.status_code}>")
+    response.raise_for_status()
+    data = response.json()
     ZendeskApp.objects.create(
         access_token=data['access_token'], 
-        access_type=data['access_type'], 
-        scopes=data['scopes'], 
+        token_type=data['token_type'], 
+        scope=data['scope'], 
     )
     log.debug("Created local ZendeskApp instance OK.")
 
-    return HttpResponse('App added to your Zendesk.')
+    return HttpResponse('ZendeskApp Added OK')
 
 
 @login_required

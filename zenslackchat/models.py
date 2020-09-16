@@ -31,8 +31,8 @@ class ZendeskApp(models.Model):
     
     """
     access_token = models.CharField(max_length=512)
-    access_type = models.CharField(max_length=50)
-    scopes = models.CharField(max_length=50)
+    token_type = models.CharField(max_length=50)
+    scope = models.CharField(max_length=50)
     created_at = models.DateTimeField(default=utcnow)
 
 
