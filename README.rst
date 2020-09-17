@@ -125,7 +125,7 @@ You need to create a trigger https://<your zendesk>.zendesk.com/agent/admin/trig
 and then do the following set up:
 
 - Trigger name: ticket-comment
-- Description: Ticket Comment that should be sent to zenslackchat
+- Description: Trigger which will post comments to Zenslackchat for consideration.
 - Meet any condition: 
   - "comment text"
   - "Does not contain the following string"

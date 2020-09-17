@@ -65,7 +65,7 @@ def handler(event, our_channel, web_client):
         return False
     
     else:
-        log.debug(f"New message on support {channel_id}: {text}")
+        log.debug(f"New message on support channel<{channel_id}>: {text}")
 
     # I'm ignoring all bot messages. I can manage the message / message-reply 
     # based on the ts/thread_ts fields and whether they are populated or not. 
@@ -127,23 +127,35 @@ def handler(event, our_channel, web_client):
                     f'Closing ticket {ticket_id} from slack {slack_chat_url}.'
                 )
                 url = zendesk_ticket_url(ticket_id)
-                ZenSlackChat.resolve(channel_id, chat_id)
                 try:
                     close_ticket(issue)
+
                 except zenpy.lib.exception.APIException:
+                    log.exception("Close ticket exception (error?): ")
                     post_message(
                         web_client, thread_id, channel_id, 
                         f'🤖 Ticket {url} is already closed.'
                     )
                 else:
+                    ZenSlackChat.resolve(channel_id, chat_id)
                     post_message(
                         web_client, thread_id, channel_id, 
                         f'🤖 Understood. Ticket {url} has been closed.'
                     )
 
             # Add comment to Zendesk:
-            ticket = get_ticket(ticket_id)
-            add_comment(ticket, f"{real_name} (Slack): {text}")
+            try:
+                ticket = get_ticket(ticket_id)
+
+            except zenpy.lib.exception.APIException:
+                post_message(
+                    web_client, thread_id, channel_id, 
+                    "🤖 I'm unable to send comment to Zendesk (API Error)."
+                )
+                log.exception("Zendesk API error: ")
+
+            else:
+                add_comment(ticket, f"{real_name} (Slack): {text}")
 
     else:
         slack_chat_url = message_url(channel_id, chat_id)
@@ -155,20 +167,29 @@ def handler(event, our_channel, web_client):
             log.debug(
                 f"Received message from '{recipient_email}': {text}\n"
             )
-            ticket = create_ticket(
-                external_id=chat_id, 
-                recipient_email=recipient_email, 
-                subject=text, 
-                slack_message_url=slack_chat_url,
-            )
+            try:
+                ticket = create_ticket(
+                    external_id=chat_id, 
+                    recipient_email=recipient_email, 
+                    subject=text, 
+                    slack_message_url=slack_chat_url,
+                )
 
-            # Store all the details in our DB:
-            ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
+            except zenpy.lib.exception.APIException:
+                post_message(
+                    web_client, thread_id, channel_id, 
+                    "🤖 I'm unable to talk to Zendesk (API Error)."
+                )
+                log.exception("Zendesk API error: ")
 
-            # Once-off response to parent thread:
-            url = zendesk_ticket_url(ticket.id)
-            message = f"Hello, your new support request is {url}"
-            post_message(web_client, chat_id, channel_id, message)
+            else:
+                # Store all the details in our DB:
+                ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
+
+                # Once-off response to parent thread:
+                url = zendesk_ticket_url(ticket.id)
+                message = f"Hello, your new support request is {url}"
+                post_message(web_client, chat_id, channel_id, message)
 
         else:
             # No, we have a ticket already for this.
@@ -280,7 +301,7 @@ def update_with_comments_from_zendesk(event):
         return 
 
     zendesk_client = api()
-    slack_client = WebClient(token=os.environ['SLACKBOT_API_TOKEN'])
+    slack_client = WebClient(token=os.environ['SLACK_BOT_USER_TOKEN'])
 
     # Recover all messages from the slack conversation:
     slack = []

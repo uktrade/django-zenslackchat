@@ -6,7 +6,7 @@ from zenslackchat.message import messages_for_slack
 UTC = timezone.utc
 
 
-def test_emoji_bug(log):
+def t__est_emoji_bug(log):
     """
     """
     # The fixture data is not complete just the fields I'm using to recreate

@@ -24,7 +24,7 @@ class WebHook(APIView):
         log = logging.getLogger(__name__)
         try:
             log.debug(f'Raw POSTed data:\n{pprint.pformat(request.data)}')
-            #message.update_with_comments_from_zendesk(request.data)
+            message.update_with_comments_from_zendesk(request.data)
 
         except:
             log.exception(f'Failed handling webhook because:')

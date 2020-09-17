@@ -2,7 +2,7 @@ export NAMESPACE=zenslackchat
 
 .DEFAULT_GOAL := all
 
-.PHONY: all run migrate remove release reinstall test up ps down 
+.PHONY: all collect run migrate remove release reinstall test up ps down 
 
 all:
 	echo "Please choose a make target to run."
@@ -18,7 +18,10 @@ clean:
 	rm -f README.pdf
 	find . -iname '*.pyc' -exec rm {} \; -print
 
-run:
+collect:
+	python manage.py collectstatic --noinput
+
+run: collect
 	python manage.py runserver
 
 migrate:
@@ -39,4 +42,4 @@ lint:
 	flake8 --ignore=E501 zenslackchat
 
 test:
-	pytest
+	pytest -s --ds=webapp.settings --cov=zenslackchat --cov=webapp

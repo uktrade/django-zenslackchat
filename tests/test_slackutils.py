@@ -15,11 +15,11 @@ def test_slack_api_env_config(log):
             config = slack_utils.config()    
 
     # do we handle set but empty?
-    with patch.dict('os.environ', {'SLACKBOT_API_TOKEN': ' '}, clear=True):    
+    with patch.dict('os.environ', {'SLACK_BOT_USER_TOKEN': ' '}, clear=True):    
         with pytest.raises(ValueError):
             config = slack_utils.config()    
 
-    mock_env = {'SLACKBOT_API_TOKEN': 'token1234'}
+    mock_env = {'SLACK_BOT_USER_TOKEN': 'token1234'}
     with patch.dict('os.environ', mock_env, clear=True):    
         config = slack_utils.config()    
 

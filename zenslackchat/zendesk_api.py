@@ -40,10 +40,14 @@ def api():
     """
     cfg = config()
 
+    from zenslackchat.models import ZendeskApp
+
+    # use the latest token
+    access_token = ZendeskApp.objects.order_by('-created_at').first()
+
     return Zenpy(
-        email=cfg['email'],
         subdomain=cfg['subdomain'],
-        token=cfg['token']
+        oauth_token=access_token
     )
 
 

@@ -15,13 +15,13 @@ from slack.errors import SlackApiError
 def config():
     """Recover the slack configuration from the environment.
 
-    The SLACKBOT_API_TOKEN must be set or ValueError will be raised.
+    The SLACK_BOT_USER_TOKEN must be set or ValueError will be raised.
 
     """
-    token = os.environ.get("SLACKBOT_API_TOKEN", "").strip()
+    token = os.environ.get("SLACK_BOT_USER_TOKEN", "").strip()
     if not token:
         raise ValueError(
-            "Required environment variable not set: SLACKBOT_API_TOKEN "
+            "Required environment variable not set: SLACK_BOT_USER_TOKEN "
         )
 
     return dict(
