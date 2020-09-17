@@ -39,7 +39,10 @@ IGNORED_SUBTYPES = [
 ]
 
 
-def handler(event, our_channel, slack_client, zendesk_client, workspace_uri):
+def handler(
+    event, our_channel, workspace_uri, zendesk_uri, slack_client, 
+    zendesk_client
+):
     """Decided what to do with the message we have received.
 
     :param event: The slack event received.
@@ -48,11 +51,13 @@ def handler(event, our_channel, slack_client, zendesk_client, workspace_uri):
 
     All other events on different channels are silently ignored.
 
+    :param workspace_uri: The base link to slack workspace archives.
+
+    :param zendesk_uri: The base link to zendesk agent tickets.
+
     :param slack_client: The slack web client instance.
 
     :param zendesk_client: The Zendesk web client instance.
-
-    :param workspace_uri: The link to slack workspace archives.
 
     :returns: True or False.
 
@@ -134,7 +139,7 @@ def handler(event, our_channel, slack_client, zendesk_client, workspace_uri):
                 log.debug(
                     f'Closing ticket {ticket_id} from slack {slack_chat_url}.'
                 )
-                url = zendesk_ticket_url(ticket_id)
+                url = zendesk_ticket_url(zendesk_uri, ticket_id)
                 try:
                     close_ticket(zendesk_client, issue)
 
@@ -198,7 +203,7 @@ def handler(event, our_channel, slack_client, zendesk_client, workspace_uri):
                 ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
 
                 # Once-off response to parent thread:
-                url = zendesk_ticket_url(ticket.id)
+                url = zendesk_ticket_url(zendesk_uri, ticket.id)
                 message = f"Hello, your new support request is {url}"
                 post_message(slack_client, chat_id, channel_id, message)
 

@@ -15,19 +15,14 @@ from zenpy.lib.api_objects import Ticket
 from zenpy.lib.api_objects import Comment
 
 
-def zendesk_ticket_url(ticket_id):
+def zendesk_ticket_url(zendesk_ticket_uri, ticket_id):
     """Return the link that can be stored in zendesk.
 
-    This expects the environment variable ZENDESK_TICKET_URI to be set. 
+    This handles the trailing slach being present or not. 
 
     """
-    ZENDESK_TICKET_URI = os.environ.get(
-        'ZENDESK_TICKET_URI', 
-        'https://zendesk.example.com/agent/tickets/'
-    )
-
     # handle trailing slash being there or not (urljoin doesn't).
-    return '/'.join([ZENDESK_TICKET_URI.rstrip('/'), str(ticket_id)])
+    return '/'.join([zendesk_ticket_uri.rstrip('/'), str(ticket_id)])
 
 
 def get_ticket(client, ticket_id):

@@ -63,59 +63,23 @@ class FakeApi(object):
         return self.results
 
 
-def test_zapi_client_default_config(log):
-    """Verify the default Zenpy config env variables.
-    """
-    # make sure no ZENDESK_* variables are set to interfere with test.
-    with patch.dict('os.environ', {}, clear=True):    
-        config = zendesk_api.config()    
-
-    assert config['email'] == '<email@example.com>'
-    assert config['token'] == '<token>'
-    assert config['subdomain'] == '<something>'
-
-
-def test_zapi_client_from_env_config(log):
-    """Verify the default Zenpy config env variables.
-    """
-    mock_env = {
-        'ZENDESK_EMAIL': 'tony@example.com',
-        'ZENDESK_TOKEN': 'token1234',
-        'ZENDESK_SUBDOMAIN': 'helpsubdomain.example.com' 
-    }
-
-    with patch.dict('os.environ', mock_env, clear=True):    
-        config = zendesk_api.config()    
-
-    assert config['email'] == 'tony@example.com'
-    assert config['token'] == 'token1234'
-    assert config['subdomain'] == 'helpsubdomain.example.com'
-
 
 def test_zendesk_ticket_url(log):
     """Verify the URL generated to point at (UI not API) ticket in zendesk.
     """
-    # default: nothing set in env
-    with patch.dict('os.environ', {}, clear=True):    
-        url = zendesk_api.zendesk_ticket_url('123')
-    assert url == 'https://zendesk.example.com/agent/tickets/123'
-
     # check trailing and non-trailing slash set
-    env = {'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'}
-    with patch.dict('os.environ', env, clear=True):    
-        url = zendesk_api.zendesk_ticket_url('123')
+    zendesk_ticket_url = 'https://example.com/agent/tickets'
+    url = zendesk_api.zendesk_ticket_url(zendesk_ticket_url, '123')
     assert url == 'https://example.com/agent/tickets/123'
 
-    env = {'ZENDESK_TICKET_URI': 'https://help.example.com/agent/tickets'}
-    with patch.dict('os.environ', env, clear=True):    
-        url = zendesk_api.zendesk_ticket_url('17')
-    assert url == 'https://help.example.com/agent/tickets/17'
+    zendesk_ticket_url = 'https://help.example.com/agent/tickets/'
+    url = zendesk_api.zendesk_ticket_url(zendesk_ticket_url, '123')
+    assert url == 'https://help.example.com/agent/tickets/123'
 
     # handle integer ticket ID being passed in e.g. ticket.id
-    env = {'ZENDESK_TICKET_URI': 'https://help.example.com/agent/tickets'}
-    with patch.dict('os.environ', env, clear=True):    
-        url = zendesk_api.zendesk_ticket_url(17)
-    assert url == 'https://help.example.com/agent/tickets/17'
+    zendesk_ticket_url = 'https://frog.example.com/agent/tickets/'
+    url = zendesk_api.zendesk_ticket_url(zendesk_ticket_url, 17)
+    assert url == 'https://frog.example.com/agent/tickets/17'
 
 
 def test_get_ticket_with_result(log):
@@ -123,10 +87,9 @@ def test_get_ticket_with_result(log):
     """
     fake_ticket = FakeTicket(ticket_id=12345)
     fake_ticket_audit = FakeTicketAudit(fake_ticket)
-    fake_api = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
+    client = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
 
-    with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
-        returned = zendesk_api.get_ticket(12345)
+    returned = zendesk_api.get_ticket(client, 12345)
 
     assert returned == fake_ticket_audit
 
@@ -135,10 +98,9 @@ def test_get_ticket_with_no_result(log):
     """Verify get_ticket when I do not expect to get a result.
     """
     chat_id='some-message-id'
-    fake_api = FakeApi()
+    client = FakeApi()
 
-    with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
-        returned = zendesk_api.get_ticket(chat_id)
+    returned = zendesk_api.get_ticket(client, chat_id)
 
     assert returned is None
 
@@ -153,19 +115,19 @@ def test_create_ticket(log):
     slack_message_url = 'https://example.com/channel/chat_id'
     fake_ticket = FakeTicket(ticket_id=chat_id)
     fake_ticket_audit = FakeTicketAudit(fake_ticket)
-    fake_api = FakeApi(
+    client = fake_api = FakeApi(
         results=[fake_ticket],
         me=FakeUserResponse(user_id),
         ticket_audit=fake_ticket_audit
     )
 
-    with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
-        zendesk_api.create_ticket(
-            chat_id,
-            recipient_email,
-            subject,
-            slack_message_url
-        )
+    zendesk_api.create_ticket(
+        client,
+        chat_id,
+        recipient_email,
+        subject,
+        slack_message_url
+    )
 
     assert len(fake_api.created_tickets) == 1
     ticket = fake_api.created_tickets[0]
@@ -184,11 +146,10 @@ def test_close_ticket(log):
     """
     fake_ticket = FakeTicket(ticket_id=12345)
     fake_ticket_audit = FakeTicketAudit(fake_ticket)
-    fake_api = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
+    client = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
     assert fake_ticket.status == 'open'
 
-    with patch('zenslackchat.zendesk_api.api', return_value=fake_api):
-        returned = zendesk_api.close_ticket(12345)
+    returned = zendesk_api.close_ticket(client, 12345)
 
     assert returned == fake_ticket
     assert fake_ticket.status == 'closed'

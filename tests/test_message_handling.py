@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from zenslackchat import SLACK_BOT_USER_TOKEN
 from zenslackchat.message import handler
 from zenslackchat.models import ZenSlackChat
 
@@ -39,10 +38,13 @@ def test_new_support_message_creates_ticket(
 ):
     """Test the path to creating a zendesk ticket from new message receipt.
     """
-    mock_web_client = MagicMock()
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
 
     # Set up the user details 'slack' will return    
-    mock_web_client.users_info.return_value = FakeUserResponse()
+    slack_client.users_info.return_value = FakeUserResponse()
 
     # No existing ticket should be returned:
     get_ticket.return_value = None
@@ -78,16 +80,14 @@ def test_new_support_message_creates_ticket(
         'user': 'UGF7MRWMS',
         'user_team': 'TGFJG8VEZ'
     }
-    env = {
-        'SLACK_WORKSPACE_URI': 'https://example.com/',
-        'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
-    }
-    with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(
-            payload,
-            our_channel='C019JUGAGTS',
-            web_client=mock_web_client,
-        )
+    is_handled = handler(
+        payload,
+        our_channel='C019JUGAGTS',
+        workspace_uri=workspace_uri,
+        zendesk_uri=zendesk_uri,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client,
+    )
     assert is_handled is True
 
     # There should now be one instance here:
@@ -106,21 +106,22 @@ def test_new_support_message_creates_ticket(
     # Verify the calls to the various mock are as I expect:
 
     # called with the content of data['user']
-    mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
+    slack_client.users_info.assert_called_with(user='UGF7MRWMS')
 
     # Check how zendesk api was called:
     create_ticket.assert_called_with(
+        zendesk_client,
         external_id='1597940362.013100',
         recipient_email='bob@example.com',
         subject='My 🖨 is on 🔥',
-        slack_message_url='https://example.com/C019JUGAGTS/p1597940362013100'
+        slack_message_url='https://s.l.a.c.k/C019JUGAGTS/p1597940362013100'
     )
 
     # finally check the posted message:
-    url = f'https://example.com/agent/tickets/{ticket.id}'
+    url = f'https://z.e.n.d.e.s.k/{ticket.id}'
     message = f"Hello, your new support request is {url}"
     post_message.assert_called_with(
-        mock_web_client,
+        slack_client,
         '1597940362.013100',
         'C019JUGAGTS',
         message
@@ -141,10 +142,13 @@ def test_message_with_existing_support_ticket_in_zendesk(
 ):
     """Test further in-thread messages don't result in new zendesk tickets.
     """
-    mock_web_client = MagicMock()
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
 
     # Set up the user details 'slack' will return    
-    mock_web_client.users_info.return_value = FakeUserResponse()
+    slack_client.users_info.return_value = FakeUserResponse()
 
     # Return the ticket which will indicate we know about this issue and
     # not then go one to make a new message.
@@ -186,16 +190,14 @@ def test_message_with_existing_support_ticket_in_zendesk(
         'user': 'UGF7MRWMS',
         'user_team': 'TGFJG8VEZ'
     }
-    env = {
-        'SLACK_WORKSPACE_URI': 'https://example.com/',
-        'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
-    }
-    with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(
-            payload,
-            our_channel='C019JUGAGTS',
-            web_client=mock_web_client,
-        )
+    is_handled = handler(
+        payload,
+        our_channel='C019JUGAGTS',
+        workspace_uri=workspace_uri,
+        zendesk_uri=zendesk_uri,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client,
+    )
     assert is_handled is True
 
     # There should not be any new issues as a result of this:
@@ -212,7 +214,7 @@ def test_message_with_existing_support_ticket_in_zendesk(
     # Verify the calls to the various mock are as I expect:
 
     # called with the content of data['user']
-    mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
+    slack_client.users_info.assert_called_with(user='UGF7MRWMS')
 
     # Quick check these should not have been called
     get_ticket.assert_not_called()
@@ -236,10 +238,13 @@ def test_thread_message_with_support_ticket_in_zendesk(
 ):
     """Test in-thread conversation messages are shipped to Zendesk.
     """
-    mock_web_client = MagicMock()
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
 
     # Set up the user details 'slack' will return    
-    mock_web_client.users_info.return_value = FakeUserResponse()
+    slack_client.users_info.return_value = FakeUserResponse()
 
     # Return the ticket which will indicate we know about this issue and
     # not then go one to make a new message.
@@ -285,16 +290,14 @@ def test_thread_message_with_support_ticket_in_zendesk(
         'user': 'UGF7MRWMS',
         'user_team': 'TGFJG8VEZ'
     }
-    env = {
-        'SLACK_WORKSPACE_URI': 'https://example.com/',
-        'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
-    }
-    with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(
-            payload,
-            our_channel='C019JUGAGTS',
-            web_client=mock_web_client,
-        )
+    is_handled = handler(
+        payload,
+        our_channel='C019JUGAGTS',
+        workspace_uri=workspace_uri,
+        zendesk_uri=zendesk_uri,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client,
+    )
     assert is_handled is True
 
     # There should be no new issues as a result of this:
@@ -312,12 +315,14 @@ def test_thread_message_with_support_ticket_in_zendesk(
     # should happen here is the comment gets shipped to Zendesk
 
     # called with the content of data['user']
-    mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
+    slack_client.users_info.assert_called_with(user='UGF7MRWMS')
 
     # Check the ticket is "recovered" and the comment is "added" to it:
-    get_ticket.assert_called_with('83')
+    get_ticket.assert_called_with(zendesk_client, '83')
     add_comment.assert_called_with(
-        ticket, 'Bob Sprocket (Slack): Oh, wait, my bad 🤦‍♀️, its ok now.'
+        zendesk_client,
+        ticket, 
+        'Bob Sprocket (Slack): Oh, wait, my bad 🤦‍♀️, its ok now.'
     )
 
     # These should not have been called:
@@ -346,10 +351,13 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     this. We just log that we ignore it and move on.
 
     """
-    mock_web_client = MagicMock()
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
 
     # Set up the user details 'slack' will return    
-    mock_web_client.users_info.return_value = FakeUserResponse()
+    slack_client.users_info.return_value = FakeUserResponse()
 
     # With no known issue for this and set ts & thread_ts, it will indicate an 
     # old message thread with new chatter on it. I'm going to ignore this.
@@ -382,22 +390,20 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
         'user': 'UGF7MRWMS',
         'user_team': 'TGFJG8VEZ'
     }
-    env = {
-        'SLACK_WORKSPACE_URI': 'https://example.com/',
-        'ZENDESK_TICKET_URI': 'https://example.com/agent/tickets/'
-    }
-    with patch.dict('os.environ', env, clear=True):    
-        is_handled = handler(
-            payload,
-            our_channel='C019JUGAGTS',
-            web_client=mock_web_client,
-        )
+    is_handled = handler(
+        payload,
+        our_channel='C019JUGAGTS',
+        workspace_uri=workspace_uri,
+        zendesk_uri=zendesk_uri,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client,
+    )
     assert is_handled is True
 
     # Verify the calls to the various mock are as I expect:
 
     # called with the content of data['user']
-    mock_web_client.users_info.assert_called_with(user='UGF7MRWMS')
+    slack_client.users_info.assert_called_with(user='UGF7MRWMS')
 
     # In a conversation the thread_ts is actually a reference to the parent 
     # message and ts refers to the message that has come in. Check this has 
@@ -435,8 +441,11 @@ def test_message_events_that_are_ignored_by_handler(
 ):
     """Verify that I don't handle various subtype messages.
     """
-    mock_web_client = MagicMock()
-    mock_web_client.users_info.return_value = {}
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
+    slack_client.users_info.return_value = {}
     payload = {
         'channel': 'C019JUGAGTS',
         'subtype': ignored_subtype,
@@ -445,10 +454,13 @@ def test_message_events_that_are_ignored_by_handler(
     is_handled = handler(
         payload,
         our_channel='C019JUGAGTS',
-        web_client=mock_web_client,
+        workspace_uri=workspace_uri,
+        zendesk_uri=zendesk_uri,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client,
     )
     assert is_handled is False
-    mock_web_client.users_info.assert_not_called()
+    slack_client.users_info.assert_not_called()
 
 
 @patch('zenslackchat.message.add_comment')
@@ -467,8 +479,11 @@ def test_channel_is_not_our_channel_so_message_is_ignored(
 ):
     """Verify that I don't handle events not from our channel.
     """
-    mock_web_client = MagicMock()
-    mock_web_client.users_info.return_value = {}
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
+    slack_client.users_info.return_value = {}
     payload = {
         'channel': 'C01A96HA9BR',
         'event_ts': '1598021977.004100',
@@ -480,10 +495,13 @@ def test_channel_is_not_our_channel_so_message_is_ignored(
     is_handled = handler(
         payload,
         our_channel='C019JUGAGTS',
-        web_client=mock_web_client,
+        workspace_uri=workspace_uri,
+        zendesk_uri=zendesk_uri,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client,
     )
     assert is_handled is False
-    mock_web_client.users_info.assert_not_called()
+    slack_client.users_info.assert_not_called()
     add_comment.assert_not_called()
     get_ticket.assert_not_called()
     create_ticket.assert_not_called()
