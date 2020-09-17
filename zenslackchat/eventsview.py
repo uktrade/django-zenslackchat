@@ -57,6 +57,7 @@ class Events(APIView):
                     slack_client=SlackApp.client(),
                     zendesk_client=ZendeskApp.client(),
                     workspace_uri=settings.SLACK_WORKSPACE_URI,
+                    zendesk_uri=settings.ZENDESK_TICKET_URI,
                 )
         
             except:

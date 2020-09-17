@@ -85,11 +85,11 @@ def handler(
     # I'm calling 'ts' chat_id and 'thread_ts' thread_id.
     subtype = event.get('subtype')
     if subtype == 'bot_message' or 'bot_id' in event:
-        #log.debug(f"Ignoring bot message: {text}")
+        log.debug(f"Ignoring bot message: {text}")
         return False
 
     elif subtype in IGNORED_SUBTYPES:
-        #log.debug(f"Ignoring subtype we don't handle: {subtype}")
+        log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
 
     # A message
@@ -141,7 +141,7 @@ def handler(
                 )
                 url = zendesk_ticket_url(zendesk_uri, ticket_id)
                 try:
-                    close_ticket(zendesk_client, issue)
+                    close_ticket(zendesk_client, ticket_id)
 
                 except zenpy.lib.exception.APIException:
                     log.exception("Close ticket exception (error?): ")

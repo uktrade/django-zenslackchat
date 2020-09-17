@@ -74,6 +74,10 @@ ZENDESK_SUBDOMAIN = os.environ.get(
 ZENDESK_REDIRECT_URI = os.environ.get(
     'ZENDESK_REDIRECT_URI', 'YOUR URI FOR http(s)://<our host>/zendesk/oauth'
 )
+ZENDESK_TICKET_URI = os.environ.get(
+    'ZENDESK_TICKET_URI', 'https://<YOUR SUBDOMAIN>.zendesk.com/agent/tickets'
+)
+
 
 # Used to work out our external URI for redirects. Also used as the entry in 
 # ALLOWED_HOSTS.

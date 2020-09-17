@@ -134,11 +134,13 @@ def close_ticket(client, ticket_id):
     log = logging.getLogger(__name__)
 
     log.debug(f'Looking for ticket with ticket_id:<{ticket_id}>')
-    ticket_audit = get_ticket(client, ticket_id)
-    if ticket_audit:
-        ticket = ticket_audit.ticket
+    ticket = get_ticket(client, ticket_id)
+    if ticket:
         ticket.status = 'closed'
         client.tickets.update(ticket)
         log.debug(f'Closed ticket:<{ticket.id}> for ticket_id:<{ticket_id}>')
+
+    else:
+        log.warn(f'Unable to close ticket:<{ticket.id}> as it was not found!')
 
     return ticket
