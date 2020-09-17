@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from zenslackchat import slack_utils
+from zenslackchat import SLACK_BOT_USER_TOKEN
 from zenslackchat.message import handler
 from zenslackchat.models import ZenSlackChat
 

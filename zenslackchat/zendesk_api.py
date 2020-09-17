@@ -10,45 +10,9 @@ import time
 import logging
 from urllib.parse import urljoin
 
-from zenpy import Zenpy
 from zenpy.lib import exception
 from zenpy.lib.api_objects import Ticket
 from zenpy.lib.api_objects import Comment
-
-
-def config():
-    """Recover the configuration for Zenpy from the environment."""
-    return dict(
-        email=os.environ.get('ZENDESK_EMAIL', '<email@example.com>'),
-        token=os.environ.get('ZENDESK_TOKEN', '<token>'),
-        subdomain=os.environ.get('ZENDESK_SUBDOMAIN', '<something>'),
-    )
-
-
-def api():
-    """Returns a configured Zenpy client instance ready for use.
-
-    This expects the environment to be set:
-
-        - ZENDESK_EMAIL
-        - ZENDESK_TOKEN
-        - ZENDESK_SUBDOMAIN
-
-    This currently uses the Token based Zendesk API key. We need to move to
-    OAuth based system for more granular access to just what is needed.
-
-    """
-    cfg = config()
-
-    from zenslackchat.models import ZendeskApp
-
-    # use the latest token
-    access_token = ZendeskApp.objects.order_by('-created_at').first()
-
-    return Zenpy(
-        subdomain=cfg['subdomain'],
-        oauth_token=access_token
-    )
 
 
 def zendesk_ticket_url(ticket_id):
@@ -66,8 +30,10 @@ def zendesk_ticket_url(ticket_id):
     return '/'.join([ZENDESK_TICKET_URI.rstrip('/'), str(ticket_id)])
 
 
-def get_ticket(ticket_id):
+def get_ticket(client, ticket_id):
     """Recover the ticket by it's ID in zendesk.
+
+    :param client: The Zendesk web client to use.
 
     :param ticket_id: The Zendesk ID of the Ticket.
 
@@ -76,8 +42,6 @@ def get_ticket(ticket_id):
     """
     log = logging.getLogger(__name__)
     returned = None
-
-    client = api()
 
     log.debug(f'Look for Ticket by is Zendesk ID:<{ticket_id}>')
     try:
@@ -89,12 +53,25 @@ def get_ticket(ticket_id):
     return returned
 
 
-def create_ticket(external_id, recipient_email, subject, slack_message_url):
+def create_ticket(
+    client, external_id, recipient_email, subject, slack_message_url
+):
     """Create a new zendesk ticket in response to a new user question.
+
+    :param client: The Zendesk web client to use.
+
+    :param external_id: Our identifier to store with this issue.
+
+    :param recipient_email: The email addres to CC on the issue.
+
+    :param subject: The title of the support issue.
+
+    :param slack_message_url: The link to message on the support slack channel. 
+
+    :returns: A Zenpy.Ticket instance.
+
     """    
     log = logging.getLogger(__name__)
-
-    client = api()
 
     requestor = client.users.me()
     log.debug(f'Recovered my requestor id:<{requestor.id}>')
@@ -121,8 +98,10 @@ def create_ticket(external_id, recipient_email, subject, slack_message_url):
     return ticket_audit.ticket
 
 
-def add_comment(ticket, comment):
+def add_comment(client, ticket, comment):
     """Add a new comment to an existing ticket.
+
+    :param client: The Zendesk web client to use.
 
     :param ticket: The Zenpy Ticket instance to use.
 
@@ -132,7 +111,6 @@ def add_comment(ticket, comment):
 
     """
     log = logging.getLogger(__name__)
-    client = api()
 
     requestor = client.users.me()
     log.debug(f'Recovered my requestor id:<{requestor.id}>')
@@ -148,8 +126,10 @@ def add_comment(ticket, comment):
     return ticket
 
 
-def close_ticket(ticket_id):
+def close_ticket(client, ticket_id):
     """Close a ticket in zendesk.
+
+    :param client: The Zendesk web client to use.
 
     :param ticket_id: The Zendesk Ticket ID.
 
@@ -157,10 +137,9 @@ def close_ticket(ticket_id):
 
     """
     log = logging.getLogger(__name__)
-    client = api()
 
     log.debug(f'Looking for ticket with ticket_id:<{ticket_id}>')
-    ticket_audit = get_ticket(ticket_id)
+    ticket_audit = get_ticket(client, ticket_id)
     if ticket_audit:
         ticket = ticket_audit.ticket
         ticket.status = 'closed'

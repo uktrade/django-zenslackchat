@@ -5,7 +5,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from webapp import settings
 from zenslackchat import message
+from zenslackchat.models import SlackApp
+from zenslackchat.models import ZendeskApp
 
 
 class WebHook(APIView):
@@ -23,8 +26,14 @@ class WebHook(APIView):
         """
         log = logging.getLogger(__name__)
         try:
-            log.debug(f'Raw POSTed data:\n{pprint.pformat(request.data)}')
-            message.update_with_comments_from_zendesk(request.data)
+            if settings.DEBUG:
+                log.debug(f'Raw POSTed data:\n{pprint.pformat(request.data)}')
+
+            message.update_with_comments_from_zendesk(
+                request.data,
+                slack_client=SlackApp.client(),
+                zendesk_client=ZendeskApp.client()
+            )
 
         except:
             log.exception(f'Failed handling webhook because:')

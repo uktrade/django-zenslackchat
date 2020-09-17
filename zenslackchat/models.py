@@ -2,7 +2,11 @@ import logging
 from datetime import timezone
 from datetime import datetime
 
+from zenpy import Zenpy
+from slack import WebClient
 from django.db import models
+
+from webapp import settings
 
 
 def utcnow():
@@ -11,29 +15,6 @@ def utcnow():
 
 class NotFoundError(Exception):
     """Raised when a ZenSlackChat instance was not found."""
-
-
-class Team(models.Model):
-    """Used to store Slack OAuth client / bot details after successfull 
-    completion of the OAuth process.
-
-    """
-    team_name = models.CharField(max_length=200)
-    team_id = models.CharField(max_length=20)
-    bot_user_id = models.CharField(max_length=20)
-    bot_access_token = models.CharField(max_length=100)
-    created_at = models.DateTimeField(default=utcnow)
-
-
-class ZendeskApp(models.Model):
-    """Used to store Zendesk OAuth client / app details after successfull 
-    completion of the OAuth process.
-    
-    """
-    access_token = models.CharField(max_length=512)
-    token_type = models.CharField(max_length=50)
-    scope = models.CharField(max_length=50)
-    created_at = models.DateTimeField(default=utcnow)
 
 
 class ZenSlackChat(models.Model):
@@ -190,4 +171,64 @@ class ZenSlackChat(models.Model):
         """
         return list(
             cls.objects.filter(active=True).order_by('-opened').all()
+        )
+
+
+class SlackApp(models.Model):
+    """Used to store Slack OAuth client / bot details after successfull 
+    completion of the OAuth process.
+
+    """
+    team_name = models.CharField(max_length=200)
+    team_id = models.CharField(max_length=20)
+    bot_user_id = models.CharField(max_length=20)
+    bot_access_token = models.CharField(max_length=100)
+    created_at = models.DateTimeField(default=utcnow)
+
+    @classmethod
+    def client(cls):
+        """Returns a Slack web client ready for use.
+
+        This recovers the latest SlackApp instance and uses its 
+        bot_access_token field for the web client.
+
+        """
+        # use the latest token
+        app = cls.objects.order_by('-created_at').first()
+        if settings.DEBUG:
+            logging.getLogger(__name__).debug(
+                f"Bot Access Token:{app.bot_access_token}"
+            )
+
+        return WebClient(token=app.bot_access_token)
+
+
+class ZendeskApp(models.Model):
+    """Used to store Zendesk OAuth client / app details after successfull 
+    completion of the OAuth process.
+    
+    """
+    access_token = models.CharField(max_length=512)
+    token_type = models.CharField(max_length=50)
+    scope = models.CharField(max_length=50)
+    created_at = models.DateTimeField(default=utcnow)
+
+    @classmethod
+    def client(cls):
+        """Returns a Zenpy client instance ready for use.
+
+        This recovers the latest ZendeskApp instance and uses its access_token
+        field for the token.
+
+        """
+        # use the latest token
+        app = cls.objects.order_by('-created_at').first()
+        if settings.DEBUG:
+            logging.getLogger(__name__).debug(
+                f"Zendesk Access Token:{app.access_token}"
+            )
+
+        return Zenpy(
+            subdomain=settings.ZENDESK_SUBDOMAIN,
+            oauth_token=app.access_token
         )

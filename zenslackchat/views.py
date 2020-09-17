@@ -1,4 +1,5 @@
 import json
+import pprint
 import logging
 
 import requests
@@ -9,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth.decorators import login_required
 
-from zenslackchat.models import Team
+from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
 
 
@@ -34,10 +35,11 @@ def slack_oauth(request):
     log.debug("Recovering access request from Slack...")
     json_response = requests.get(settings.SLACK_OAUTH_URI, params)
     log.debug(f"Result status from Slack:<{json_response.status_code}>")
-    # log.debug(f"Result from Slack:\n{json_response.text}")
+    if settings.DEBUG:
+        log.debug(f"Result from Slack:\n{json_response.text}")
     data = json.loads(json_response.text)
 
-    Team.objects.create(
+    SlackApp.objects.create(
         team_name=data['team_name'], 
         team_id=data['team_id'],
         bot_user_id=data['bot']['bot_user_id'],     
@@ -61,9 +63,7 @@ def zendesk_oauth(request):
 
     subdomain = settings.ZENDESK_SUBDOMAIN
     request_url = f"https://{subdomain}.zendesk.com/oauth/tokens"
-
-    fqdn = settings.PAAS_FQDN
-    redirect_uri = f"https://{fqdn}/zendesk/oauth/"
+    redirect_uri = settings.ZENDESK_REDIRECT_URI
 
     code = request.GET['code']    
     log.debug(
@@ -85,6 +85,7 @@ def zendesk_oauth(request):
     log.debug(f"Result status from Zendesk:<{response.status_code}>")
     response.raise_for_status()
     data = response.json()
+    log.debug(f"Result status from Zendesk:\n{pprint.pformat(data)}>")
     ZendeskApp.objects.create(
         access_token=data['access_token'], 
         token_type=data['token_type'], 
@@ -99,7 +100,34 @@ def zendesk_oauth(request):
 def index(request):
     """A page Pingdom can log-in to test site uptime and DB readiness.
     """
+    log = logging.getLogger(__name__)
+
     template = loader.get_template('zenslackchat/index.html')
-    return HttpResponse(template.render({}, request))
+
+    zendesk_oauth_request_uri = (
+        "https://"
+        f"{settings.ZENDESK_SUBDOMAIN}"
+        ".zendesk.com/oauth/authorizations/new?"
+        f"response_type=code&"
+        f"redirect_uri={settings.ZENDESK_REDIRECT_URI}&"
+        f"client_id={settings.ZENDESK_CLIENT_IDENTIFIER}&"
+        "scope=read%20write"
+    )
+    log.debug(f"zendesk_oauth_request_uri:<{zendesk_oauth_request_uri}>")
+
+    slack_oauth_request_uri = (
+        "https://slack.com/oauth/authorize?"
+        "scope=bot&"
+        f"client_id={settings.SLACK_CLIENT_ID}"
+    )
+    log.debug(f"slack_oauth_request_uri:<{slack_oauth_request_uri}>")
+
+    return HttpResponse(template.render(
+        dict(
+            zendesk_oauth_request_uri=zendesk_oauth_request_uri,
+            slack_oauth_request_uri=slack_oauth_request_uri
+        ), 
+        request
+    ))
 
     

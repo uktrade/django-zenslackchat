@@ -50,6 +50,11 @@ SLACK_VERIFICATION_TOKEN = os.environ.get(
 SLACK_OAUTH_URI = os.environ.get(
     'SLACK_OAUTH_URI', 'https://slack.com/api/oauth.access'
 )
+# The base uri on which '/channel_id/message_id/' is added to form the direct
+# link to the message on Slack:
+SLACK_WORKSPACE_URI = os.environ.get(
+    'SLACK_WORKSPACE_URI', 'https://<YOUR WORKSPACE>.slack.com/archives'
+)
 
 
 # The channel events we listen for and ignore all other events.
@@ -65,6 +70,9 @@ ZENDESK_CLIENT_SECRET = os.environ.get(
 )
 ZENDESK_SUBDOMAIN = os.environ.get(
     'ZENDESK_SUBDOMAIN', 'YOUR ZENDESK SUBDOMAIN'
+)
+ZENDESK_REDIRECT_URI = os.environ.get(
+    'ZENDESK_REDIRECT_URI', 'YOUR URI FOR http(s)://<our host>/zendesk/oauth'
 )
 
 # Used to work out our external URI for redirects. Also used as the entry in 

@@ -18,19 +18,19 @@ from time import mktime
 from operator import itemgetter
 
 import zenpy
-from slack import WebClient
+
 from dateutil.parser import parse
 
-from zenslackchat.zendesk_api import api
+from webapp import settings
+from zenslackchat.models import ZenSlackChat
+from zenslackchat.models import NotFoundError
+from zenslackchat.slack_api import message_url
+from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import get_ticket
 from zenslackchat.zendesk_api import add_comment
 from zenslackchat.zendesk_api import close_ticket
 from zenslackchat.zendesk_api import create_ticket
 from zenslackchat.zendesk_api import zendesk_ticket_url
-from zenslackchat.slack_utils import message_url
-from zenslackchat.slack_utils import post_message
-from zenslackchat.models import ZenSlackChat
-from zenslackchat.models import NotFoundError
 
 
 IGNORED_SUBTYPES = [
@@ -39,7 +39,7 @@ IGNORED_SUBTYPES = [
 ]
 
 
-def handler(event, our_channel, web_client):
+def handler(event, our_channel, slack_client, zendesk_client, workspace_uri):
     """Decided what to do with the message we have received.
 
     :param event: The slack event received.
@@ -48,7 +48,11 @@ def handler(event, our_channel, web_client):
 
     All other events on different channels are silently ignored.
 
-    :param web_client: The slack web client instance.
+    :param slack_client: The slack web client instance.
+
+    :param zendesk_client: The Zendesk web client instance.
+
+    :param workspace_uri: The link to slack workspace archives.
 
     :returns: True or False.
 
@@ -61,7 +65,11 @@ def handler(event, our_channel, web_client):
     text = event.get('text', '')
 
     if channel_id != our_channel:
-        # log.debug(f"Our Channel:{our_channel} ignored channel:{channel_id}")
+        if settings.DEBUG:
+            log.debug(
+                f"Ignoring event from channel id:<{channel_id} as its not from"
+                f"our support channel id:{our_channel}"
+            )
         return False
     
     else:
@@ -88,7 +96,7 @@ def handler(event, our_channel, web_client):
     # Recover the slack channel message author's email address. I assume 
     # this is always set on all accounts.
     log.debug(f"Recovering profile for user <{user_id}>")
-    resp = web_client.users_info(user=user_id)
+    resp = slack_client.users_info(user=user_id)
     # print(f"resp.event:\n{resp.event}\n")
     real_name = resp.data['user']['real_name']
     recipient_email = resp.data['user']['profile']['email']
@@ -103,7 +111,7 @@ def handler(event, our_channel, web_client):
         )
 
         # This is a reply message, use the thread_id to recover from zendesk:
-        slack_chat_url = message_url(channel_id, thread_id)
+        slack_chat_url = message_url(workspace_uri, channel_id, thread_id)
         try:
             issue = ZenSlackChat.get(channel_id, thread_id)
 
@@ -128,37 +136,39 @@ def handler(event, our_channel, web_client):
                 )
                 url = zendesk_ticket_url(ticket_id)
                 try:
-                    close_ticket(issue)
+                    close_ticket(zendesk_client, issue)
 
                 except zenpy.lib.exception.APIException:
                     log.exception("Close ticket exception (error?): ")
                     post_message(
-                        web_client, thread_id, channel_id, 
+                        slack_client, thread_id, channel_id, 
                         f'🤖 Ticket {url} is already closed.'
                     )
                 else:
-                    ZenSlackChat.resolve(channel_id, chat_id)
+                    ZenSlackChat.resolve(zendesk_client, channel_id, chat_id)
                     post_message(
-                        web_client, thread_id, channel_id, 
+                        slack_client, thread_id, channel_id, 
                         f'🤖 Understood. Ticket {url} has been closed.'
                     )
 
             # Add comment to Zendesk:
             try:
-                ticket = get_ticket(ticket_id)
+                ticket = get_ticket(zendesk_client, ticket_id)
 
             except zenpy.lib.exception.APIException:
                 post_message(
-                    web_client, thread_id, channel_id, 
+                    slack_client, thread_id, channel_id, 
                     "🤖 I'm unable to send comment to Zendesk (API Error)."
                 )
                 log.exception("Zendesk API error: ")
 
             else:
-                add_comment(ticket, f"{real_name} (Slack): {text}")
+                add_comment(
+                    zendesk_client, ticket, f"{real_name} (Slack): {text}"
+                )
 
     else:
-        slack_chat_url = message_url(channel_id, chat_id)
+        slack_chat_url = message_url(workspace_uri, channel_id, chat_id)
         try:
             issue = ZenSlackChat.get(channel_id, chat_id)
 
@@ -169,6 +179,7 @@ def handler(event, our_channel, web_client):
             )
             try:
                 ticket = create_ticket(
+                    zendesk_client, 
                     external_id=chat_id, 
                     recipient_email=recipient_email, 
                     subject=text, 
@@ -177,7 +188,7 @@ def handler(event, our_channel, web_client):
 
             except zenpy.lib.exception.APIException:
                 post_message(
-                    web_client, thread_id, channel_id, 
+                    slack_client, thread_id, channel_id, 
                     "🤖 I'm unable to talk to Zendesk (API Error)."
                 )
                 log.exception("Zendesk API error: ")
@@ -189,7 +200,7 @@ def handler(event, our_channel, web_client):
                 # Once-off response to parent thread:
                 url = zendesk_ticket_url(ticket.id)
                 message = f"Hello, your new support request is {url}"
-                post_message(web_client, chat_id, channel_id, message)
+                post_message(slack_client, chat_id, channel_id, message)
 
         else:
             # No, we have a ticket already for this.
@@ -275,7 +286,7 @@ def messages_for_slack(slack, zendesk):
     return for_slack
 
 
-def update_with_comments_from_zendesk(event):
+def update_with_comments_from_zendesk(event, zendesk_client, slack_client):
     """Handle the raw event from a Zendesk webhook and return without error.
 
     This will log all exceptions rather than cause zendesk reject 
@@ -299,9 +310,6 @@ def update_with_comments_from_zendesk(event):
             f'external_id:<{external_id}> not found, ignoring ticket comment.'
         )    
         return 
-
-    zendesk_client = api()
-    slack_client = WebClient(token=os.environ['SLACK_BOT_USER_TOKEN'])
 
     # Recover all messages from the slack conversation:
     slack = []

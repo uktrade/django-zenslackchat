@@ -1,13 +1,14 @@
 import pprint
 import logging
 
-from slack import WebClient
 from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from zenslackchat import message
+from zenslackchat.models import SlackApp
+from zenslackchat.models import ZendeskApp
 
 
 class Events(APIView):
@@ -47,14 +48,15 @@ class Events(APIView):
 
         if 'event' in slack_message:
             event = slack_message.get('event')
+            if settings.DEBUG:
+                log.debug(f'event received:\n{pprint.pformat(event)}\n')
             try:
-                # log.debug(f'event received:\n{pprint.pformat(event)}\n')
                 message.handler(
                     event, 
                     our_channel=settings.SRE_SUPPORT_CHANNEL,
-                    web_client=WebClient(
-                        token=settings.SLACK_BOT_USER_TOKEN
-                    )
+                    slack_client=SlackApp.client(),
+                    zendesk_client=ZendeskApp.client(),
+                    workspace_uri=settings.SLACK_WORKSPACE_URI,
                 )
         
             except:
