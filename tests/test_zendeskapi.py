@@ -51,7 +51,12 @@ class FakeApi(object):
         def __call__(self, id):
             """Recover a specific ticket.
             """
-            return self.ticket_audit
+            returned = None
+
+            if self.ticket_audit:
+                returned = self.ticket_audit.ticket
+
+            return returned
 
     def __init__(self, results=[], me=None, ticket_audit=None):
         self.results = results
@@ -91,7 +96,7 @@ def test_get_ticket_with_result(log):
 
     returned = zendesk_api.get_ticket(client, 12345)
 
-    assert returned == fake_ticket_audit
+    assert returned == fake_ticket
 
 
 def test_get_ticket_with_no_result(log):
@@ -146,8 +151,8 @@ def test_close_ticket(log):
     """
     fake_ticket = FakeTicket(ticket_id=12345)
     fake_ticket_audit = FakeTicketAudit(fake_ticket)
-    client = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
     assert fake_ticket.status == 'open'
+    client = FakeApi(results=[fake_ticket], ticket_audit=fake_ticket_audit)
 
     returned = zendesk_api.close_ticket(client, 12345)
 

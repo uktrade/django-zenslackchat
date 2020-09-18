@@ -10,6 +10,7 @@ from zenslackchat.models import ZenSlackChat
 class FakeTicket(object):
     def __init__(self, ticket_id):
         self.id = ticket_id
+        self.status = 'open'
 
 
 class FakeUserResponse(object):
