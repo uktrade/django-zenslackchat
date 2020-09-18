@@ -127,9 +127,12 @@ def handler(
             )
 
         else:
+            # If this is a command handle it otherwise ship it as a comment to
+            # Zendesk. You can only add comments if the Zendesk ticket is not
+            # closed.
             ticket_id = issue.ticket_id
-
-            # Handle thread commands here e.g. done/reopen
+            url = zendesk_ticket_url(zendesk_uri, ticket_id)
+            ticket = get_ticket(zendesk_client, ticket_id)
             log.debug(
                 f'Recoverd ticket {ticket_id} from slack {slack_chat_url}'
             )
@@ -139,38 +142,36 @@ def handler(
                 log.debug(
                     f'Closing ticket {ticket_id} from slack {slack_chat_url}.'
                 )
-                url = zendesk_ticket_url(zendesk_uri, ticket_id)
-                try:
-                    close_ticket(zendesk_client, ticket_id)
-
-                except zenpy.lib.exception.APIException:
-                    log.exception("Close ticket exception (error?): ")
-                    post_message(
-                        slack_client, thread_id, channel_id, 
-                        f'🤖 Ticket {url} is already closed.'
-                    )
-                else:
-                    ZenSlackChat.resolve(zendesk_client, channel_id, chat_id)
-                    post_message(
-                        slack_client, thread_id, channel_id, 
-                        f'🤖 Understood. Ticket {url} has been closed.'
-                    )
-
-            # Add comment to Zendesk:
-            try:
-                ticket = get_ticket(zendesk_client, ticket_id)
-
-            except zenpy.lib.exception.APIException:
+                close_ticket(zendesk_client, ticket_id)
                 post_message(
                     slack_client, thread_id, channel_id, 
-                    "🤖 I'm unable to send comment to Zendesk (API Error)."
+                    f'🤖 Understood. Ticket {url} has been closed.'
                 )
-                log.exception("Zendesk API error: ")
+
+            elif command == 'help':
+                post_message(
+                    slack_client, thread_id, channel_id, (
+                       "I understand the follow commands:\n\n" 
+                       "- help: <this command>\n"
+                       f"- resolve ticket: close this ticket ({url})\n"
+                       "\nBest regards.\n\n🤖"
+                    )
+               )
 
             else:
-                add_comment(
-                    zendesk_client, ticket, f"{real_name} (Slack): {text}"
-                )
+                if ticket.status == 'closed':
+                    post_message(
+                        slack_client, thread_id, channel_id, 
+                        f"🤖 This ticket is closed {url}. Please raise a "
+                        "new support issue."
+                    )
+
+                else:
+                    add_comment(
+                        zendesk_client, 
+                        ticket, 
+                        f"{real_name} (Slack): {text}"
+                    )
 
     else:
         slack_chat_url = message_url(workspace_uri, channel_id, chat_id)

@@ -135,12 +135,11 @@ def close_ticket(client, ticket_id):
 
     log.debug(f'Looking for ticket with ticket_id:<{ticket_id}>')
     ticket = get_ticket(client, ticket_id)
-    if ticket:
+    if ticket.status == 'closed':
+        log.warn(f'The ticket:<{ticket.id}> has already been closed!')
+    else:
         ticket.status = 'closed'
         client.tickets.update(ticket)
         log.debug(f'Closed ticket:<{ticket.id}> for ticket_id:<{ticket_id}>')
-
-    else:
-        log.warn(f'Unable to close ticket:<{ticket.id}> as it was not found!')
 
     return ticket
