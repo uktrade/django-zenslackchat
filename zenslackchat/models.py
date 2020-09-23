@@ -173,6 +173,56 @@ class ZenSlackChat(models.Model):
             cls.objects.filter(active=True).order_by('-opened').all()
         )
 
+    @classmethod
+    def daily_summary(cls, workspace_uri, when=None):
+        """Generate the data for the daily report.
+
+        :param workspace_uri: The base URI for messages on slack.
+
+        :param when: None or UTC datetime instance.
+
+        When is used to work out the report data for that date. All open 
+        tickets are count and not just those for the given date. Only closed
+        tickets on the given date are counted.
+
+        :returns: A dict(open=[..links to slack issues..], closed=<a count>)
+
+        """
+        return dict(open=[], closed=0)
+
+    @classmethod
+    def daily_report(cls, report):
+        """Generate the daily report text for the given report.
+
+        :param report: The result of a cls.daily_summary call().
+
+        :returns: A plain text report that could be sent to interested parties.
+
+        """
+        closed = report['closed']
+
+        open = len(report['open'])
+
+        links = []
+        for link in report['open']:
+            links.append(f"- {link}")
+        links = "\n".join(links)
+
+        report = f"""
+📊 Daily WebOps SRE Issue Report
+
+Closed 🤘: {closed}
+
+Unresolved 🔥: {open}
+{links}
+
+Cheers,
+
+🤖 ZenSlackChat
+        """.strip()
+
+        return report 
+
 
 class SlackApp(models.Model):
     """Used to store Slack OAuth client / bot details after successfull 

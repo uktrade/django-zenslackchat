@@ -10,7 +10,7 @@ from zenslackchat.models import NotFoundError
 UTC = datetime.timezone.utc
 
 
-def test_basic_cru_functionality(db):
+def test_basic_cru_functionality(log, db):
     """Test the basic operations we rely on.
     """
     ZenSlackChat.open(

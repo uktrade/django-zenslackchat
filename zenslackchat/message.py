@@ -126,7 +126,7 @@ def handler(
 
         except NotFoundError:
             # This could be an thread that happened before the bot was running:
-            log.warn(
+            log.warning(
                 f'No ticket found in slack {slack_chat_url}. Old thread?'
             )
 
@@ -264,12 +264,12 @@ def messages_for_slack(slack, zendesk):
     log = logging.getLogger(__name__)
 
     slack = sorted(slack, key=itemgetter('created_at')) 
-    msgs = [s['text'] for s in slack]
+    # msgs = [s['text'] for s in slack]
     # log.debug(f"Raw Slack messages:\n{slack}")
     # log.debug(f"Slack messages:\n{msgs}")
 
     zendesk = sorted(zendesk, key=itemgetter('created_at'), reverse=True) 
-    msgs = [z['body'] for z in zendesk]
+    # msgs = [z['body'] for z in zendesk]
     # log.debug(f"Zendesk messages:\n{msgs}")
 
     # Ignore the first message which is the parent message. Also ignore the 
@@ -278,10 +278,10 @@ def messages_for_slack(slack, zendesk):
     for msg in slack[2:]:
         # text = msg['text']
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
-        # Slack seems to use the name where as zendesk uses the character:
+        # Slack seems to use the name whereas zendesk uses the actual emoji:
         raw_text = msg['text'].split('(Zendesk):')[-1].strip()
         text = emoji.emojize(raw_text)
-        log.debug(f"slack msg to index:{text}")
+        # log.debug(f"slack msg to index:{text}")
         lookup[text] = 1        
     # log.debug(f"messages to consider from slack:{len(slack)}")
     # log.debug(f"lookup:\n{lookup}")
@@ -299,7 +299,6 @@ def messages_for_slack(slack, zendesk):
     for_slack.reverse()
 
     # log.debug(f"message for slack:\n{pprint.pformat(for_slack)}")
-    log.debug(f"New message(s) for slack:\n{len(for_slack)}")
     return for_slack
 
 
