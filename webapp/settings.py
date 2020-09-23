@@ -77,7 +77,12 @@ ZENDESK_REDIRECT_URI = os.environ.get(
 ZENDESK_TICKET_URI = os.environ.get(
     'ZENDESK_TICKET_URI', 'https://<YOUR SUBDOMAIN>.zendesk.com/agent/tickets'
 )
-
+ZENDESK_USER_ID = os.environ.get(
+    'ZENDESK_USER_ID', '<The user id to assign new zendesk tickets to>'
+)
+ZENDESK_GROUP_ID = os.environ.get(
+    'ZENDESK_GROUP_ID', '<The group id new zendesk tickets belong to>'
+)
 
 # Used to work out our external URI for redirects. Also used as the entry in 
 # ALLOWED_HOSTS.

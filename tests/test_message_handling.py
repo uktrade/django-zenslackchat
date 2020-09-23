@@ -43,6 +43,8 @@ def test_new_support_message_creates_ticket(
     zendesk_client = MagicMock()
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000001'
+    group_id = '200000000002'
 
     # Set up the user details 'slack' will return    
     slack_client.users_info.return_value = FakeUserResponse()
@@ -88,6 +90,8 @@ def test_new_support_message_creates_ticket(
         zendesk_uri=zendesk_uri,
         slack_client=slack_client,
         zendesk_client=zendesk_client,
+        user_id=user_id,
+        group_id=group_id,
     )
     assert is_handled is True
 
@@ -112,7 +116,8 @@ def test_new_support_message_creates_ticket(
     # Check how zendesk api was called:
     create_ticket.assert_called_with(
         zendesk_client,
-        external_id='1597940362.013100',
+        user_id='100000000001',
+        group_id='200000000002',
         recipient_email='bob@example.com',
         subject='My 🖨 is on 🔥',
         slack_message_url='https://s.l.a.c.k/C019JUGAGTS/p1597940362013100'
@@ -147,6 +152,8 @@ def test_message_with_existing_support_ticket_in_zendesk(
     zendesk_client = MagicMock()
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000001'
+    group_id = '200000000002'
 
     # Set up the user details 'slack' will return    
     slack_client.users_info.return_value = FakeUserResponse()
@@ -198,6 +205,8 @@ def test_message_with_existing_support_ticket_in_zendesk(
         zendesk_uri=zendesk_uri,
         slack_client=slack_client,
         zendesk_client=zendesk_client,
+        user_id=user_id,
+        group_id=group_id,
     )
     assert is_handled is True
 
@@ -243,6 +252,8 @@ def test_thread_message_with_support_ticket_in_zendesk(
     zendesk_client = MagicMock()
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000001'
+    group_id = '200000000002'
 
     # Set up the user details 'slack' will return    
     slack_client.users_info.return_value = FakeUserResponse()
@@ -298,6 +309,8 @@ def test_thread_message_with_support_ticket_in_zendesk(
         zendesk_uri=zendesk_uri,
         slack_client=slack_client,
         zendesk_client=zendesk_client,
+        user_id=user_id,
+        group_id=group_id,
     )
     assert is_handled is True
 
@@ -356,6 +369,8 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     zendesk_client = MagicMock()
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000001'
+    group_id = '200000000002'
 
     # Set up the user details 'slack' will return    
     slack_client.users_info.return_value = FakeUserResponse()
@@ -398,6 +413,8 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
         zendesk_uri=zendesk_uri,
         slack_client=slack_client,
         zendesk_client=zendesk_client,
+        user_id=user_id,
+        group_id=group_id,
     )
     assert is_handled is True
 
@@ -446,6 +463,8 @@ def test_message_events_that_are_ignored_by_handler(
     zendesk_client = MagicMock()
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000001'
+    group_id = '200000000002'
     slack_client.users_info.return_value = {}
     payload = {
         'channel': 'C019JUGAGTS',
@@ -459,6 +478,8 @@ def test_message_events_that_are_ignored_by_handler(
         zendesk_uri=zendesk_uri,
         slack_client=slack_client,
         zendesk_client=zendesk_client,
+        user_id=user_id,
+        group_id=group_id,
     )
     assert is_handled is False
     slack_client.users_info.assert_not_called()
@@ -484,6 +505,8 @@ def test_channel_is_not_our_channel_so_message_is_ignored(
     zendesk_client = MagicMock()
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000001'
+    group_id = '200000000002'
     slack_client.users_info.return_value = {}
     payload = {
         'channel': 'C01A96HA9BR',
@@ -500,6 +523,8 @@ def test_channel_is_not_our_channel_so_message_is_ignored(
         zendesk_uri=zendesk_uri,
         slack_client=slack_client,
         zendesk_client=zendesk_client,
+        user_id=user_id,
+        group_id=group_id,
     )
     assert is_handled is False
     slack_client.users_info.assert_not_called()

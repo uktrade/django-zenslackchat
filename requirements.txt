@@ -1,4 +1,5 @@
 zenpy
+emoji
 slackclient
 slackeventsapi
 python-dateutil

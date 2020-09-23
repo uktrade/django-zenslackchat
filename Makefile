@@ -1,5 +1,8 @@
 export NAMESPACE=zenslackchat
 
+# default set up to run with docker compose started DB:
+export DATABASE_URL?=postgresql://service:service@localhost:5432/service
+
 .DEFAULT_GOAL := all
 
 .PHONY: all collect run migrate remove release reinstall test up ps down 

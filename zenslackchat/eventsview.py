@@ -58,6 +58,8 @@ class Events(APIView):
                     zendesk_client=ZendeskApp.client(),
                     workspace_uri=settings.SLACK_WORKSPACE_URI,
                     zendesk_uri=settings.ZENDESK_TICKET_URI,
+                    user_id=settings.ZENDESK_USER_ID,
+                    group_id=settings.ZENDESK_GROUP_ID,
                 )
         
             except:

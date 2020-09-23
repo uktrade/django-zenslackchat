@@ -113,12 +113,12 @@ def test_get_ticket_with_no_result(log):
 def test_create_ticket(log):
     """Test out the behaviour when 'creating' a zendesk ticket.
     """
-    user_id= 'some-user-id'
-    chat_id = 'some-message-id'
+    user_id= '100000000001'
+    group_id= '200000000002'
     recipient_email = 'bob@example.com'
     subject = 'printer out of ink'
     slack_message_url = 'https://example.com/channel/chat_id'
-    fake_ticket = FakeTicket(ticket_id=chat_id)
+    fake_ticket = FakeTicket(ticket_id='some-ticket-id')
     fake_ticket_audit = FakeTicketAudit(fake_ticket)
     client = fake_api = FakeApi(
         results=[fake_ticket],
@@ -128,7 +128,8 @@ def test_create_ticket(log):
 
     zendesk_api.create_ticket(
         client,
-        chat_id,
+        user_id,
+        group_id,
         recipient_email,
         subject,
         slack_message_url
@@ -136,11 +137,12 @@ def test_create_ticket(log):
 
     assert len(fake_api.created_tickets) == 1
     ticket = fake_api.created_tickets[0]
-    assert ticket.type == 'question'
-    assert ticket.external_id == chat_id
+    assert ticket.type == 'ticket'
     assert ticket.subject == subject
     assert ticket.recipient == recipient_email
-    assert ticket.requestor_id == user_id
+    assert ticket.submitter_id == user_id
+    assert ticket.assingee_id == user_id
+    assert ticket.group_id == group_id
     assert ticket.comment.author_id == user_id
     msg = f'This is the message on slack {slack_message_url}.'
     assert ticket.comment.body == msg

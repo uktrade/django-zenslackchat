@@ -17,8 +17,8 @@ import datetime
 from time import mktime
 from operator import itemgetter
 
+import emoji
 import zenpy
-
 from dateutil.parser import parse
 
 from webapp import settings
@@ -41,7 +41,7 @@ IGNORED_SUBTYPES = [
 
 def handler(
     event, our_channel, workspace_uri, zendesk_uri, slack_client, 
-    zendesk_client
+    zendesk_client, user_id, group_id
 ):
     """Decided what to do with the message we have received.
 
@@ -58,6 +58,10 @@ def handler(
     :param slack_client: The slack web client instance.
 
     :param zendesk_client: The Zendesk web client instance.
+
+    :param user_id: Who to create Zendesk tickets as.
+
+    :param group_id: Which Zendesk group the ticket belongs to.
 
     :returns: True or False.
 
@@ -93,15 +97,15 @@ def handler(
         return False
 
     # A message
-    user_id = event['user']
+    slack_user_id = event['user']
     chat_id = event['ts']
     # won't be present in a new top-level message we will reply too
     thread_id = event.get('thread_ts', '')
 
     # Recover the slack channel message author's email address. I assume 
     # this is always set on all accounts.
-    log.debug(f"Recovering profile for user <{user_id}>")
-    resp = slack_client.users_info(user=user_id)
+    log.debug(f"Recovering profile for user <{slack_user_id}>")
+    resp = slack_client.users_info(user=slack_user_id)
     # print(f"resp.event:\n{resp.event}\n")
     real_name = resp.data['user']['real_name']
     recipient_email = resp.data['user']['profile']['email']
@@ -186,7 +190,8 @@ def handler(
             try:
                 ticket = create_ticket(
                     zendesk_client, 
-                    external_id=chat_id, 
+                    user_id=user_id, 
+                    group_id=group_id,
                     recipient_email=recipient_email, 
                     subject=text, 
                     slack_message_url=slack_chat_url,
@@ -260,35 +265,41 @@ def messages_for_slack(slack, zendesk):
 
     slack = sorted(slack, key=itemgetter('created_at')) 
     msgs = [s['text'] for s in slack]
-    log.debug(f"Raw Slack messages:\n{slack}")
-    log.debug(f"Slack messages:\n{msgs}")
+    # log.debug(f"Raw Slack messages:\n{slack}")
+    # log.debug(f"Slack messages:\n{msgs}")
 
     zendesk = sorted(zendesk, key=itemgetter('created_at'), reverse=True) 
     msgs = [z['body'] for z in zendesk]
-    log.debug(f"Zendesk messages:\n{msgs}")
+    # log.debug(f"Zendesk messages:\n{msgs}")
 
     # Ignore the first message which is the parent message. Also ignore the 
     # second message which is our "link to zendesk ticket" message.
     lookup = {}
     for msg in slack[2:]:
         # text = msg['text']
-        text = msg['text'].split('(Zendesk):')[-1].strip()
+        # convert '... :palm_tree:​ ...' to its emoji character 🌴
+        # Slack seems to use the name where as zendesk uses the character:
+        raw_text = msg['text'].split('(Zendesk):')[-1].strip()
+        text = emoji.emojize(raw_text)
         log.debug(f"slack msg to index:{text}")
-        lookup[text] = 1
+        lookup[text] = 1        
     # log.debug(f"messages to consider from slack:{len(slack)}")
     # log.debug(f"lookup:\n{lookup}")
 
     # remove api messages which come from slack
     for_slack = []
     for msg in zendesk:
-        if msg['via']['channel'] == 'web' and msg['body'] not in lookup:
-            log.debug(f"msg to be added:{msg['body']}")
+        # compare like with like, although this might not be needed on zendesk
+        text = emoji.emojize(msg['body'])
+        if msg['via']['channel'] == 'web' and text not in lookup:
+            # log.debug(f"msg to be added:{text}")
             for_slack.append(msg)
-        else:
-            log.debug(f"msg ignored:{msg['body']}")
+        # else:
+        #     log.debug(f"msg ignored:{text}")
     for_slack.reverse()
 
-    log.debug(f"message for slack:\n{pprint.pformat(for_slack)}")
+    # log.debug(f"message for slack:\n{pprint.pformat(for_slack)}")
+    log.debug(f"New message(s) for slack:\n{len(for_slack)}")
     return for_slack
 
 

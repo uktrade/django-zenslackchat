@@ -121,11 +121,13 @@ found in the Zendesk:
 Comment Trigger
 ```````````````
 
-You need to create a trigger https://<your zendesk>.zendesk.com/agent/admin/triggers/<trigger id>
-and then do the following set up:
+You will need to create the ZenSlackChat group if its not present already. You 
+need to create a trigger and then do the following set up:
 
 - Trigger name: ticket-comment
 - Description: Trigger which will post comments to Zenslackchat for consideration.
+- Meet ALL of the following conditions
+  - Group is ZenSlackChat 
 - Meet any condition: 
   - "comment text"
   - "Does not contain the following string"
@@ -139,24 +141,24 @@ and then do the following set up:
       "ticket_id": "{{ticket.id}}"
    }
 
-The "meet any condition" is a bit of a hack to get comments sent to us.
+The "meet any condition" is a bit of a hack to get comments sent to us. I would 
+also put the trigger order first above any existing triggers although thats 
+just me.
 
 
 Webhook
 ```````
 
-Sign-up for a free Ngrok.io account. This allows you to have a public 
-accessible HTTP endpoint to your local instance for development. Run ngrok
-locally as follows::
-
-   ngrok http 12380
-
-This should then give you a URL you can use in the HTTP Target. For example 
-http://ed8a1df2e030.ngrok.io. This changes each time its restarted so you will
-need to update the HTTP Target when this happens.
-
-The webhook code is now integrated into the Django webapp. Running locally its
+The webhook code is integrated into the Django webapp. Running locally its
 found on "http://localhost:8000/zendesk/webhook/"
+
+
+OAuth
+`````
+
+You need a paid Ngrok.io account to tunnel locally, as Zendesk requires a HTTPS
+endpoint for the OAuth process. Locally the this runs on 
+"http://localhost:8000/zendesk/oauth/"
 
 
 Slack
@@ -189,18 +191,15 @@ App Name: zenslackchat
 OAuth & Permissions
 
 Tokens for Worksapce
-
 - OAuth Access Token
 - Bot User OAuth Access Token
 
 Redirect URLs
-
 - https://<location of running endpoint>/slack/oauth/
 
 Scopes
 
 Bot Token Scopes: 
-
 - channels:history
 - groups:history
 - chat:write
@@ -208,7 +207,6 @@ Bot Token Scopes:
 - users:read.email
 
 User Token Scopes
-
 - channels:history
 
 Install the app into workspace after set up the Scopes
@@ -227,29 +225,39 @@ To run the webapp locally::
 
     workon zenslackchat
 
-    # Needed in production. If not given this is randomly generated each time.
-    export WEBAPP_SECRET_KEY=<some key>
+   # Needed in production. If not given this is randomly generated each time.
+   # Changing this forces everyone to login again.
+   export WEBAPP_SECRET_KEY=<some key>
 
-    # Hostname of where its running (added to allowed hosts):
-    export PAAS_FQDN=
+   # Local dev DB access. This is set in Production automatically:
+   export DATABASE_URL=postgresql://service:service@localhost:5432/service
 
-    # Set up the credentials:
-    # zendesk
-    export ZENDESK_EMAIL=<user on support site> 
-    export ZENDESK_SUBDOMAIN=<support site subdomain>
-    export ZENDESK_TOKEN=<zendesk token> 
-    export ZENDESK_TICKET_URI=https://<support site>.zendesk.com/agent/tickets
+   # Hostname of where its running (added to allowed hosts):
+   export PAAS_FQDN=<some.host.com>
 
-    # slack
-    export SLACK_CLIENT_ID=<slack app oauth client id>
-    export SLACK_CLIENT_SECRET=<slack app oauth client secret>
-    export SLACK_VERIFICATION_TOKEN=<slack app verification token>
-    export SLACK_SIGN_SECRET=<slack app sign secret>
-    export SLACK_BOT_USER_TOKEN=<slack app bot user token>
-    export SLACK_WORKSPACE_URI=https://<workspace>.slack.com/archives
-        
-    # Run the bot (Python3)
-    python manage.py runserver
+   # zendesk
+   export ZENDESK_CLIENT_IDENTIFIER=<oauth identifier>
+   export ZENDESK_CLIENT_SECRET=<oauth secret>
+   export ZENDESK_REDIRECT_URI=https://..host../zendesk/oauth/
+   export ZENDESK_SUBDOMAIN=<support site subdomain>
+   export ZENDESK_TICKET_URI=https://<support site>.zendesk.com/agent/tickets
+   # Who tickets are assigned to
+   export ZENDESK_USER_ID=375202855898
+   # Which group tickets belong to. (Used when filter what gets sent to bot)
+   export ZENDESK_GROUP_ID=360003877797
+
+   # slack
+   export SLACK_CLIENT_ID=<slack app oauth client id>
+   export SLACK_CLIENT_SECRET=<slack app oauth client secret>
+   export SLACK_SIGN_SECRET=<slack app sign secret>
+   export SLACK_VERIFICATION_TOKEN=<slack app verification token>
+   export SLACK_WORKSPACE_URI=https://<workspace>.slack.com/archives
+
+   # The channel to monitor for support requests:
+   export SRE_SUPPORT_CHANNEL=<Slack Channel ID to use>
+
+   # Run the bot (Python3)
+   python manage.py runserver
 
 
 Development

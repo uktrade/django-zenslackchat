@@ -47,15 +47,19 @@ def get_ticket(client, ticket_id):
 
     return returned
 
+    
+
 
 def create_ticket(
-    client, external_id, recipient_email, subject, slack_message_url
+    client, user_id, group_id, recipient_email, subject, slack_message_url
 ):
     """Create a new zendesk ticket in response to a new user question.
 
     :param client: The Zendesk web client to use.
 
-    :param external_id: Our identifier to store with this issue.
+    :param user_id: Who to create the ticket as.
+
+    :param group_id: Which group the ticket belongs to.
 
     :param recipient_email: The email addres to CC on the issue.
 
@@ -68,19 +72,25 @@ def create_ticket(
     """    
     log = logging.getLogger(__name__)
 
-    requestor = client.users.me()
-    log.debug(f'Recovered my requestor id:<{requestor.id}>')
+    log.debug(
+        f'Assigning new ticket subject:<{subject}> to '
+        f'user:<{user_id}> and group:<{group_id}> '
+    )
 
+    # And assign this ticket to them. I can then later filter comments that 
+    # should go to the ZenSlackChat webhook to just those in the ZenSlackChat
+    # group.
     issue = Ticket(
-        type='question', 
-        external_id=external_id,
+        type='ticket', 
+        submitter_id=user_id,
+        assingee_id=user_id,
+        group_id=group_id,
         subject=subject, 
         description=subject, 
         recipient=recipient_email,
-        requestor_id=requestor.id,
         comment=Comment(
             body=f'This is the message on slack {slack_message_url}.',
-            author_id=requestor.id
+            author_id=user_id
         )        
     )
 
