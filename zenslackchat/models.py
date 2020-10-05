@@ -1,12 +1,14 @@
 import logging
 from datetime import timezone
 from datetime import datetime
+from datetime import timedelta
 
 from zenpy import Zenpy
 from slack import WebClient
 from django.db import models
 
 from webapp import settings
+from zenslackchat import slack_api
 
 
 def utcnow():
@@ -179,16 +181,45 @@ class ZenSlackChat(models.Model):
 
         :param workspace_uri: The base URI for messages on slack.
 
-        :param when: None or UTC datetime instance.
+        :param when: None or UTC datetime instance for 'today'.
 
-        When is used to work out the report data for that date. All open 
-        tickets are count and not just those for the given date. Only closed
-        tickets on the given date are counted.
+        Used to work yesterday's date. All open tickets are counted and not 
+        just those for the yesterday. Only yesterday's closed tickets on are 
+        counted.
 
         :returns: A dict(open=[..links to slack issues..], closed=<a count>)
 
         """
-        return dict(open=[], closed=0)
+        if when:
+            yesterday = when - timedelta(days=1)
+
+        else:
+            yesterday = utcnow() - timedelta(days=1)
+
+        day_begin = datetime(
+            yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, 0,
+            tzinfo=timezone.utc
+        )
+
+        day_end = datetime(
+            yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, 999,
+            tzinfo=timezone.utc
+        )
+
+        returned = dict(open=[], closed=0)
+
+        for issue in cls.open_issues():
+            returned['open'].append(slack_api.message_url(
+                workspace_uri,
+                issue.channel_id, 
+                issue.ticket_id, 
+            ))
+
+        returned['closed'] = cls.objects.filter(
+            closed__range=(day_begin, day_end)
+        ).count()
+
+        return returned
 
     @classmethod
     def daily_report(cls, report):

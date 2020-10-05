@@ -89,8 +89,25 @@ def test_daily_summary_data(log, db):
     # 3 on 1 Jan + 1 still open on 31 Dec:
     assert len(report['open']) == 4
 
+    # oldest issue first
+    assert report['open'][0] == (
+        'https://s.l.a.c.k/some_channel_id/pzendesk-ticket-4'
+    )
+
     # Only the 2 closed issues on 1 Jan:
     assert report['closed'] == 2
+
+    # Its the 3 Jan 2020, report on what happened on 2 Jan.
+    #
+    now = datetime.datetime(2020, 1, 3, 0, 0, 0, tzinfo=UTC)
+
+    report  = ZenSlackChat.daily_summary(workspace_uri, when=now)
+
+    # 3 on 1 Jan + 1 still open on 31 Dec:
+    assert len(report['open']) == 4
+
+    # No closed issues on 2 Jan:
+    assert report['closed'] == 0
 
 
 def test_daily_report_plaintext(log, db):
