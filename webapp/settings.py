@@ -11,12 +11,15 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 import sys
+import json
 import binascii
 from pathlib import Path
 
 from zenslackchat import botlogging
 
 LOGGING = botlogging.config
+
+VCAP_SERVICES = json.loads(os.environ.get('VCAP_SERVICES', "{}"))
 
 DEBUG = False
 if os.environ.get("DEBUG_ENABLED", "0").strip() == "1":
@@ -191,6 +194,23 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
+
+
+# Redis & Celery
+if 'redis' in VCAP_SERVICES:
+    REDIS_URL = VCAP_SERVICES['redis'][0]['credentials']['uri']
+    REDIS_CELERY_URL = f'{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED'
+
+else:
+    REDIS_URL = os.environ['REDIS_URL']
+    REDIS_CELERY_URL = REDIS_URL
+
+CELERY_BROKER_URL = REDIS_CELERY_URL
+# no results as I'm just running a report once a day and it should just work.
+# result_backend = REDIS_CELERY_URL
+accept_content = ['application/json']
+task_serializer = 'json'
+result_serializer = 'json'
+task_always_eager = False
