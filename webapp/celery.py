@@ -18,11 +18,8 @@ def setup_periodic_tasks(sender, **kwargs):
     """
     # Executes every Monday morning at 7:30 a.m.
     sender.add_periodic_task(
-        crontab(
-        #   minute='*/2',
-          solar_event='dawn_civil', 
-          day_of_week='mon,tue,wed,thu,fri'
-        ),
+        # 07:30 monday -> friday
+        crontab(hour=7, minute=30, day_of_week='1-5'),
         run_daily_summary,
     )
 
