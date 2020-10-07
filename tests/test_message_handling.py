@@ -134,6 +134,159 @@ def test_new_support_message_creates_ticket(
     )
 
 
+@patch('zenslackchat.message.add_comment')
+@patch('zenslackchat.message.get_ticket')
+@patch('zenslackchat.message.close_ticket')
+@patch('zenslackchat.message.create_ticket')
+@patch('zenslackchat.message.post_message')
+def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
+    post_message,
+    create_ticket,
+    close_ticket,
+    get_ticket,
+    add_comment,
+    log,
+    db
+):
+    """Test a comment is sent to Zendesk and that a ticket can be resolved with
+    the 'resolve ticket' message (not sent to Zendesk).
+
+    """
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
+    user_id = '100000000004'
+    group_id = '200000000005'
+
+    slack_client.users_info.return_value = FakeUserResponse()
+    get_ticket.return_value = None
+    ticket = FakeTicket(ticket_id='77')
+    create_ticket.return_value = ticket
+    assert ZenSlackChat.objects.count() == 0
+
+    def handle_message(payload):
+        is_handled = handler(
+            payload,
+            our_channel='C0192NP3TFG',
+            workspace_uri=workspace_uri,
+            zendesk_uri=zendesk_uri,
+            slack_client=slack_client,
+            zendesk_client=zendesk_client,
+            user_id=user_id,
+            group_id=group_id,
+        )
+        assert is_handled is True
+
+    # Create an issue
+    #
+    handle_message({
+        'channel': 'C0192NP3TFG',
+        'event_ts': '1602064330.001600',
+        'text': 'My 🖨 is on 🔥',
+        'ts': '1602064330.001600',
+        'user': 'UGF7MRWMS',
+    })
+
+    # There should now be one instance here:
+    assert ZenSlackChat.objects.count() == 1
+    assert len(ZenSlackChat.open_issues()) == 1
+
+    # Verify what the stored issue should look like:
+    issue = ZenSlackChat.get('C0192NP3TFG', '1602064330.001600')
+    assert issue.active is True
+    assert issue.opened is not None
+    assert issue.closed is None
+    assert issue.channel_id == 'C0192NP3TFG'
+    assert issue.chat_id == '1602064330.001600'
+    assert issue.ticket_id == '77'
+
+    # Check a new comment is sent over to zendesk:
+    #
+    create_ticket.reset_mock()
+    post_message.reset_mock()
+
+    # Return the fake ticket instance this time
+    get_ticket.return_value = ticket
+
+    handle_message({
+        'channel': 'C0192NP3TFG',
+        'event_ts': '1602064330.001600',
+        'text': 'No wait, it was just a blinking red light',
+        # This is a reply message so thread_ts refers to the parent chat id:
+        'thread_ts': issue.chat_id,
+        # and the ts refers to the reply message id:
+        'ts': '1602065965.003200',
+        'user': 'UGF7MRWMS',
+    })
+    assert ZenSlackChat.objects.count() == 1
+    assert len(ZenSlackChat.open_issues()) == 1
+
+    # None of test should have changed yet:
+    issue = ZenSlackChat.get('C0192NP3TFG', '1602064330.001600')
+    assert issue.active is True
+    assert issue.opened is not None
+    assert issue.closed is None
+    assert issue.channel_id == 'C0192NP3TFG'
+    assert issue.chat_id == '1602064330.001600'
+    assert issue.ticket_id == '77'
+
+    # No ticket should be created here
+    create_ticket.assert_not_called()
+
+    # Check the comment was "sent" to Zendesk correctly:
+    add_comment.assert_called_with(
+        zendesk_client,
+        ticket,
+        "Bob Sprocket (Slack): No wait, it was just a blinking red light"
+    )
+
+    # No slack message should have been sent:
+    post_message.assert_not_called()
+
+    # Resolve the issue:
+    #
+    create_ticket.reset_mock()
+    post_message.reset_mock()
+    add_comment.reset_mock()
+
+    handle_message({
+        'channel': 'C0192NP3TFG',
+        'event_ts': '1602064330.001600',
+        'text': 'resolve ticket',
+        # This is a reply message so thread_ts refers to the parent chat id
+        'thread_ts': '1602064330.001600',
+        'ts': '1602065965.003200',
+        'user': 'UGF7MRWMS',
+    })
+
+    # There should now be one instance here:
+    assert ZenSlackChat.objects.count() == 1
+    assert len(ZenSlackChat.open_issues()) == 0
+
+    # Verify what the stored issue should look like:
+    issue = ZenSlackChat.get('C0192NP3TFG', '1602064330.001600')
+    assert issue.active is False
+    assert issue.opened is not None
+    assert issue.closed is not None
+    assert issue.channel_id == 'C0192NP3TFG'
+    assert issue.chat_id == '1602064330.001600'
+    assert issue.ticket_id == '77'
+
+    slack_client.users_info.assert_called_with(user='UGF7MRWMS')
+    create_ticket.assert_not_called()
+    add_comment.assert_not_called()
+
+    # Check the message that should go to slack closing the issue:
+    url = f'https://z.e.n.d.e.s.k/{ticket.id}'
+    post_message.assert_called_with(
+        slack_client, 
+        '1602064330.001600', 
+        'C0192NP3TFG', 
+        f'🤖 Understood. Ticket {url} has been closed.'
+    )
+
+
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')

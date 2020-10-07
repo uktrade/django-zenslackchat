@@ -1,6 +1,7 @@
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webapp.settings')
@@ -15,21 +16,18 @@ app.conf.timezone = 'Europe/London'
 def setup_periodic_tasks(sender, **kwargs):
     """Set up the daily report.
     """
+    # Executes every Monday morning at 7:30 a.m.
     sender.add_periodic_task(
-        30.0, run_daily_summary, expires=10
+        crontab(
+        #   minute='*/2',
+          solar_event='dawn_civil', 
+          day_of_week='mon,tue,wed,thu,fri'
+        ),
+        run_daily_summary,
     )
 
-    # # Executes every Monday morning at 7:30 a.m.
-    # sender.add_periodic_task(
-    #     crontab(
-    #       solar_event='dawn_civil', 
-    #       day_of_week=['mon, 'tue', 'wed', 'thu', 'fri']
-    #     ),
-    #     run_daily_summary,
-    # )
 
-
-@app.task
+@app.task(ignore_result=True)
 def run_daily_summary():
     """Generate and send the daily summary report to slack.
     """
@@ -42,7 +40,6 @@ def run_daily_summary():
 
     report_data = ZenSlackChat.daily_summary(workspace_uri)
     text = ZenSlackChat.daily_report(report_data)
-    print(text)
 
     client = SlackApp.client()
     client.chat_postMessage(channel=channel_id, text=text)    

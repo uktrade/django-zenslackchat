@@ -119,7 +119,8 @@ def handler(
             f"Received thread message from '{recipient_email}': {text}\n"
         )
 
-        # This is a reply message, use the thread_id to recover from zendesk:
+        # This is a reply message, use the thread_id to recover the parent 
+        # message:
         slack_chat_url = message_url(workspace_uri, channel_id, thread_id)
         try:
             issue = ZenSlackChat.get(channel_id, thread_id)
@@ -147,6 +148,7 @@ def handler(
                     f'Closing ticket {ticket_id} from slack {slack_chat_url}.'
                 )
                 close_ticket(zendesk_client, ticket_id)
+                ZenSlackChat.resolve(channel_id, thread_id)
                 post_message(
                     slack_client, thread_id, channel_id, 
                     f'🤖 Understood. Ticket {url} has been closed.'
