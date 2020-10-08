@@ -212,7 +212,7 @@ class ZenSlackChat(models.Model):
             returned['open'].append(slack_api.message_url(
                 workspace_uri,
                 issue.channel_id, 
-                issue.ticket_id, 
+                issue.chat_id, 
             ))
 
         returned['closed'] = cls.objects.filter(

@@ -91,7 +91,7 @@ def test_daily_summary_data(log, db):
 
     # oldest issue first
     assert report['open'][0] == (
-        'https://s.l.a.c.k/some_channel_id/pzendesk-ticket-4'
+        'https://s.l.a.c.k/some_channel_id/pslack-chat-4'
     )
 
     # Only the 2 closed issues on 1 Jan:
