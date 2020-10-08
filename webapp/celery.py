@@ -6,16 +6,22 @@ from celery.schedules import crontab
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webapp.settings')
 
+from zenslackchat import botlogging
+botlogging.log_setup()
+
 app = Celery('django-zenslackchat')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 app.conf.timezone = 'Europe/London'
+# Allow me to configure my own logging and not use celery's way of doing it.
+app.conf.worker_hijack_root_logger = False
 
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     """Set up the daily report.
     """
+    
     # Executes every Monday morning at 7:30 a.m.
     sender.add_periodic_task(
         # 07:30 monday -> friday

@@ -8,6 +8,7 @@ psycopg2-binary
 dj-database-url
 requests
 celery[redis]
+django_log_formatter_ecs
 django
 djangorestframework
 whitenoise

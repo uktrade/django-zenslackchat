@@ -214,3 +214,6 @@ accept_content = ['application/json']
 task_serializer = 'json'
 result_serializer = 'json'
 task_always_eager = False
+
+
+DLFE_APP_NAME = 'ZenSlackChat'

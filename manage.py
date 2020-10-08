@@ -3,6 +3,11 @@
 import os
 import sys
 
+from zenslackchat import botlogging
+
+
+botlogging.log_setup()
+
 
 def main():
     """Run administrative tasks."""
