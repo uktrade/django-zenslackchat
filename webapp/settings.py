@@ -12,8 +12,15 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 import sys
 import json
+import logging
 import binascii
 from pathlib import Path
+
+
+import sentry_sdk
+import dj_database_url
+from sentry_sdk.integrations.django import DjangoIntegration
+
 
 from zenslackchat import botlogging
 
@@ -102,7 +109,6 @@ PAAS_FQDN = os.environ.get("PAAS_FQDN", "").strip()
 if PAAS_FQDN:
     ALLOWED_HOSTS.insert(0, PAAS_FQDN)
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -150,9 +156,6 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
-import dj_database_url
-
 DATABASES = {}
 DATABASES['default'] =  dj_database_url.config()
 
@@ -191,12 +194,10 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
-
 
 # Redis & Celery
 if 'redis' in VCAP_SERVICES:
@@ -215,5 +216,12 @@ task_serializer = 'json'
 result_serializer = 'json'
 task_always_eager = False
 
-
+# Set the name for the app in logging:
 DLFE_APP_NAME = 'ZenSlackChat'
+
+# Sentry set up:
+SENTRY_DSN = os.environ.get("SENTRY_DSN", None)
+if SENTRY_DSN:
+    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[DjangoIntegration()])
+else:
+    logging.getLogger(__name__).info("SENTRY_DSN not set. Sentry is diabled.")

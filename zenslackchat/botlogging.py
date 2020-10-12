@@ -9,10 +9,7 @@ config = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'django.server': {
-            "()": ECSFormatter,
-        },
-        "ecs_formatter": {
+        "ecs": {
             "()": ECSFormatter,
         },
         'standard': {
@@ -21,24 +18,12 @@ config = {
         },
     },
     'handlers': {
-        'django.server': {
-            'level': 'NOTSET',
-            'formatter': 'ecs_formatter',
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout'
-        },
         'default': {
             'level': 'NOTSET',
-            'formatter': 'ecs_formatter',
+            'formatter': 'ecs',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout'
         },
-        'celery': {
-            'level': 'NOTSET',
-            'formatter': 'ecs_formatter',
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout'
-        }
     },
     'loggers': {
         '': {
@@ -46,9 +31,9 @@ config = {
             'level': 'INFO',
             'propagate': True
         },
-        'django.server': {
+        'django': {
             'handlers': ['default'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': False
         },
         'zenslackchat': {
