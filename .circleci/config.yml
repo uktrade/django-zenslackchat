@@ -4,13 +4,11 @@ jobs:
         docker:
             - image: python:3.8      
             - image: redis:5
-            - image: postgres:9.6
+            - image: postgres:9.5
               environment:
-                POSTGRES_DB: service
-                POSTGRES_USERNAME: service
                 POSTGRES_PASSWORD: service
-                POSTGRES_HOST_AUTH_METHOD: trust
-      
+                POSTGRES_USER: service
+                
         environment:
             REDIS_URL: redis://localhost/
             DATABASE_URL: postgresql://service:service@localhost:5432/service
