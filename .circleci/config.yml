@@ -27,7 +27,7 @@ jobs:
             - restore_cache:
                 name: Restore pip cache
                 keys:
-                  - v1-zenslackchat-{{ checksum "requirements-dev.txt" }}
+                  - v1-zenslackchat-{{ checksum "requirements-test.txt" }}
                   - v1-zenslackchat-
                 paths:
                   - ~/cache/pip
@@ -38,7 +38,7 @@ jobs:
       
             - save_cache:
                 name: Save pip cache
-                key: v1-zenslackchat-{{ checksum "requirements-dev.txt" }}
+                key: v1-zenslackchat-{{ checksum "requirements-test.txt" }}
                 paths:
                   - ~/cache/pip
       
