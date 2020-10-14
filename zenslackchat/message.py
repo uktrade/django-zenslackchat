@@ -33,9 +33,15 @@ from zenslackchat.zendesk_api import create_ticket
 from zenslackchat.zendesk_api import zendesk_ticket_url
 
 
+# See https://api.slack.com/events/message for subtypes.
 IGNORED_SUBTYPES = [
-    'channel_join', 'bot_message', 'channel_rename', 'message_changed', 
-    'message_deleted'    
+    "bot_message", "channel_archive", "channel_join", "channel_leave", 
+    "channel_name", "channel_purpose", "channel_topic", "channel_unarchive", 
+    "ekm_access_denied", "file_comment", "file_mention", "file_share", 
+    "group_archive", "group_join", "group_leave", "group_name", 
+    "group_purpose", "group_topic", "group_unarchive", "me_message", 
+    "message_changed", "message_deleted", "message_replied", "pinned_item", 
+    "thread_broadcast", "unpinned_item", "channel_rename"
 ]
 
 
@@ -84,15 +90,11 @@ def handler(
     else:
         log.debug(f"New message on support channel<{channel_id}>: {text}")
 
-    # I'm ignoring all bot messages. I can manage the message / message-reply 
-    # based on the ts/thread_ts fields and whether they are populated or not. 
-    # I'm calling 'ts' chat_id and 'thread_ts' thread_id.
+    # I'm ignoring most subtypes, I might be able to ignore all. I can manage 
+    # the message / message-reply based on the ts/thread_ts fields and whether 
+    # they are populated or not. I'm calling 'ts' chat_id and 'thread_ts' thread_id.
     subtype = event.get('subtype')
-    if subtype == 'bot_message' or 'bot_id' in event:
-        log.debug(f"Ignoring bot message: {text}")
-        return False
-
-    elif subtype in IGNORED_SUBTYPES:
+    if subtype in IGNORED_SUBTYPES:
         log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
 

@@ -9,10 +9,10 @@ config = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        "ecs": {
+        "ecs1": {
             "()": ECSFormatter,
         },
-        'standard': {
+        'ecs': {
             'format':
                 '%(asctime)s %(name)s.%(funcName)s %(levelname)s %(message)s'
         },

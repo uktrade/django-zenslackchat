@@ -5,6 +5,7 @@ import pytest
 
 from zenslackchat.message import handler
 from zenslackchat.models import ZenSlackChat
+from zenslackchat.message import IGNORED_SUBTYPES
 
 
 class FakeTicket(object):
@@ -592,10 +593,7 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
 
 @pytest.mark.parametrize(
     'ignored_subtype',
-    [
-        'channel_join', 'bot_message', 'channel_rename', 'message_changed', 
-        'message_deleted',
-    ]
+    IGNORED_SUBTYPES
 )
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
