@@ -8,6 +8,16 @@
 </head>
 <body>
   <div class="container-fluid">
+  {% if messages %}
+    {% for message in messages %}
+    <div class="row">
+      <div class="col-sm-12">
+        <span class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">{{ message }}</span>
+      </div>
+    </div>        
+    {% endfor %}
+  {% endif %} 
+     
   {% block content %}{% endblock %}
   </div>
 </body>

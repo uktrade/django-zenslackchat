@@ -7,11 +7,15 @@ from django.conf import settings
 from django.template import loader
 from django.http import HttpResponse
 from rest_framework import status
+from django.contrib import messages
+from django.shortcuts import redirect
 from rest_framework.response import Response
 from django.contrib.auth.decorators import login_required
 
+from webapp.celery import run_daily_summary
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
+
 
 
 def slack_oauth(request):
@@ -96,6 +100,26 @@ def zendesk_oauth(request):
     return HttpResponse('ZendeskApp Added OK')
 
 
+@login_required
+def trigger_daily_report(request):
+    """Helper to trigger the daily report to aid in testing it works.
+
+    Otherwise you would need to connect into the running instance and do it
+    from the django shell.
+
+    """
+    log = logging.getLogger(__name__)
+
+    log.info("Scheduling the daily report to run now...")
+    run_daily_summary.delay()
+
+    msg = "Daily report scheduled."
+    log.info(msg)
+    messages.success(request, msg)
+
+    return redirect('/')
+
+    
 @login_required
 def index(request):
     """A page Pingdom can log-in to test site uptime and DB readiness.

@@ -22,4 +22,10 @@ urlpatterns = [
         zendesk_webhook_view.WebHook.as_view(), 
         name='slack_events'
     ),
+
+    path(
+        'trigger/report/daily', 
+        views.trigger_daily_report, 
+        name='daily_report'
+    ),
 ]
