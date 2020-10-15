@@ -285,12 +285,19 @@ When running via the make file this is set automatically.
 DEBUG_ENABLED
 ~~~~~~~~~~~~~
 
+**Warning**: Do not set this in a live environment. The system will log full 
+Slack message events and other information, which may contain sensitive 
+information.
+
 By default DEBUG is disabled in Django settings. To enable DEBUG mode for 
 development purposes set the variables as follows::
 
    export DEBUG_ENABLED=1
 
 When running via the make file this is set automatically.
+
+I have made this extra step of not allowing you to set DEBUG directly from the
+environment, to slow you down and think before you set this.
 
 
 Development
@@ -303,7 +310,10 @@ to install what I need. Your mileage may vary.
 To set up the code for development you can do::
 
    mkvirtualenv --clear -p python3 zenslackchat
-   make install
+   make test_install
+
+There is a ``make install``. This only installs the apps dependancies and not 
+those needed for testing.
 
 To run the service locally in the dev environment do::
 
