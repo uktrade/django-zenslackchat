@@ -1,11 +1,6 @@
 Zenslackchat 
 ============
 
-A bot which synchronises support requests from Slack to Zendesk and back.
-
-Overview
---------
-
 .. image:: docs/zenslackchat-overview.png
     :align: center
 
@@ -23,6 +18,57 @@ The bot is a Django web application. It uses Celery and Redis to schedule the pe
 
 
 .. contents::
+
+
+Development
+-----------
+
+I'm using make, docker-compose, python3 and virtualenvwrappers to develop the 
+project locally. I currently work of Mac OSX for development and use Homebrew 
+to install what I need. Your mileage may vary.
+
+To set up the code for development you can do::
+
+   mkvirtualenv --clear -p python3 zenslackchat
+   make test_install
+
+There is a ``make install``. This only installs the apps dependancies and not 
+those needed for testing.
+
+To run the service locally in the dev environment do::
+
+   # activate the env
+   workon zenslackchat
+
+   # run dependant services via docker compose (in its own terminal)
+   make up
+
+   # run the periodic task manager (in its own terminal)
+   make runbeat
+
+   # run the periodic task manager (in its own terminal)
+   make runworker
+
+   # run the webapp (in its own terminal)
+   make runserver
+
+Using the Makefile to run the webapp/worker/beat is only meant for local 
+development. It is not for live environment use (staging/production/...)
+
+
+Testing
+~~~~~~~
+
+You can run the tests as follows::
+
+   # activate the env
+   workon zenslackchat
+
+   # run dependant services via docker compose (in its own terminal)
+   make up
+
+   # Run all tests and output a coverage report
+   make test
 
 
 Zendesk Set-up
@@ -299,57 +345,6 @@ When running via the make file this is set automatically.
 
 I have made this extra step of not allowing you to set DEBUG directly from the
 environment, to slow you down and think before you set this.
-
-
-Development
------------
-
-I'm using make, docker-compose, python3 and virtualenvwrappers to develop the 
-project locally. I currently work of Mac OSX for development and use Homebrew 
-to install what I need. Your mileage may vary.
-
-To set up the code for development you can do::
-
-   mkvirtualenv --clear -p python3 zenslackchat
-   make test_install
-
-There is a ``make install``. This only installs the apps dependancies and not 
-those needed for testing.
-
-To run the service locally in the dev environment do::
-
-   # activate the env
-   workon zenslackchat
-
-   # run dependant services via docker compose (in its own terminal)
-   make up
-
-   # run the periodic task manager (in its own terminal)
-   make run_beat
-
-   # run the periodic task manager (in its own terminal)
-   make run_worker
-
-   # run the webapp
-   make runserver
-
-Using the Makefile to run the webapp/worker/beat is only meant for local 
-development. It is not for live environment use (staging/production/...)
-
-
-Testing
-~~~~~~~
-
-You can run the tests as follows::
-
-   # activate the env
-   workon zenslackchat
-
-   # run dependant services via docker compose (in its own terminal)
-   make up
-
-   # Run all tests and output a coverage report
-   make test
 
 
 .. |ss| raw:: html

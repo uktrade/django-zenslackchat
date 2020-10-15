@@ -3,8 +3,8 @@ export NAMESPACE=zenslackchat
 # default set up to run with docker compose managed services:
 export DATABASE_URL?=postgresql://service:service@localhost:5432/service
 export REDIS_URL?=redis://localhost/
-export DEBUG_ENABLED=1
-export DISABLE_ECS_LOG_FORMAT=1
+export DEBUG_ENABLED?=1
+export DISABLE_ECS_LOG_FORMAT?=1
 
 .DEFAULT_GOAL := all
 
@@ -30,10 +30,10 @@ collect:
 runserver: collect
 	python manage.py runserver
 
-run_beat:
+runbeat:
 	celery -A webapp beat -l DEBUG
 
-run_worker:
+runworker:
 	celery -A webapp worker -l DEBUG
 
 migrate:
