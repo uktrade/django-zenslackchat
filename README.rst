@@ -68,16 +68,21 @@ need to create a trigger and then do the following set up:
 - Trigger name: ticket-comment
 - Description: Trigger which will post comments to Zenslackchat for consideration.
 - Meet ALL of the following conditions
+
    - Group is ZenSlackChat 
+
 - Meet any condition: 
+
    - "comment text"
    - "Does not contain the following string"
    - "resolve request"
+
 - Actions
+
    - Notifiy target
    - Select the trigger created earlier
    - Set the JSON body set up::
-   
+
    {
       "external_id": "{{ticket.external_id}}",
       "ticket_id": "{{ticket.id}}"
@@ -122,20 +127,24 @@ Now I need from the App Credentials
 - Verification Token
 
 Display Information
-App Name: zenslackchat
+
+- App Name: zenslackchat
 
 OAuth & Permissions
 
-Tokens for Worksapce
-- OAuth Access Token
-- Bot User OAuth Access Token
+- Tokens for Worksapce
 
-Redirect URLs
-- https://<location of running endpoint>/slack/oauth/
+  - OAuth Access Token
+  - Bot User OAuth Access Token
+
+- Redirect URLs
+
+  - ``https://<location of running endpoint>/slack/oauth/``
 
 Scopes
 
 Bot Token Scopes: 
+
 - channels:history
 - groups:history
 - chat:write
@@ -143,20 +152,22 @@ Bot Token Scopes:
 - users:read.email
 
 User Token Scopes
+
 - channels:history
 
 Install the app into workspace after set up the Scopes
+
 - Accept the permissions
 - Get the Bot user access token.
 
 Event Subscriptions
+
 - Enable Events: on
-- Request URL: https://<location of running endpoint>/slack/events/
+- Request URL: ``https://<location of running endpoint>/slack/events/``
 
 
 Environment Variables
 ---------------------
-
 
 WEBAPP_SECRET_KEY
 ~~~~~~~~~~~~~~~~~
