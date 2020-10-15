@@ -3,8 +3,6 @@ Zenslackchat
 
 A bot which synchronises support requests from Slack to Zendesk and back.
 
-.. contents::
-
 Overview
 --------
 
@@ -22,6 +20,9 @@ To use the Zendesk API the bot must be registered as a OAuth application. Zendes
 The bot manages the issues raised using its own Postgres database. This allows for easy tracking and later reporting.
 
 The bot is a Django web application. It uses Celery and Redis to schedule the periodic report.
+
+
+.. contents::
 
 
 Zendesk Set-up
