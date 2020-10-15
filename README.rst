@@ -11,38 +11,21 @@ Overview
 .. image:: docs/zenslackchat-overview.png
     :align: center
 
-The support team work through Slack. Zendesk is the company support issue 
-tracking system. This bot will put new support issues raised on Slack into 
-Zendesk. It will also update the conversation in Zendesk as it develops on 
-Slack. If any comments are made on the issue in Zendesk these will also be sent 
-to the support message thread on Slack. The idea is to pull in support requests 
-from other platforms such as Microsoft Teams and the support Email in future.
+The support team work through Slack. Zendesk is the company support issue tracking system. This bot will put new support issues raised on Slack into Zendesk. It will also update the conversation in Zendesk as it develops on Slack. If any comments are made on the issue in Zendesk these will also be sent to the support message thread on Slack. The idea is to pull in support requests from other platforms such as Microsoft Teams and the support Email in future.
 
-The bot reports daily on the total amount of open issues and the total closed 
-issues. The closed issue count represents only issues close in the previous day.
-The previous day is worked out from the current day in which the report is run.
-Current the bot posts the daily report on the support channel is monitors.
+The bot reports daily on the total amount of open issues and the total closed issues. The closed issue count represents only issues close in the previous day. The previous day is worked out from the current day in which the report is run. Current the bot posts the daily report on the support channel is monitors.
 
-The bot needs to be installed as a Slack application using OAuth. The bot also
-needs to be told the channel it must monitor for support request messages.
+The bot needs to be installed as a Slack application using OAuth. The bot also needs to be told the channel it must monitor for support request messages.
 
-To use the Zendesk API the bot must be registered as a OAuth application. Zendesk 
-has extra set up around what comments get sent to Slack. Zendesk is set up to 
-only notify the bot of comments from issue belonging to a certain support group. 
-This prevents all Zendesk comments being sent to the bot.
+To use the Zendesk API the bot must be registered as a OAuth application. Zendesk has extra set up around what comments get sent to Slack. Zendesk is set up to only notify the bot of comments from issue belonging to a certain support group. This prevents all Zendesk comments being sent to the bot.
 
-The bot stores manages the issues using its own Postgres database. This allows 
-for easy tracking and later reporting.
+The bot stores manages the issues using its own Postgres database. This allows for easy tracking and later reporting.
 
-The bot is a Django web application. It uses Celery and Redis to schedule the 
-periodic report.
+The bot is a Django web application. It uses Celery and Redis to schedule the periodic report.
 
 
-Configuration
--------------
-
-Zendesk
-~~~~~~~
+Zendesk Set-up
+--------------
 
 Zendesk OAuth:
 - https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
@@ -57,7 +40,7 @@ Useful Reference docs:
 This is the raw set up you need to enable comment shipping to slack from Zendesk. 
 
 HTTP Target
-```````````
+~~~~~~~~~~~
 
 You need to create a HTTP target which can then be used in the trigger set up. 
 From https://<your zendesk>.zendesk.com/agent/admin/extensions you click 
@@ -75,7 +58,7 @@ found in the Zendesk:
 
 
 Comment Trigger
-```````````````
+~~~~~~~~~~~~~~~
 
 You will need to create the ZenSlackChat group if its not present already. You 
 need to create a trigger and then do the following set up:
@@ -103,22 +86,22 @@ just me.
 
 
 Webhook
-```````
+~~~~~~~
 
 The webhook code is integrated into the Django webapp. Running locally its
 found on "http://localhost:8000/zendesk/webhook/"
 
 
 OAuth
-`````
+~~~~~
 
 You need a paid Ngrok.io account to tunnel locally, as Zendesk requires a HTTPS
 endpoint for the OAuth process. Locally the this runs on 
 "http://localhost:8000/zendesk/oauth/"
 
 
-Slack
-~~~~~
+Slack Set-up
+------------
 
 You need to create a Slack application in your workspace. Go to https://api.slack.com/apps 
 and create a slack app.
@@ -169,42 +152,41 @@ Event Subscriptions
 
 
 Environment Variables
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
+
 
 WEBAPP_SECRET_KEY
-`````````````````
+~~~~~~~~~~~~~~~~~
 
 If not given this is randomly generated each time. Changing this forces everyone 
 to login again. 
 
+
 DATABASE_URL
-````````````
+~~~~~~~~~~~~
 
 This is set automatically by the PaaS environment when the running service is
 linked to a Postgres instance. 
 
-For local development the Makefile sets this to::
+For local development the Makefile sets this to ``postgresql://service:service@localhost:5432/service``
 
-   postgresql://service:service@localhost:5432/service
 
 REDIS_URL
-`````````
+~~~~~~~~~
 
 This is set automatically by the PaaS environment when the running service is
-linked to a Redis instance. 
+linked to a Redis instance. For local development the Makefile sets this to ``redis://localhost/``
 
-For local development the Makefile sets this to::
-
-   redis://localhost/
 
 PAAS_FQDN
-`````````
+~~~~~~~~~
 
 The fully qualified domain name of where the service is running. This is added
 to the ALLOWED_HOSTS list.
 
+
 Zendesk OAuth
-`````````````
+~~~~~~~~~~~~~
 
 For Zendesk OAuth you need to set the follow::
 
@@ -212,34 +194,39 @@ For Zendesk OAuth you need to set the follow::
    export ZENDESK_CLIENT_SECRET=<oauth secret>
    export ZENDESK_REDIRECT_URI=https://..host../zendesk/oauth/
 
+
 ZENDESK_SUBDOMAIN
-`````````````````
+~~~~~~~~~~~~~~~~~
 
 This is used by the code when setting up the API it uses. This is the name of 
-the sub-domain from the zendesk URL i.e. in the URL https://<support_site>.zendesk.com 
+the sub-domain from the zendesk URL i.e. in the URL ``https://<support_site>.zendesk.com``
 the support_site is the sub domain. 
 
+
 ZENDESK_TICKET_URI
-``````````````````
+~~~~~~~~~~~~~~~~~~
 
 This is used as the base URL when generating links directly to Zendesk issues.
 It takes the form ``https://<support site>.zendesk.com/agent/tickets``
 
+
 ZENDESK_USER_ID
-```````````````
+~~~~~~~~~~~~~~~
 
 Who tickets are assigned to when the bot creates them. This is the numeric 
 Zendesk ID for a user it will look something like ``375202855898``.
 
+
 ZENDESK_GROUP_ID
-````````````````
+~~~~~~~~~~~~~~~~
 
 Which group tickets belong to. This is used when deciding what tickets the bot 
 should handle. This is the numeric Zendesk ID for the group it will look 
 something like ``360003877797``.
 
+
 Slack OAuth
-```````````
+~~~~~~~~~~~
 
 You need to set the follow environment variable::
    
@@ -248,15 +235,17 @@ You need to set the follow environment variable::
    SLACK_SIGN_SECRET=<slack app sign secret>
    SLACK_VERIFICATION_TOKEN=<slack app verification token>
 
+
 SLACK_WORKSPACE_URI
-```````````````````
+~~~~~~~~~~~~~~~~~~~
 
 This is used as the base URL when generating links to created conversations on 
 slack. The first comment on the newly created Zendesk issue will be a link back
 to the conversation on Slack. The base URL look like ``https://<workspace>.slack.com/archives``
 
+
 SRE_SUPPORT_CHANNEL
-```````````````````
+~~~~~~~~~~~~~~~~~~~
 
 This is the slack channel ID which the bot will monitor for support request 
 messages. Recovering this ID is not user friendly. It is a string that looks 
@@ -270,7 +259,7 @@ Development Environment Variables
 ---------------------------------
 
 DISABLE_ECS_LOG_FORMAT
-``````````````````````
+~~~~~~~~~~~~~~~~~~~~~~
 
 By default JSON logging is used which is not user friendly when developing. To
 logged a more user friendly format set the variables as follows::
@@ -280,7 +269,7 @@ logged a more user friendly format set the variables as follows::
 When running via the make file this is set automatically.
 
 DEBUG_ENABLED
-`````````````
+~~~~~~~~~~~~~
 
 By default DEBUG is disabled in Django settings. To enable DEBUG mode for 
 development purposes set the variables as follows::
