@@ -13,13 +13,13 @@ Overview
 
 The support team work through Slack. Zendesk is the company support issue tracking system. This bot will put new support issues raised on Slack into Zendesk. It will also update the conversation in Zendesk as it develops on Slack. If any comments are made on the issue in Zendesk these will also be sent to the support message thread on Slack. The idea is to pull in support requests from other platforms such as Microsoft Teams and the support Email in future.
 
-The bot reports daily on the total amount of open issues and the total closed issues. The closed issue count represents only issues close in the previous day. The previous day is worked out from the current day in which the report is run. Current the bot posts the daily report on the support channel is monitors.
+The bot reports daily on the total amount of open issues and the total closed issues. The closed issue count represents only issues closed in the previous day. The previous day is worked out from the current day in which the report is run. Currently the bot posts the daily report on the support channel is monitors.
 
 The bot needs to be installed as a Slack application using OAuth. The bot also needs to be told the channel it must monitor for support request messages.
 
 To use the Zendesk API the bot must be registered as a OAuth application. Zendesk has extra set up around what comments get sent to Slack. Zendesk is set up to only notify the bot of comments from issue belonging to a certain support group. This prevents all Zendesk comments being sent to the bot.
 
-The bot stores manages the issues using its own Postgres database. This allows for easy tracking and later reporting.
+The bot manages the issues raised using its own Postgres database. This allows for easy tracking and later reporting.
 
 The bot is a Django web application. It uses Celery and Redis to schedule the periodic report.
 
@@ -28,6 +28,7 @@ Zendesk Set-up
 --------------
 
 Zendesk OAuth:
+
 - https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
 
 Useful Reference docs:
@@ -43,7 +44,7 @@ HTTP Target
 ~~~~~~~~~~~
 
 You need to create a HTTP target which can then be used in the trigger set up. 
-From https://<your zendesk>.zendesk.com/agent/admin/extensions you click 
+From ``https://<your zendesk>.zendesk.com/agent/admin/extensions`` you click 
 "add target" and then set:
 
 - Title: zenslackchat zendesk comment notification
@@ -54,6 +55,7 @@ You can test the target if you have set up the end point in advance. Otherwise
 just select "Create Target" in the drop down. and move on to creating the 
 trigger for this HTTP target. More detail on how to set up a webhook can be
 found in the Zendesk:
+
 - https://support.zendesk.com/hc/en-us/articles/204890268-Creating-webhooks-with-the-HTTP-target
 
 
@@ -66,15 +68,16 @@ need to create a trigger and then do the following set up:
 - Trigger name: ticket-comment
 - Description: Trigger which will post comments to Zenslackchat for consideration.
 - Meet ALL of the following conditions
-  - Group is ZenSlackChat 
+   - Group is ZenSlackChat 
 - Meet any condition: 
-  - "comment text"
-  - "Does not contain the following string"
-  - "resolve request"
+   - "comment text"
+   - "Does not contain the following string"
+   - "resolve request"
 - Actions
-  - Notifiy target
-  - Select the trigger created earlier
-  - Set the JSON body set up::
+   - Notifiy target
+   - Select the trigger created earlier
+   - Set the JSON body set up::
+   
    {
       "external_id": "{{ticket.external_id}}",
       "ticket_id": "{{ticket.id}}"
