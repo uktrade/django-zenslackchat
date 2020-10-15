@@ -1,87 +1,48 @@
 Zenslackchat 
 ============
 
+A bot which synchronises support requests from Slack to Zendesk and back.
+
 .. contents::
 
-Helpdesk support using a slack chat bot and integration into zendesk.
+Overview
+--------
 
-I'm going to use GOV.UK PaaS for this so will need to look at buildpacks and
-cloud foundry to aid me with this.
+.. image:: docs/zenslackchat-overview.png
+    :align: center
 
-- https://docs.cloud.service.gov.uk/deploying_apps.html#deploying-apps
+The support team work through Slack. Zendesk is the company support issue 
+tracking system. This bot will put new support issues raised on Slack into 
+Zendesk. It will also update the conversation in Zendesk as it develops on 
+Slack. If any comments are made on the issue in Zendesk these will also be sent 
+to the support message thread on Slack. The idea is to pull in support requests 
+from other platforms such as Microsoft Teams and the support Email in future.
 
-I'm using make, docker-compose, python3 and virtualenvwrappers to develop the 
-project locally. I currently work of Mac OSX for development and use Homebrew 
-to install what I need. Your mileage may vary.
+The bot reports daily on the total amount of open issues and the total closed 
+issues. The closed issue count represents only issues close in the previous day.
+The previous day is worked out from the current day in which the report is run.
+Current the bot posts the daily report on the support channel is monitors.
+
+The bot needs to be installed as a Slack application using OAuth. The bot also
+needs to be told the channel it must monitor for support request messages.
+
+To use the Zendesk API the bot must be registered as a OAuth application. Zendesk 
+has extra set up around what comments get sent to Slack. Zendesk is set up to 
+only notify the bot of comments from issue belonging to a certain support group. 
+This prevents all Zendesk comments being sent to the bot.
+
+The bot stores manages the issues using its own Postgres database. This allows 
+for easy tracking and later reporting.
+
+The bot is a Django web application. It uses Celery and Redis to schedule the 
+periodic report.
 
 
-Spike Investigation
--------------------
-
-I've converted to a Django project as I needed proper storage. Zendesk 
-external_id hack wasn't working. The advantage of going Django is I can have
-a single app now which subscribes to events and handles Slack and Zendesk 
-OAuth.
-
-Scenario / chat with Matt / Things to work out on SRE-725:
-
-- user types in question on the slack channel (without /<command> ideally).
-   - OM: I'm using slack client and subscribing to message events. I get *all* 
-     the messages including my own. I then have control over how to react, 
-     although its a bit tricky.
-- Bot instantly replies in a thread that this got assigned a ticket ID X. Ticket is stored in Zendesk
-   - OM: I've got this working as requireds.
-- Ticket in zendesk filled in with end user email so that user gets updated on the progress. 
-   - OM: I recover the slack message author's email. I then add this as the recipient when creating the ticket. I'll need to see how this works in the field.
-- Record URL to the conversation on slack
-   - OM: |ss| Your can add URL to slack thread as a custom field on zendesk. |se|
-      - I can add a custom field. Then you need to find its unique ID. To set it you then user the custom_fields: [{'id': <id>, 'value': '...'}]. This is a bit unweildy.
-      - When you set this in the code, it does populate the text box with the link however it is not clickable. I didn't see a HTML link option as a field.
-   - OM: A better approach (in my view) I've added the link as the first ticket_comment. This is clickable and opens slack to reveal the message thread.
-- SRE on call follows up with the conversation on slack
-- Bot replicates the conversation into zendesk ticket
-   - OM: I'll need to look into webhooks at least for the zendesk to slack replication. So new comments in zendesk trigger the bot to put them in the slack chat.
-- SRE on call closes the ticket by typing “done” or similar within the thread
-   - OM: This works now, it could be any string. Maybe done is too vague. Should anyone be able to type "done" to close the issue?
-- Can we avoid /<command> actions?
-  - OM: yes there is not need for these.
-- Ticket assigned to every thread.
-  - Webops metrics time open/cycle time.
-     - OM: Zendesk does have metrics, have to investigate.
-     - OM: Bot could reply with stats in response to query.
-     - OM: Now I also have opened/closed datetimes on issues in my DB. So you 
-       could generate reports for this.
-  - Primary/Secondary people on support added to ticket.
-     - If you had a way to query some API for who is "on call", this could be 
-       added automatically as Ticket assignees.
-
-Todo
-~~~~
-
-Zendesk / Slack investigation.
- - [X] |ss| Get access credentials for API access to a Zendesk |se|
- - [X] |ss| Choose a python Zendesk |se| 
- - [x] |ss| Create a zendesk ticket and investigate structure |se| 
- - [x] |ss| Slackbot reading |se|
- - [x] |ss| Skeletal slackbot and slack integration |se|
- - [X] |ss| Can bot respond to a user without using a slack command? |se|
- - [X] |ss| Can bot respond in a thread? |se|
- - [X] |ss| link from slack to zendesk in the thread |se|
- - [X] |ss| link from zendesk UI to the slack message |se|
- - [X] |ss| Close the issue on slack by saying 'done' in the thread |se|
- - [X] |ss| Ship conversation messages from slack to zendesk |se|
- - [X] |ss| Ship messages from zendesk to slack |se|
- 
+Configuration
+-------------
 
 Zendesk
 ~~~~~~~
-
-For Zendesk integration you need to enable and generate a token (not oauth):
- - https://support.zendesk.com/hc/en-us/articles/226022787-Generating-a-new-API-token-
-
-The token approach is functional, however its permissons are too broad using 
-this method. To get off the ground its fine, but we'll need to move to OAuth
-in production. I'll move to this as I'm done this for Slack.
 
 Zendesk OAuth:
 - https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
@@ -93,9 +54,7 @@ Useful Reference docs:
 - Zenpy: http://docs.facetoe.com.au/api_objects.html
 - http://docs.facetoe.com.au/zenpy.html
 
-
-This is the raw set up you need to enable comment shipping to slack from 
-Zendesk. 
+This is the raw set up you need to enable comment shipping to slack from Zendesk. 
 
 HTTP Target
 ```````````
@@ -107,9 +66,6 @@ From https://<your zendesk>.zendesk.com/agent/admin/extensions you click
 - Title: zenslackchat zendesk comment notification
 - URL: <Ngrok.io URI or Production URI>/zendesk/webhook
 - Method: POST
-- Check basic auth
-  - username: webhook_access
-  - password: <shared with webapp>
 
 You can test the target if you have set up the end point in advance. Otherwise
 just select "Create Target" in the drop down. and move on to creating the 
@@ -164,14 +120,8 @@ endpoint for the OAuth process. Locally the this runs on
 Slack
 ~~~~~
 
-I've ditched the standalone bot and favour of using Django and subscribing a
-specific view to receive events. Django+Rest Framework projects are quite 
-common here so others can easily work on this project too.
-
-You need to create a Slack app
-``````````````````````````````
-
-Go to https://api.slack.com/apps and create a slack app.
+You need to create a Slack application in your workspace. Go to https://api.slack.com/apps 
+and create a slack app.
 
 New App:
 
@@ -218,75 +168,174 @@ Event Subscriptions
 - Request URL: https://<location of running endpoint>/slack/events/
 
 
-django-zenslackchat
--------------------
+Environment Variables
+~~~~~~~~~~~~~~~~~~~~~
 
-To run the webapp locally::
+WEBAPP_SECRET_KEY
+`````````````````
 
-    workon zenslackchat
+If not given this is randomly generated each time. Changing this forces everyone 
+to login again. 
 
-   # Needed in production. If not given this is randomly generated each time.
-   # Changing this forces everyone to login again.
-   export WEBAPP_SECRET_KEY=<some key>
+DATABASE_URL
+````````````
 
-   # Local dev DB access. This is set in Production automatically:
-   export DATABASE_URL=postgresql://service:service@localhost:5432/service
+This is set automatically by the PaaS environment when the running service is
+linked to a Postgres instance. 
 
-   # Hostname of where its running (added to allowed hosts):
-   export PAAS_FQDN=<some.host.com>
+For local development the Makefile sets this to::
 
-   # zendesk
+   postgresql://service:service@localhost:5432/service
+
+REDIS_URL
+`````````
+
+This is set automatically by the PaaS environment when the running service is
+linked to a Redis instance. 
+
+For local development the Makefile sets this to::
+
+   redis://localhost/
+
+PAAS_FQDN
+`````````
+
+The fully qualified domain name of where the service is running. This is added
+to the ALLOWED_HOSTS list.
+
+Zendesk OAuth
+`````````````
+
+For Zendesk OAuth you need to set the follow::
+
    export ZENDESK_CLIENT_IDENTIFIER=<oauth identifier>
    export ZENDESK_CLIENT_SECRET=<oauth secret>
    export ZENDESK_REDIRECT_URI=https://..host../zendesk/oauth/
-   export ZENDESK_SUBDOMAIN=<support site subdomain>
-   export ZENDESK_TICKET_URI=https://<support site>.zendesk.com/agent/tickets
-   # Who tickets are assigned to
-   export ZENDESK_USER_ID=375202855898
-   # Which group tickets belong to. (Used when filter what gets sent to bot)
-   export ZENDESK_GROUP_ID=360003877797
 
-   # slack
-   export SLACK_CLIENT_ID=<slack app oauth client id>
-   export SLACK_CLIENT_SECRET=<slack app oauth client secret>
-   export SLACK_SIGN_SECRET=<slack app sign secret>
-   export SLACK_VERIFICATION_TOKEN=<slack app verification token>
-   export SLACK_WORKSPACE_URI=https://<workspace>.slack.com/archives
+ZENDESK_SUBDOMAIN
+`````````````````
 
-   # The channel to monitor for support requests:
-   export SRE_SUPPORT_CHANNEL=<Slack Channel ID to use>
+This is used by the code when setting up the API it uses. This is the name of 
+the sub-domain from the zendesk URL i.e. in the URL https://<support_site>.zendesk.com 
+the support_site is the sub domain. 
 
-   # Run the bot (Python3)
-   python manage.py runserver
+ZENDESK_TICKET_URI
+``````````````````
+
+This is used as the base URL when generating links directly to Zendesk issues.
+It takes the form ``https://<support site>.zendesk.com/agent/tickets``
+
+ZENDESK_USER_ID
+```````````````
+
+Who tickets are assigned to when the bot creates them. This is the numeric 
+Zendesk ID for a user it will look something like ``375202855898``.
+
+ZENDESK_GROUP_ID
+````````````````
+
+Which group tickets belong to. This is used when deciding what tickets the bot 
+should handle. This is the numeric Zendesk ID for the group it will look 
+something like ``360003877797``.
+
+Slack OAuth
+```````````
+
+You need to set the follow environment variable::
+   
+   SLACK_CLIENT_ID=<slack app oauth client id>
+   SLACK_CLIENT_SECRET=<slack app oauth client secret>
+   SLACK_SIGN_SECRET=<slack app sign secret>
+   SLACK_VERIFICATION_TOKEN=<slack app verification token>
+
+SLACK_WORKSPACE_URI
+```````````````````
+
+This is used as the base URL when generating links to created conversations on 
+slack. The first comment on the newly created Zendesk issue will be a link back
+to the conversation on Slack. The base URL look like ``https://<workspace>.slack.com/archives``
+
+SRE_SUPPORT_CHANNEL
+```````````````````
+
+This is the slack channel ID which the bot will monitor for support request 
+messages. Recovering this ID is not user friendly. It is a string that looks 
+like ``C0192NP3TFG``.
+
+The bot has the potential to receive *all* messages on slack, so the code 
+rejects anything that does not come from this channel.
+
+
+Development Environment Variables
+---------------------------------
+
+DISABLE_ECS_LOG_FORMAT
+``````````````````````
+
+By default JSON logging is used which is not user friendly when developing. To
+logged a more user friendly format set the variables as follows::
+
+   export DISABLE_ECS_LOG_FORMAT=1
+
+When running via the make file this is set automatically.
+
+DEBUG_ENABLED
+`````````````
+
+By default DEBUG is disabled in Django settings. To enable DEBUG mode for 
+development purposes set the variables as follows::
+
+   export DEBUG_ENABLED=1
+
+When running via the make file this is set automatically.
 
 
 Development
 -----------
 
+I'm using make, docker-compose, python3 and virtualenvwrappers to develop the 
+project locally. I currently work of Mac OSX for development and use Homebrew 
+to install what I need. Your mileage may vary.
+
 To set up the code for development you can do::
 
-    mkvirtualenv --clear -p python3 zenslackchat
-    make install
+   mkvirtualenv --clear -p python3 zenslackchat
+   make install
 
 To run the service locally in the dev environment do::
 
-    # activate the env
-    workon zenslackchat
+   # activate the env
+   workon zenslackchat
 
-    # run the webapp
-    make run
+   # run dependant services via docker compose (in its own terminal)
+   make up
+
+   # run the periodic task manager (in its own terminal)
+   make run_beat
+
+   # run the periodic task manager (in its own terminal)
+   make run_worker
+
+   # run the webapp
+   make runserver
+
+Using the Makefile to run the webapp/worker/beat is only meant for local 
+development. It is not for live environment use (staging/production/...)
+
 
 Testing
--------
+~~~~~~~
 
-With docker compose running postgres in one window, you can run the tests as
-follows::
+You can run the tests as follows::
 
-    # activate the env
-    workon zenslackchat
+   # activate the env
+   workon zenslackchat
 
-    # Run basic model and view tests
-    make test
+   # run dependant services via docker compose (in its own terminal)
+   make up
+
+   # Run all tests and output a coverage report
+   make test
 
 
 .. |ss| raw:: html

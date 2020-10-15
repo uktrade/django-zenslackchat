@@ -1,11 +1,14 @@
 export NAMESPACE=zenslackchat
 
-# default set up to run with docker compose started DB:
+# default set up to run with docker compose managed services:
 export DATABASE_URL?=postgresql://service:service@localhost:5432/service
+export REDIS_URL?=redis://localhost/
+export DEBUG_ENABLED=1
+export DISABLE_ECS_LOG_FORMAT=1
 
 .DEFAULT_GOAL := all
 
-.PHONY: all collect run migrate remove release reinstall test up ps down 
+.PHONY: all collect run run_beat run_worker migrate remove release reinstall test up ps down 
 
 all:
 	echo "Please choose a make target to run."
@@ -24,8 +27,14 @@ clean:
 collect:
 	python manage.py collectstatic --noinput
 
-run: collect
+runserver: collect
 	python manage.py runserver
+
+run_beat:
+	celery -A webapp beat -l DEBUG
+
+run_worker:
+	celery -A webapp worker -l DEBUG
 
 migrate:
 	python manage.py migrate
