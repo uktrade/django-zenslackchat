@@ -316,6 +316,16 @@ The bot has the potential to receive *all* messages on slack, so the code
 rejects anything that does not come from this channel.
 
 
+DISABLE_MESSAGE_PROCESSING
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is used to allow installing and running of the bot before its due to be
+enabled. You can set up OAuth and other admin actions before going live.
+
+When is set DISABLE_MESSAGE_PROCESSING=1, a warning will be logged for each 
+message received indicating that it was not handled.
+
+
 Development Environment Variables
 ---------------------------------
 
@@ -345,6 +355,8 @@ When running via the make file this is set automatically.
 
 I have made this extra step of not allowing you to set DEBUG directly from the
 environment, to slow you down and think before you set this.
+
+
 
 
 .. |ss| raw:: html

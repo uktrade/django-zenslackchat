@@ -33,6 +33,14 @@ if os.environ.get("DEBUG_ENABLED", "0").strip() == "1":
     sys.stderr.write("DEBUG_ENABLED=1 is set in environment!\n")
     DEBUG = True
 
+
+DISABLE_MESSAGE_PROCESSING = False
+if os.environ.get("DISABLE_MESSAGE_PROCESSING", "0").strip() == "1":
+    # Stop handling messages, while this is set in the environment.
+    sys.stderr.write("DISABLE_MESSAGE_PROCESSING is set in environment!\n")
+    DISABLE_MESSAGE_PROCESSING = True
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 

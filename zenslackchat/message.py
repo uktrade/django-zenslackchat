@@ -87,9 +87,6 @@ def handler(
             )
         return False
     
-    else:
-        log.debug(f"New message on support channel<{channel_id}>: {text}")
-
     # I'm ignoring most subtypes, I might be able to ignore all. I can manage 
     # the message / message-reply based on the ts/thread_ts fields and whether 
     # they are populated or not. I'm calling 'ts' chat_id and 'thread_ts' thread_id.
@@ -97,6 +94,16 @@ def handler(
     if subtype in IGNORED_SUBTYPES:
         log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
+
+    if settings.DISABLE_MESSAGE_PROCESSING:
+        log.warn(
+            "MESSAGE HANDLING IS DISABLED! "
+            f"Not handled from channel<{channel_id}>: {text}"
+        )
+        return False
+
+    else:
+        log.debug(f"New message on support channel<{channel_id}>: {text}")
 
     # A message
     slack_user_id = event['user']
