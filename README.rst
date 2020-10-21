@@ -74,10 +74,6 @@ You can run the tests as follows::
 Zendesk Set-up
 --------------
 
-Zendesk OAuth:
-
-- https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
-
 Useful Reference docs:
 
 - https://developer.zendesk.com/rest_api/docs/support/tickets#json-format
@@ -85,7 +81,25 @@ Useful Reference docs:
 - Zenpy: http://docs.facetoe.com.au/api_objects.html
 - http://docs.facetoe.com.au/zenpy.html
 
-This is the raw set up you need to enable comment shipping to slack from Zendesk. 
+
+OAuth Registration
+~~~~~~~~~~~~~~~~~~
+
+For you Zendesk go to https://<subdomain>.zendesk.com/agent/admin/api/oauth_clients
+
+- "Add OAuth Client"
+- Client Name: ZenSlackChat
+- Description: Ferry messages back and forth between Slack and Zendesk.
+- Unique Identifier: zenslackchat
+- Redirect URLS: https://<endpoint address>/zendesk/oauth/
+
+The Unique Identifier is set as ZENDESK_CLIENT_IDENTIFIER in the webapp's 
+environment. When you add the client a secret will be generated and shown once. This is set as ZENDESK_CLIENT_SECRET
+
+Reference:
+
+- https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
+
 
 HTTP Target
 ~~~~~~~~~~~
@@ -106,13 +120,41 @@ found in the Zendesk:
 - https://support.zendesk.com/hc/en-us/articles/204890268-Creating-webhooks-with-the-HTTP-target
 
 
+Zendesk Agent
+~~~~~~~~~~~~~
+
+Create an agent account the bot will assign tickets to. From 
+https://<subdomain>.zendesk.com/agent/admin/people select "add user":
+
+- Name: zenslackchat
+- Email: <email address>
+- Role: Agent
+
+From the URL of the created user you will see the ID. This needs to be set as
+ZENDESK_USER_ID in the webapp's environment.
+
+
+Zendesk Group
+~~~~~~~~~~~~~
+
+Create an group which the bot agent is part of. From 
+https://<subdomain>.zendesk.com/agent/admin/people select "add group":
+
+- Group name: ZenSlackChat
+- Group description: The group the ZenSlackChat bot uses to filter comments from.
+- Agents in group: zenslackchat
+
+From inspecting the page of the group you will see the ID. This needs to be set 
+as ZENDESK_GROUP_ID in the webapp's environment.
+
+
 Comment Trigger
 ~~~~~~~~~~~~~~~
 
 You will need to create the ZenSlackChat group if its not present already. You 
 need to create a trigger and then do the following set up:
 
-- Trigger name: ticket-comment
+- Trigger name: zenslackchat-ticket-comment
 - Description: Trigger which will post comments to Zenslackchat for consideration.
 - Meet ALL of the following conditions
 
@@ -131,9 +173,14 @@ need to create a trigger and then do the following set up:
    - Set the JSON body set up::
 
    {
-      "external_id": "{{ticket.external_id}}",
+      "token": "<shared secret token>",
+      "chat_id": "{{ticket.external_id}}",
       "ticket_id": "{{ticket.id}}"
    }
+
+The token is a shared random string that is set in the JSON body. This must 
+match the value in the webapp's environment variable ZENDESK_WEBHOOK_TOKEN. If
+these don't match the webhook request will be rejected and logged as an error.
 
 The "meet any condition" is a bit of a hack to get comments sent to us. I would 
 also put the trigger order first above any existing triggers although thats 
@@ -290,6 +337,14 @@ ZENDESK_GROUP_ID
 Which group tickets belong to. This is used when deciding what tickets the bot 
 should handle. This is the numeric Zendesk ID for the group it will look 
 something like ``360003877797``.
+
+
+ZENDESK_WEBHOOK_TOKEN
+~~~~~~~~~~~~~~~~~~~~~
+
+This is a shared secret between the Zendesk HTTP target and the webapp's 
+environment. It is a protection against unauthorised POSTs to the webapps 
+endpoint.
 
 
 Slack OAuth
