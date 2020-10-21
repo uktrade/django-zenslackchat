@@ -46,16 +46,17 @@ def get_ticket(client, ticket_id):
         log.debug(f'Ticket not found by is Zendesk ID:<{ticket_id}>')
 
     return returned
-
     
 
-
 def create_ticket(
-    client, user_id, group_id, recipient_email, subject, slack_message_url
+    client, chat_id, user_id, group_id, recipient_email, subject, 
+    slack_message_url
 ):
     """Create a new zendesk ticket in response to a new user question.
 
     :param client: The Zendesk web client to use.
+
+    :param chat_id: The conversation ID on slack.
 
     :param user_id: Who to create the ticket as.
 
@@ -82,6 +83,7 @@ def create_ticket(
     # group.
     issue = Ticket(
         type='ticket', 
+        external_id=chat_id,
         submitter_id=user_id,
         assingee_id=user_id,
         group_id=group_id,

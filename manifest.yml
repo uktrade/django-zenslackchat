@@ -1,6 +1,0 @@
----
-applications:
-- name: zenslackchat
-  memory: 512M
-  buildpacks:
-  - python_buildpack

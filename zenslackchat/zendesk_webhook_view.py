@@ -1,3 +1,4 @@
+import base64
 import pprint
 import logging
 
@@ -25,17 +26,35 @@ class WebHook(APIView):
 
         """
         log = logging.getLogger(__name__)
-        try:
-            if settings.DEBUG:
-                log.debug(f'Raw POSTed data:\n{pprint.pformat(request.data)}')
 
-            message.update_with_comments_from_zendesk(
-                request.data,
-                slack_client=SlackApp.client(),
-                zendesk_client=ZendeskApp.client()
+        if settings.DEBUG:
+            log.debug(f'Raw POSTed data:\n{pprint.pformat(request.data)}')
+
+        try:
+            token = request.data.get(
+                'token', '<token not set in webhook request body JSON>'
             )
+
+            if token == settings.ZENDESK_WEBHOOK_TOKEN:
+                message.update_with_comments_from_zendesk(
+                    request.data,
+                    slack_client=SlackApp.client(),
+                    zendesk_client=ZendeskApp.client()
+                )
+            
+            else:
+                log.error(
+                    'Webhook JSON body token does no match expected token '
+                    'settings.ZENDESK_WEBHOOK_TOKEN token.'
+                )
+
+                if settings.DEBUG:
+                    log.debug(
+                        f"Webhook rejected as token '{token}' does not "
+                        f"match ours '{settings.ZENDESK_WEBHOOK_TOKEN}'"
+                    )
 
         except:
             log.exception(f'Failed handling webhook because:')
 
-        return Response("Received OK, Thanks.", status=status.HTTP_200_OK)
+        return Response('OK, Thanks', status=200)

@@ -117,6 +117,7 @@ def test_new_support_message_creates_ticket(
     # Check how zendesk api was called:
     create_ticket.assert_called_with(
         zendesk_client,
+        chat_id='1597940362.013100',
         user_id='100000000001',
         group_id='200000000002',
         recipient_email='bob@example.com',

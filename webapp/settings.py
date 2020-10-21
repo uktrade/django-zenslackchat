@@ -101,6 +101,13 @@ ZENDESK_USER_ID = os.environ.get(
 ZENDESK_GROUP_ID = os.environ.get(
     'ZENDESK_GROUP_ID', '<The group id new zendesk tickets belong to>'
 )
+ZENDESK_WEBHOOK_USER = os.environ.get(
+    'ZENDESK_WEBHOOK_USER', '<some random username>'
+)
+ZENDESK_WEBHOOK_TOKEN = os.environ.get(
+    'ZENDESK_WEBHOOK_TOKEN', '<shared secret random string>'
+)
+
 
 # Used to work out our external URI for redirects. Also used as the entry in 
 # ALLOWED_HOSTS.

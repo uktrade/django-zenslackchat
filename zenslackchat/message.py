@@ -200,7 +200,8 @@ def handler(
             )
             try:
                 ticket = create_ticket(
-                    zendesk_client, 
+                    zendesk_client,
+                    chat_id=chat_id,
                     user_id=user_id, 
                     group_id=group_id,
                     recipient_email=recipient_email, 
@@ -322,26 +323,26 @@ def update_with_comments_from_zendesk(event, zendesk_client, slack_client):
     """
     log = logging.getLogger(__name__)
     
-    external_id = event['external_id']
+    chat_id = event['chat_id']
     ticket_id = event['ticket_id']
-    if not external_id:
-        log.debug(f'external_id is empty, ignoring ticket comment.')    
+    if not chat_id:
+        log.debug(f'chat_id is empty, ignoring ticket comment.')    
         return 
 
     log.debug(f'Recovering ticket by its Zendesk ID:<{ticket_id}>')
     try:
-        issue = ZenSlackChat.get_by_ticket(external_id, ticket_id)
+        issue = ZenSlackChat.get_by_ticket(chat_id, ticket_id)
 
     except NotFoundError:
         log.debug(
-            f'external_id:<{external_id}> not found, ignoring ticket comment.'
+            f'chat_id:<{chat_id}> not found, ignoring ticket comment.'
         )    
         return 
 
     # Recover all messages from the slack conversation:
     slack = []
     resp = slack_client.conversations_replies(
-        channel=issue.channel_id, ts=external_id
+        channel=issue.channel_id, ts=chat_id
     )
     for message in resp.data['messages']:
         message['created_at'] = ts_to_datetime(message['ts'])
@@ -360,4 +361,4 @@ def update_with_comments_from_zendesk(event, zendesk_client, slack_client):
     # Update the slack conversation:
     for message in for_slack:
         msg = f"(Zendesk): {message['body']}"
-        post_message(slack_client, external_id, issue.channel_id, msg)
+        post_message(slack_client, chat_id, issue.channel_id, msg)

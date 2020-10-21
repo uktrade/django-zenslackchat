@@ -35,7 +35,7 @@ class ZenSlackChat(models.Model):
     # An epoch time e.g. 1597931771.007500
     chat_id = models.CharField(max_length=20)
 
-    # The Zendesk Ticket ID:
+    # The ID of the linked issue in Zendesk:
     # e.g. 3451
     ticket_id = models.CharField(max_length=20)
 

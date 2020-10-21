@@ -211,6 +211,12 @@ Event Subscriptions
 
 - Enable Events: on
 - Request URL: ``https://<location of running endpoint>/slack/events/``
+- Subscribe to events on behalf of users: 
+
+  - messages.channels
+
+We don't need "Subscribe to bot events" or "App unfurl domains", so no set up
+is needed.
 
 
 Environment Variables
