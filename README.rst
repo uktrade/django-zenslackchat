@@ -10,7 +10,7 @@ The bot reports daily on the total amount of open issues and the total closed is
 
 The bot needs to be installed as a Slack application using OAuth. The bot also needs to be told the channel it must monitor for support request messages.
 
-To use the Zendesk API the bot must be registered as a OAuth application. Zendesk has extra set up around what comments get sent to Slack. Zendesk is set up to only notify the bot of comments from issue belonging to a certain support group. This prevents all Zendesk comments being sent to the bot.
+To use the Zendesk API the bot must be registered as an OAuth client. Zendesk has extra set up around what comments get sent to Slack. Zendesk is set up to only notify the bot of comments from issue belonging to a certain support group. This prevents all Zendesk comments being sent to the bot.
 
 The bot manages the issues raised using its own Postgres database. This allows for easy tracking and later reporting.
 
@@ -25,17 +25,14 @@ Development
 
 I'm using make, docker-compose, python3 and virtualenvwrappers to develop the 
 project locally. I currently work of Mac OSX for development and use Homebrew 
-to install what I need. Your mileage may vary.
-
-To set up the code for development you can do::
+to install what I need. Your mileage may vary. To set up the code for development 
+you can do::
 
    mkvirtualenv --clear -p python3 zenslackchat
    make test_install
 
 There is a ``make install``. This only installs the apps dependancies and not 
-those needed for testing.
-
-To run the service locally in the dev environment do::
+those needed for testing. To run the service locally in the dev environment do::
 
    # activate the env
    workon zenslackchat
@@ -74,7 +71,19 @@ You can run the tests as follows::
 Zendesk Set-up
 --------------
 
-Useful Reference docs:
+There are three main parts to set up in Zendesk. The first is to register the
+OAuth client. This allows the webapp to use the Zendesk API. Next is setting up 
+the HTTP Target which POSTs comments to the webapp's /zendesk/webhook/ endpoint.
+Finally you need to configure the comment trigger which decides what comments
+should be sent to the webapp. Once accepted the comments will be sent to the 
+respective Slack conversations.
+
+A ZenSlackChat user and group is used to restrict what gets sent to the bot. 
+Without these and their use in the comment trigger to filter, all Zendesk 
+comments would be sent to the webapp. This would risk exposing sensitive data
+which should not go to the webapp.
+
+Useful development reference docs:
 
 - https://developer.zendesk.com/rest_api/docs/support/tickets#json-format
 - https://developer.zendesk.com/rest_api/docs/support/ticket_comments
@@ -94,9 +103,20 @@ For you Zendesk go to https://<subdomain>.zendesk.com/agent/admin/api/oauth_clie
 - Redirect URLS: https://<endpoint address>/zendesk/oauth/
 
 The Unique Identifier is set as ZENDESK_CLIENT_IDENTIFIER in the webapp's 
-environment. When you add the client a secret will be generated and shown once. This is set as ZENDESK_CLIENT_SECRET
+environment. When you add the client a secret will be generated and shown once. 
+This is set as ZENDESK_CLIENT_SECRET. The redirect URL should be the same as 
+ZENDESK_REDIRECT_URI set for the webapp's env.
 
-Reference:
+If you are developing locally you would need a paid Ngrok.io account to tunnel 
+the staging Zendesk to a local running webapp. Zendesk requires a HTTPS endpoint 
+for the OAuth process. 
+
+In local development this runs on:
+
+- http://localhost:8000/zendesk/oauth/
+
+
+Handy Zendesk OAuth client registration documentation:
 
 - https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
 
@@ -185,21 +205,6 @@ these don't match the webhook request will be rejected and logged as an error.
 The "meet any condition" is a bit of a hack to get comments sent to us. I would 
 also put the trigger order first above any existing triggers although thats 
 just me.
-
-
-Webhook
-~~~~~~~
-
-The webhook code is integrated into the Django webapp. Running locally its
-found on "http://localhost:8000/zendesk/webhook/"
-
-
-OAuth
-~~~~~
-
-You need a paid Ngrok.io account to tunnel locally, as Zendesk requires a HTTPS
-endpoint for the OAuth process. Locally the this runs on 
-"http://localhost:8000/zendesk/oauth/"
 
 
 Slack Set-up
@@ -412,11 +417,10 @@ development purposes set the variables as follows::
 
    export DEBUG_ENABLED=1
 
-When running via the make file this is set automatically.
+When running via ``make run`` this is set automatically.
 
 I have made this extra step of not allowing you to set DEBUG directly from the
 environment, to slow you down and think before you set this.
-
 
 
 
