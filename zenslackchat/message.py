@@ -117,7 +117,15 @@ def handler(
     resp = slack_client.users_info(user=slack_user_id)
     # print(f"resp.event:\n{resp.event}\n")
     real_name = resp.data['user']['real_name']
-    recipient_email = resp.data['user']['profile']['email']
+    recipient_email = resp.data['user']['profile'].get('email', '')
+    if not recipient_email:
+        log.error(
+            f"For slack profile '{real_name}' I was not able to recover an "
+            "email. Is the bot token scope users:read.email set? (Re)install "
+            "the slack app?"
+        )
+        # hmm this is not the answer as its getting into a loop :(
+        return False
 
     # zendesk ticket instance
     ticket = None
