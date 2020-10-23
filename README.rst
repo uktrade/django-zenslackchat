@@ -4,18 +4,35 @@ Zenslackchat
 .. image:: docs/zenslackchat-overview.png
     :align: center
 
-The support team work through Slack. Zendesk is the company support issue tracking system. This bot will put new support issues raised on Slack into Zendesk. It will also update the conversation in Zendesk as it develops on Slack. If any comments are made on the issue in Zendesk these will also be sent to the support message thread on Slack. The idea is to pull in support requests from other platforms such as Microsoft Teams and the support Email in future.
+The support team work through Slack. Zendesk is the company support issue 
+tracking system. This bot will put new support issues raised on Slack into 
+Zendesk. It will also update the conversation in Zendesk as it develops on 
+Slack. If any comments are made on the issue in Zendesk these will also be sent 
+to the support message thread on Slack. The idea is to pull in support requests 
+from other platforms such as Microsoft Teams and the support Email in future.
 
-The bot reports daily on the total amount of open issues and the total closed issues. The closed issue count represents only issues closed in the previous day. The previous day is worked out from the current day in which the report is run. Currently the bot posts the daily report on the support channel is monitors.
+The bot reports daily on the total amount of open issues and the total closed 
+issues. The closed issue count represents only issues closed in the previous 
+day. The previous day is worked out from the current day in which the report is 
+run. Currently the bot posts the daily report on the support channel is monitors.
 
-The bot needs to be installed as a Slack application using OAuth. The bot also needs to be told the channel it must monitor for support request messages.
+The bot needs to be installed as a Slack application using OAuth. The bot also 
+needs to be told the channel it must monitor for support request messages.
 
-To use the Zendesk API the bot must be registered as an OAuth client. Zendesk has extra set up around what comments get sent to Slack. Zendesk is set up to only notify the bot of comments from issue belonging to a certain support group. This prevents all Zendesk comments being sent to the bot.
+To use the Zendesk API the bot must be registered as an OAuth client. Zendesk 
+has extra set up around what comments get sent to Slack. Zendesk is set up to 
+only notify the bot of comments from issue belonging to a certain support 
+group. This prevents all Zendesk comments being sent to the bot.
 
-The bot manages the issues raised using its own Postgres database. This allows for easy tracking and later reporting.
+The bot manages the issues raised using its own Postgres database. This allows 
+for easy tracking and later reporting.
 
-The bot is a Django web application. It uses Celery and Redis to schedule the periodic report.
+The bot is a Django web application. It uses Celery and Redis to schedule the 
+periodic report.
 
+This bot can connect to Pager Duty and recover an enscalation policy from 
+which it then gets the primary and secondary contact names. If configured, who 
+is on call will be posted to the slack channel after an issue is raised.
 
 .. contents::
 
@@ -106,6 +123,10 @@ The Unique Identifier is set as ZENDESK_CLIENT_IDENTIFIER in the webapp's
 environment. When you add the client a secret will be generated and shown once. 
 This is set as ZENDESK_CLIENT_SECRET. The redirect URL should be the same as 
 ZENDESK_REDIRECT_URI set for the webapp's env.
+
+You kick off the OAuth process by going to the site root. Log-in and you will 
+see a section called "OAuth integrations for" and there is a Zendesk entry
+and a link to "Add".
 
 If you are developing locally you would need a paid Ngrok.io account to tunnel 
 the staging Zendesk to a local running webapp. Zendesk requires a HTTPS endpoint 
@@ -270,6 +291,36 @@ Event Subscriptions
 We don't need "Subscribe to bot events" or "App unfurl domains", so no set up
 is needed.
 
+You kick off the OAuth process by going to the site root. Log-in and you will 
+see a section called "OAuth integrations for" and there is a Slack entry and a 
+link to "Add".
+
+
+PagerDuty OAuth
+---------------
+
+To set up a new OAuth client go to your account:
+
+- https://uktrade.pagerduty.com/developer/apps/register
+
+For "Build an App" fill out 
+
+- App Name: ZenSlackChat
+- Brief Description: Access to recover who is on call.
+- Category: API Management
+- Publish: no
+
+Once you'd filled this out and saved the app you can go to the OAuth section
+
+- https://<your subdomain>.pagerduty.com/developer/apps/<APP ID>/editOAuth 
+
+From here you can set up the redirect URLs and recover the client id and secret
+you need to set in the environment.
+
+You kick off the OAuth process by going to the site root. Log-in and you will 
+see a section called "OAuth integrations for" and there is a Pager Duty entry
+and a link to "Add".
+
 
 Environment Variables
 ---------------------
@@ -390,6 +441,17 @@ enabled. You can set up OAuth and other admin actions before going live.
 
 When is set DISABLE_MESSAGE_PROCESSING=1, a warning will be logged for each 
 message received indicating that it was not handled.
+
+
+PagerDuty OAuth
+~~~~~~~~~~~~~~~
+
+For PagerDuty OAuth you need to set the follow::
+
+   export PAGERDUTY_CLIENT_IDENTIFIER=<oauth identifier>
+   export PAGERDUTY_CLIENT_SECRET=<oauth secret>
+   export PAGERDUTY_REDIRECT_URI=https://..host../pagerduty/oauth/
+   export PAGERDUTY_ESCALATION_POLICY_ID=<policy id string>
 
 
 Development Environment Variables
