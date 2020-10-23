@@ -330,24 +330,42 @@ class PagerDutyApp(models.Model):
     @classmethod
     def client(cls):
         """Returns a client instance ready for use.
+
+        :returns: The APISession instance for pager duty.
+
+        If the OAuth app is not yet set up then None will be returned.
+
         """
+        log = logging.getLogger(__name__)
+
         # use the latest token
         app = cls.objects.order_by('-created_at').first()
-        if settings.DEBUG:
-            logging.getLogger(__name__).debug(
+        if app and settings.DEBUG:
+            log.debug(
                 f"PagerDuty Access Token:{app.access_token}"
             )
 
-        return APISession(app.access_token, auth_type='oauth2')
+        session = None
+        if app:
+            session = APISession(app.access_token, auth_type='oauth2')
+
+        return session
 
     @classmethod
     def on_call(cls):
         """Return the primary and secondary on call contacts.
 
-        :returns: dict(primary='...', secondary='...')
+        :returns: dict(primary='First Lastname', secondary='First Lastname')
 
         """
         session = cls.client()
+
+        if not session:
+            logging.getLogger(__name__).error(
+                "No OAuth PagerDutyApp is configured. I'm unable to get who "
+                "is the primary and secondary on call engineers."
+            )
+            return {}
 
         policy_id = settings.PAGERDUTY_ESCALATION_POLICY_ID
 

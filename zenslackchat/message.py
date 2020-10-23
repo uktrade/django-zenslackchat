@@ -235,11 +235,12 @@ def handler(
                 post_message(slack_client, chat_id, channel_id, message)
 
                 on_call = PagerDutyApp.on_call()
-                message = (
-                    f"📧 Primary on call: {on_call['primary']}\n"
-                    f"ℹ️ Secondary on call: {on_call['secondary']}."
-                )
-                post_message(slack_client, chat_id, channel_id, message)
+                if on_call != {}:
+                    message = (
+                        f"📧 Primary on call: {on_call['primary']}\n"
+                        f"ℹ️ Secondary on call: {on_call['secondary']}."
+                    )
+                    post_message(slack_client, chat_id, channel_id, message)
 
         else:
             # No, we have a ticket already for this.
