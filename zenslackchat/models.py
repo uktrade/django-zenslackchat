@@ -2,10 +2,12 @@ import logging
 from datetime import timezone
 from datetime import datetime
 from datetime import timedelta
+from operator import itemgetter
 
 from zenpy import Zenpy
 from slack import WebClient
 from django.db import models
+from pdpyras import APISession
 
 from webapp import settings
 from zenslackchat import slack_api
@@ -313,3 +315,47 @@ class ZendeskApp(models.Model):
             subdomain=settings.ZENDESK_SUBDOMAIN,
             oauth_token=app.access_token
         )
+
+
+class PagerDutyApp(models.Model):
+    """Used to store Pager Duty OAuth client / app details after successfull 
+    completion of the OAuth process.
+    
+    """
+    access_token = models.CharField(max_length=512)
+    token_type = models.CharField(max_length=50)
+    scope = models.CharField(max_length=50)
+    created_at = models.DateTimeField(default=utcnow)
+
+    @classmethod
+    def client(cls):
+        """Returns a client instance ready for use.
+        """
+        # use the latest token
+        app = cls.objects.order_by('-created_at').first()
+        if settings.DEBUG:
+            logging.getLogger(__name__).debug(
+                f"PagerDuty Access Token:{app.access_token}"
+            )
+
+        return APISession(app.access_token, auth_type='oauth2')
+
+    @classmethod
+    def on_call(cls):
+        """Return the primary and secondary on call contacts.
+
+        :returns: dict(primary='...', secondary='...')
+
+        """
+        session = cls.client()
+
+        policy_id = settings.PAGERDUTY_ESCALATION_POLICY_ID
+
+        path = f'/oncalls?escalation_policy_ids[]={policy_id}'
+        data = session.get(path).json()
+
+        # level 1 is the person on call, 2 is the secondary backup
+        priority = sorted(data['oncalls'], key=itemgetter('escalation_level')) 
+        primary, secondary = [i['user']['summary'] for i in priority][:2]
+
+        return dict(primary=primary, secondary=secondary)

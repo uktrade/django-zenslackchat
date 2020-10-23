@@ -109,6 +109,22 @@ ZENDESK_WEBHOOK_TOKEN = os.environ.get(
 )
 
 
+PAGERDUTY_OAUTH_URI = os.environ.get(
+    'PAGERDUTY_OAUTH_URI', 'https://app.pagerduty.com/oauth/token'
+)
+PAGERDUTY_CLIENT_IDENTIFIER = os.environ.get(
+    'PAGERDUTY_CLIENT_IDENTIFIER', 'YOUR PAGER DUTY CLIENT UNIQUE IDENTIFIER'
+)
+PAGERDUTY_CLIENT_SECRET = os.environ.get(
+    'PAGERDUTY_CLIENT_SECRET', 'YOUR PAGER DUTY CLIENT SECRET'
+)
+PAGERDUTY_REDIRECT_URI = os.environ.get(
+    'PAGERDUTY_REDIRECT_URI', 'URI FOR http(s)://<our host>/pagerduty/oauth'
+)
+PAGERDUTY_ESCALATION_POLICY_ID = os.environ.get(
+    'PAGERDUTY_ESCALATION_POLICY_ID', 'PagerDuty Policy ID'
+)
+
 # Used to work out our external URI for redirects. Also used as the entry in 
 # ALLOWED_HOSTS.
 PAAS_FQDN = os.environ.get(

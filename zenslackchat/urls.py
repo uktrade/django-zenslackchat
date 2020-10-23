@@ -23,6 +23,8 @@ urlpatterns = [
         name='slack_events'
     ),
 
+    path('pagerduty/oauth/', views.pagerduty_oauth, name='pagerduty_oauth'),
+
     path(
         'trigger/report/daily', 
         views.trigger_daily_report, 

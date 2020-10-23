@@ -22,6 +22,7 @@ import zenpy
 from dateutil.parser import parse
 
 from webapp import settings
+from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.models import NotFoundError
 from zenslackchat.slack_api import message_url
@@ -231,6 +232,13 @@ def handler(
                 # Once-off response to parent thread:
                 url = zendesk_ticket_url(zendesk_uri, ticket.id)
                 message = f"Hello, your new support request is {url}"
+                post_message(slack_client, chat_id, channel_id, message)
+
+                on_call = PagerDutyApp.on_call()
+                message = (
+                    f"📧 Primary on call: {on_call['primary']}\n"
+                    f"ℹ️ Secondary on call: {on_call['secondary']}."
+                )
                 post_message(slack_client, chat_id, channel_id, message)
 
         else:

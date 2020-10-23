@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from webapp.celery import run_daily_summary
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
+from zenslackchat.models import PagerDutyApp
 
 
 
@@ -100,6 +101,52 @@ def zendesk_oauth(request):
     return HttpResponse('ZendeskApp Added OK')
 
 
+def pagerduty_oauth(request):
+    """Complete the Pager Duty OAuth process.
+
+    - https://developer.pagerduty.com/docs/app-integration-development/
+        oauth-2-auth-code-grant/
+
+    """
+    log = logging.getLogger(__name__)
+    
+    if 'code' not in request.GET:
+        log.error("The code parameter was missing in the request!")
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    code = request.GET['code']    
+    subdomain = request.GET['subdomain']
+    log.debug(
+        f"Received Zendesk OAuth request code:<{code}> for subdomain:"
+        f"<{subdomain}>. Recovering access token."
+    )
+    response = requests.post(
+        (
+            f'{settings.PAGERDUTY_OAUTH_URI}?'
+            'grant_type=authorization_code&'
+            f'client_id={settings.PAGERDUTY_CLIENT_IDENTIFIER}&'
+            f'client_secret={settings.PAGERDUTY_CLIENT_SECRET}&'
+            f'redirect_uri={settings.PAGERDUTY_REDIRECT_URI}&'
+            f'code={code}'
+        )
+    )
+    log.debug(f"Result status from PagerDuty:<{response.status_code}>")
+    # import ipdb; ipdb.set_trace()
+
+    response.raise_for_status()
+    data = response.json()
+
+    log.debug(f"Result status from PagerDuty:\n{pprint.pformat(data)}>")
+    PagerDutyApp.objects.create(
+        access_token=data['access_token'], 
+        token_type=data['token_type'], 
+        scope=data['scope'], 
+    )
+    log.debug("Created local PagerDutyApp instance OK.")
+
+    return HttpResponse('PagerDutyApp Added OK')
+
+
 @login_required
 def trigger_daily_report(request):
     """Helper to trigger the daily report to aid in testing it works.
@@ -146,10 +193,19 @@ def index(request):
     )
     log.debug(f"slack_oauth_request_uri:<{slack_oauth_request_uri}>")
 
+    pagerduty_oauth_request_uri = (
+        'https://app.pagerduty.com/oauth/authorize?'
+        f'client_id={settings.PAGERDUTY_CLIENT_IDENTIFIER}&'
+        f'redirect_uri={settings.PAGERDUTY_REDIRECT_URI}&'
+        'response_type=code'
+    )
+    log.debug(f"pagerduty_oauth_request_uri:<{pagerduty_oauth_request_uri}>")
+
     return HttpResponse(template.render(
         dict(
             zendesk_oauth_request_uri=zendesk_oauth_request_uri,
-            slack_oauth_request_uri=slack_oauth_request_uri
+            slack_oauth_request_uri=slack_oauth_request_uri,
+            pagerduty_oauth_request_uri=pagerduty_oauth_request_uri
         ), 
         request
     ))

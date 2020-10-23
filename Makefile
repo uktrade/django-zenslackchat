@@ -30,6 +30,8 @@ collect:
 runserver: collect
 	python manage.py runserver
 
+run: runserver
+
 runbeat:
 	celery -A webapp beat -l DEBUG
 

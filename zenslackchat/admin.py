@@ -3,6 +3,7 @@ from django.contrib import admin
 
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
+from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 
 
@@ -16,6 +17,13 @@ class SlackAppAdmin(admin.ModelAdmin):
 @admin.register(ZendeskApp)
 class ZendeskAppAdmin(admin.ModelAdmin):
     """Manage the stored Zendesk OAuth client credentials
+    """
+    date_hierarchy = 'created_at'
+
+
+@admin.register(PagerDutyApp)
+class PagerDutyAppAdmin(admin.ModelAdmin):
+    """Manage the stored PagerDuty OAuth client credentials
     """
     date_hierarchy = 'created_at'
 
