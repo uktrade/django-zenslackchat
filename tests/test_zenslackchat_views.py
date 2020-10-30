@@ -1,5 +1,6 @@
 import json
 import datetime
+from unittest.mock import patch
 
 from django.test import RequestFactory, TestCase
 from rest_framework.test import APIRequestFactory
@@ -43,3 +44,25 @@ class WebAppAndAPITest(TestCase):
         # Check the Pingdom ID is present to indicate successful login:
         content = response.content.decode()
         assert content.find('user_login_ok') != -1
+
+    @patch('zenslackchat.views.messages')
+    def test_trigger_daily_report_view(self, messages):
+        """Check an authorised person can trigger the daily report.
+        """
+        # Check that anonymous user results in redirect to the login:
+        request = self.factory.get('/')
+        request.user = AnonymousUser()
+        response = views.trigger_daily_report(request)
+        assert response.status_code == 302
+        self.assertEqual(response.url, '/accounts/login/?next=/')        
+        messages.success.assert_not_called()
+
+        # Now try with a logged-in user:
+        request = self.factory.get('/')
+        request.user = self.user
+        response = views.trigger_daily_report(request)
+        # We should be redirect back to root and the messages should have
+        # been called.
+        assert response.status_code == 302
+        self.assertEqual(response.url, '/')        
+        messages.success.assert_called()

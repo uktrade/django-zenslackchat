@@ -4,6 +4,8 @@ from datetime import datetime
 from datetime import timedelta
 from operator import itemgetter
 
+import requests
+import requests.adapters
 from zenpy import Zenpy
 from slack import WebClient
 from django.db import models
@@ -286,6 +288,26 @@ class SlackApp(models.Model):
         return WebClient(token=app.bot_access_token)
 
 
+
+class CustomHeaderAdapter(requests.adapters.HTTPAdapter):
+    """Allow custom request headers for Zenpy requests.
+    """
+    def add_headers(self, request, **kwargs):
+        """Add in custom X-On-Behalf-Of for zenslackchat.
+        
+        This allows us to impersonate Zenslackchat directly so their
+        email is assigned to the issue at the top level. Otherwise it
+        seems the admin email gets used.
+
+        For this to work the Zendesk scope 'impersonate' needs to be
+        requested.
+
+        """
+        headers = request.headers
+        headers['X-On-Behalf-Of'] = settings.ZENDESK_AGENT_EMAIL
+        request.headers = headers
+
+
 class ZendeskApp(models.Model):
     """Used to store Zendesk OAuth client / app details after successfull 
     completion of the OAuth process.
@@ -311,9 +333,14 @@ class ZendeskApp(models.Model):
                 f"Zendesk Access Token:{app.access_token}"
             )
 
+        session = requests.Session()
+        adapter = CustomHeaderAdapter(**Zenpy.http_adapter_kwargs())
+        session.mount('https://', adapter)
+
         return Zenpy(
             subdomain=settings.ZENDESK_SUBDOMAIN,
-            oauth_token=app.access_token
+            oauth_token=app.access_token,
+            session=session,
         )
 
 

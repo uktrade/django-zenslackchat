@@ -76,15 +76,16 @@ def zendesk_oauth(request):
         f"Recovering access token from {request_url}. "
         f"Redirect URL is {redirect_uri}. "
     )
+    data = { 
+        'code': code,
+        'client_id': settings.ZENDESK_CLIENT_IDENTIFIER,
+        'client_secret': settings.ZENDESK_CLIENT_SECRET,
+        'grant_type': 'authorization_code',
+        'redirect_uri': redirect_uri,
+    }
     response = requests.post(
         request_url, 
-        data=json.dumps({ 
-            'code': code,
-            'client_id': settings.ZENDESK_CLIENT_IDENTIFIER,
-            'client_secret': settings.ZENDESK_CLIENT_SECRET,
-            'grant_type': 'authorization_code',
-            'redirect_uri': redirect_uri
-        }),
+        data=json.dumps(data),
         headers={"Content-Type": "application/json"}
     )
     log.debug(f"Result status from Zendesk:<{response.status_code}>")
@@ -131,12 +132,11 @@ def pagerduty_oauth(request):
         )
     )
     log.debug(f"Result status from PagerDuty:<{response.status_code}>")
-    # import ipdb; ipdb.set_trace()
-
     response.raise_for_status()
     data = response.json()
 
-    log.debug(f"Result status from PagerDuty:\n{pprint.pformat(data)}>")
+    if settings.DEBUG:
+        log.debug(f"Result status from PagerDuty:\n{pprint.pformat(data)}>")
     PagerDutyApp.objects.create(
         access_token=data['access_token'], 
         token_type=data['token_type'], 
@@ -166,6 +166,15 @@ def trigger_daily_report(request):
 
     return redirect('/')
 
+
+# Restrict scope down to what I can interact with..
+ZENDESK_REQUESTED_SCOPES = "%20".join((
+    # allows me to be zenslackchat when managing tickets
+    'impersonate', 
+    # I only need access to tickets resources:
+    'tickets:read', 'tickets:write'
+))
+
     
 @login_required
 def index(request):
@@ -182,7 +191,7 @@ def index(request):
         f"response_type=code&"
         f"redirect_uri={settings.ZENDESK_REDIRECT_URI}&"
         f"client_id={settings.ZENDESK_CLIENT_IDENTIFIER}&"
-        "scope=read%20write"
+        f"scope={ZENDESK_REQUESTED_SCOPES}"
     )
     log.debug(f"zendesk_oauth_request_uri:<{zendesk_oauth_request_uri}>")
 

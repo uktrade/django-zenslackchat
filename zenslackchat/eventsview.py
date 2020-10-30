@@ -6,9 +6,10 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from zenslackchat import message
+from zenslackchat.message import handler
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
+
 
 
 class Events(APIView):
@@ -51,7 +52,7 @@ class Events(APIView):
             if settings.DEBUG:
                 log.debug(f'event received:\n{pprint.pformat(event)}\n')
             try:
-                message.handler(
+                handler(
                     event, 
                     our_channel=settings.SRE_SUPPORT_CHANNEL,
                     slack_client=SlackApp.client(),

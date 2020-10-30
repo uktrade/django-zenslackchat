@@ -10,6 +10,7 @@ from webapp import settings
 from zenslackchat import message
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
+from zenslackchat.message import update_with_comments_from_zendesk
 
 
 class WebHook(APIView):
@@ -26,6 +27,7 @@ class WebHook(APIView):
 
         """
         log = logging.getLogger(__name__)
+        response = Response('OK, Thanks', status=200)
 
         if settings.DEBUG:
             log.debug(f'Raw POSTed data:\n{pprint.pformat(request.data)}')
@@ -36,7 +38,7 @@ class WebHook(APIView):
             )
 
             if token == settings.ZENDESK_WEBHOOK_TOKEN:
-                message.update_with_comments_from_zendesk(
+                update_with_comments_from_zendesk(
                     request.data,
                     slack_client=SlackApp.client(),
                     zendesk_client=ZendeskApp.client()
@@ -54,7 +56,9 @@ class WebHook(APIView):
                         f"match ours '{settings.ZENDESK_WEBHOOK_TOKEN}'"
                     )
 
+                response = Response(status=status.HTTP_403_FORBIDDEN)
+
         except:
             log.exception(f'Failed handling webhook because:')
 
-        return Response('OK, Thanks', status=200)
+        return response

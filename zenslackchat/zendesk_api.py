@@ -84,6 +84,7 @@ def create_ticket(
     issue = Ticket(
         type='ticket', 
         external_id=chat_id,
+        requestor_id=user_id,
         submitter_id=user_id,
         assingee_id=user_id,
         group_id=group_id,

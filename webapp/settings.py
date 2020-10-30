@@ -107,6 +107,9 @@ ZENDESK_WEBHOOK_USER = os.environ.get(
 ZENDESK_WEBHOOK_TOKEN = os.environ.get(
     'ZENDESK_WEBHOOK_TOKEN', '<shared secret random string>'
 )
+ZENDESK_AGENT_EMAIL = os.environ.get(
+    'ZENDESK_AGENT_EMAIL', '<email of zenslackchat agent>'
+)
 
 
 PAGERDUTY_OAUTH_URI = os.environ.get(
