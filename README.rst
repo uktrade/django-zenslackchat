@@ -30,7 +30,7 @@ for easy tracking and later reporting.
 The bot is a Django web application. It uses Celery and Redis to schedule the 
 periodic report.
 
-This bot can connect to Pager Duty and recover an enscalation policy from 
+This bot can connect to Pager Duty and recover an escalation policy from 
 which it then gets the primary and secondary contact names. If configured, who 
 is on call will be posted to the slack channel after an issue is raised.
 
@@ -301,7 +301,7 @@ PagerDuty OAuth
 
 To set up a new OAuth client go to your account:
 
-- https://uktrade.pagerduty.com/developer/apps/register
+- https://<your subdomain>.pagerduty.com/developer/apps/register
 
 For "Build an App" fill out 
 
