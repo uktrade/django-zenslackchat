@@ -395,6 +395,13 @@ should handle. This is the numeric Zendesk ID for the group it will look
 something like ``360003877797``.
 
 
+ZENDESK_AGENT_EMAIL
+~~~~~~~~~~~~~~~~~~~
+
+When Zendesk creates and issue, it imperonsates the ZenslackChat user. This is
+the email address of that user and must match what is shown on the account.
+
+
 ZENDESK_WEBHOOK_TOKEN
 ~~~~~~~~~~~~~~~~~~~~~
 
