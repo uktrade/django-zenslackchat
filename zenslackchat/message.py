@@ -190,6 +190,8 @@ def handler(
                     slack_client, thread_id, channel_id, (
                        "I understand the follow commands:\n\n" 
                        "- help: <this command>\n"
+                       f"- ✅: close this ticket ({url})\n"
+                       f"- resolve: close this ticket ({url})\n"
                        f"- resolve ticket: close this ticket ({url})\n"
                        "\nBest regards.\n\n🤖"
                     )
