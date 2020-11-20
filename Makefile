@@ -21,7 +21,6 @@ test_install:
 
 clean:
 	rm -rf dist/ build/
-	rm -f README.pdf
 	find . -iname '*.pyc' -exec rm {} \; -print
 
 collect:
