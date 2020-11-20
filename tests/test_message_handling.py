@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from zenslackchat.message import handler
+from zenslackchat.message import is_resolved
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.message import IGNORED_SUBTYPES
 
@@ -136,17 +137,42 @@ def test_new_support_message_creates_ticket(
     )
 
 
+@pytest.mark.parametrize(
+    ('resolve_command', 'expected'),
+    [
+        ('resolve ticket', True),
+        ('resolve', True),
+        ('✅', True),
+        ('Yo!', False),
+        ('res', False),
+        ('stfu', False),
+        ('resolv', False),
+    ]
+)
+def test_is_resolve(resolve_command, expected):
+    assert is_resolved(resolve_command) is expected
+    
+
 @patch('zenslackchat.message.add_comment')
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')
 @patch('zenslackchat.message.post_message')
+@pytest.mark.parametrize(
+    'resolve_command',
+    [
+        'resolve ticket',
+        'resolve',
+        '✅'
+    ]
+)
 def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
     post_message,
     create_ticket,
     close_ticket,
     get_ticket,
     add_comment,
+    resolve_command, 
     log,
     db
 ):
@@ -255,7 +281,7 @@ def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
     handle_message({
         'channel': 'C0192NP3TFG',
         'event_ts': '1602064330.001600',
-        'text': 'resolve ticket',
+        'text': resolve_command,
         # This is a reply message so thread_ts refers to the parent chat id
         'thread_ts': '1602064330.001600',
         'ts': '1602065965.003200',

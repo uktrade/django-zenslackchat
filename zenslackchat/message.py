@@ -46,6 +46,19 @@ IGNORED_SUBTYPES = [
 ]
 
 
+def is_resolved(command):
+    """Return true if the given command string matches on of the accepted
+    resolve strings.
+
+    :param command: A string of 'resolve', 'resolve ticket' or '✅'
+
+    :returns: True the given string is a resolve command otherwise False.
+
+    """
+    _cmd = command.lower()
+    return (_cmd == 'resolve' or _cmd == 'resolve ticket' or _cmd == '✅')
+
+
 def handler(
     event, our_channel, workspace_uri, zendesk_uri, slack_client, 
     zendesk_client, user_id, group_id
@@ -160,7 +173,7 @@ def handler(
                 f'Recoverd ticket {ticket_id} from slack {slack_chat_url}'
             )
             command = text.strip().lower()
-            if command == 'resolve ticket':
+            if is_resolved(command):
                 # Time to close the ticket as the issue has been resolved.
                 log.debug(
                     f'Closing ticket {ticket_id} from slack {slack_chat_url}.'
