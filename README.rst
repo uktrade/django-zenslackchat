@@ -6,7 +6,7 @@ Zenslackchat
 
 The support team work through Slack. Zendesk is the company support issue 
 tracking system. This bot will put new support issues raised on Slack into 
-Zendesk. It will also update the conversation in Zendesk as it develops on 
+Zendesk. It will also updates the conversation in Zendesk as it develops on 
 Slack. If any comments are made on the issue in Zendesk these will also be sent 
 to the support message thread on Slack. The idea is to pull in support requests 
 from other platforms such as Microsoft Teams and the support Email in future.
@@ -35,6 +35,25 @@ which it then gets the primary and secondary contact names. If configured, who
 is on call will be posted to the slack channel after an issue is raised.
 
 .. contents::
+
+
+Chat bot commands
+-----------------
+
+Any text sent to the chat bot will result in a new issues. In the new issue 
+thread, the bot will respond to the follow commands.
+
+help
+~~~~
+
+This will list the available chat bot commands to the channel.
+
+
+resolve | resolve ticket | ✅
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This will resolve the current issue based on the thread you are in. The issue
+cannot be re-opened as Zendesk does not permit this.
 
 
 Development
@@ -393,6 +412,13 @@ ZENDESK_GROUP_ID
 Which group tickets belong to. This is used when deciding what tickets the bot 
 should handle. This is the numeric Zendesk ID for the group it will look 
 something like ``360003877797``.
+
+
+ZENDESK_AGENT_EMAIL
+~~~~~~~~~~~~~~~~~~~
+
+When Zendesk creates and issue, it imperonsates the ZenslackChat user. This is
+the email address of that user and must match what is shown on the account.
 
 
 ZENDESK_WEBHOOK_TOKEN
