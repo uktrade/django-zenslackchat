@@ -5,13 +5,15 @@ slackeventsapi
 python-dateutil
 python-decouple
 psycopg2-binary
-dj-database-url
 requests
 pdpyras
 sentry-sdk==0.10.2
 celery[redis]
+dj-redis-url
+dj-database-url
 django_log_formatter_ecs
 django
 djangorestframework
+django-environ
 whitenoise
 waitress

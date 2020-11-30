@@ -139,3 +139,4 @@ cython_debug/
 static/
 local_settings.py
 
+.env
