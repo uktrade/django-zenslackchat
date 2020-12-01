@@ -9,7 +9,6 @@ requests
 pdpyras
 sentry-sdk==0.10.2
 celery[redis]
-dj-redis-url
 dj-database-url
 django_log_formatter_ecs
 django

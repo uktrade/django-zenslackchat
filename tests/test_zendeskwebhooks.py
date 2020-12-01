@@ -8,13 +8,11 @@ from rest_framework.test import APIRequestFactory
 
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
-from zenslackchat import zendesk_webhook_view
+from zenslackchat import zendesk_webhooks
+from zenslackchat import zendesk_base_webhook
 
 
-@patch('zenslackchat.zendesk_webhook_view.update_with_comments_from_zendesk')
-def test_zendesk_request_is_rejected_with_missing_token_field(
-    update_with_comments_from_zendesk
-):
+def test_zendesk_request_is_rejected_with_missing_token_field():
     """Test if no token is present when data is POSTed to the 
     zendesk webhook webhook.
 
@@ -26,7 +24,7 @@ def test_zendesk_request_is_rejected_with_missing_token_field(
         'ticket_id': '1430',
     }
     factory = APIRequestFactory()
-    view = zendesk_webhook_view.WebHook.as_view()
+    view = zendesk_base_webhook.BaseWebHook.as_view()
     request = factory.post(
         '/zendesk/webhook/', 
         zendesk_event,
@@ -34,11 +32,9 @@ def test_zendesk_request_is_rejected_with_missing_token_field(
     )
     response = view(request)
     assert response.status_code == 403
-    update_with_comments_from_zendesk.assert_not_called()
 
 
-@patch('zenslackchat.zendesk_webhook_view.update_with_comments_from_zendesk')
-def test_zendesk_request_token_is_incorrect(update_with_comments_from_zendesk):
+def test_zendesk_request_token_is_incorrect():
     """Test that presenting the wrong token rejects the request.
     """
     zendesk_event = {
@@ -47,7 +43,7 @@ def test_zendesk_request_token_is_incorrect(update_with_comments_from_zendesk):
         'ticket_id': '1430',
     }
     factory = APIRequestFactory()
-    view = zendesk_webhook_view.WebHook.as_view()
+    view = zendesk_base_webhook.BaseWebHook.as_view()
     request = factory.post(
         '/zendesk/webhook/', 
         zendesk_event,
@@ -58,12 +54,11 @@ def test_zendesk_request_token_is_incorrect(update_with_comments_from_zendesk):
         response = view(request)
 
     assert response.status_code == 403
-    update_with_comments_from_zendesk.assert_not_called()
 
 
-@patch('zenslackchat.zendesk_webhook_view.SlackApp')
-@patch('zenslackchat.zendesk_webhook_view.ZendeskApp')
-@patch('zenslackchat.zendesk_webhook_view.update_with_comments_from_zendesk')
+@patch('zenslackchat.zendesk_base_webhook.SlackApp')
+@patch('zenslackchat.zendesk_base_webhook.ZendeskApp')
+@patch('zenslackchat.zendesk_webhooks.update_with_comments_from_zendesk')
 def test_zendesk_exception_raised_by_update_comments(
     update_with_comments_from_zendesk, ZendeskApp, SlackApp, log, db
 ):
@@ -75,7 +70,7 @@ def test_zendesk_exception_raised_by_update_comments(
         'ticket_id': '1430',
     }
     factory = APIRequestFactory()
-    view = zendesk_webhook_view.WebHook.as_view()
+    view = zendesk_webhooks.CommentsWebHook.as_view()
     request = factory.post(
         '/zendesk/webhook/', 
         zendesk_event,
@@ -94,13 +89,13 @@ def test_zendesk_exception_raised_by_update_comments(
     update_with_comments_from_zendesk.assert_called()
 
 
-@patch('zenslackchat.zendesk_webhook_view.SlackApp')
-@patch('zenslackchat.zendesk_webhook_view.ZendeskApp')
-@patch('zenslackchat.zendesk_webhook_view.update_with_comments_from_zendesk')
-def test_zendesk_request_token_ok(
+@patch('zenslackchat.zendesk_base_webhook.SlackApp')
+@patch('zenslackchat.zendesk_base_webhook.ZendeskApp')
+@patch('zenslackchat.zendesk_webhooks.update_with_comments_from_zendesk')
+def test_zendesk_comments_event_ok_path(
     update_with_comments_from_zendesk, ZendeskApp, SlackApp, log, db
 ):
-    """Test that given the correct token the request is processed OK.
+    """Test OK case to update comments being called.
     """
     class MockClient:
         def __init__(self, name):
@@ -125,7 +120,7 @@ def test_zendesk_request_token_ok(
 
     override = {'ZENDESK_WEBHOOK_TOKEN': 'the-correct-token'}
     with patch.dict('webapp.settings.__dict__', override):    
-        view = zendesk_webhook_view.WebHook.as_view()
+        view = zendesk_webhooks.CommentsWebHook.as_view()
         factory = APIRequestFactory()
         request = factory.post(
             '/zendesk/webhook/', 
@@ -138,6 +133,55 @@ def test_zendesk_request_token_ok(
     SlackApp.client.assert_called()
     ZendeskApp.client.assert_called()
     update_with_comments_from_zendesk.assert_called_with(
+        zendesk_event,
+        slack_client=slack_client,
+        zendesk_client=zendesk_client
+    )
+
+
+@patch('zenslackchat.zendesk_base_webhook.SlackApp')
+@patch('zenslackchat.zendesk_base_webhook.ZendeskApp')
+@patch('zenslackchat.zendesk_webhooks.update_from_zendesk_email')
+def test_zendesk_email_event_ok_path(
+    update_from_zendesk_email, ZendeskApp, SlackApp, log, db
+):
+    """Test OK case to email event being called.
+    """
+    class MockClient:
+        def __init__(self, name):
+            self.name = name
+
+    SlackApp.client = MagicMock()
+    slack_client = MockClient('slack')
+    SlackApp.client.return_value = slack_client
+    # test my understanding of who this should work
+    assert SlackApp.client() == slack_client
+
+    ZendeskApp.client = MagicMock()
+    zendesk_client = MockClient('zendesk')
+    ZendeskApp.client.return_value = zendesk_client
+    assert ZendeskApp.client() == zendesk_client
+
+    zendesk_event = {
+        'token': 'the-correct-token',
+        'ticket_id': '1430',
+    }
+
+    override = {'ZENDESK_WEBHOOK_TOKEN': 'the-correct-token'}
+    with patch.dict('webapp.settings.__dict__', override):    
+        view = zendesk_webhooks.CommentsWebHook.as_view()
+        factory = APIRequestFactory()
+        request = factory.post(
+            '/zendesk/webhook/', 
+            zendesk_event,
+            format='json'
+        )
+        response = view(request)
+
+    assert response.status_code == 200
+    SlackApp.client.assert_called()
+    ZendeskApp.client.assert_called()
+    update_from_zendesk_email.assert_called_with(
         zendesk_event,
         slack_client=slack_client,
         zendesk_client=zendesk_client

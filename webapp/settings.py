@@ -16,13 +16,16 @@ import logging
 import binascii
 from pathlib import Path
 
-
+import environ
 import sentry_sdk
 import dj_database_url
 from sentry_sdk.integrations.django import DjangoIntegration
 
-
 from zenslackchat import botlogging
+
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 LOGGING = botlogging.config
 
@@ -39,10 +42,6 @@ if os.environ.get("DISABLE_MESSAGE_PROCESSING", "0").strip() == "1":
     # Stop handling messages, while this is set in the environment.
     sys.stderr.write("DISABLE_MESSAGE_PROCESSING is set in environment!\n")
     DISABLE_MESSAGE_PROCESSING = True
-
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -253,6 +252,14 @@ task_always_eager = False
 
 # Set the name for the app in logging:
 DLFE_APP_NAME = 'ZenSlackChat'
+
+
+ENV_FILE = os.path.join(BASE_DIR, '.env')
+if os.path.exists(ENV_FILE):
+    logging.getLogger(__name__).warn("Using .env override configuration.")
+    environ.Env.read_env(ENV_FILE)
+
+
 
 # Sentry set up:
 SENTRY_DSN = os.environ.get("SENTRY_DSN", None)

@@ -394,3 +394,8 @@ def update_with_comments_from_zendesk(event, zendesk_client, slack_client):
     for message in for_slack:
         msg = f"(Zendesk): {message['body']}"
         post_message(slack_client, chat_id, issue.channel_id, msg)
+
+
+def update_from_zendesk_email(event, zendesk_client, slack_client):
+    """
+    """
