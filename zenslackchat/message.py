@@ -22,6 +22,8 @@ import zenpy
 from dateutil.parser import parse
 
 from webapp import settings
+from zenslackchat.models import SlackApp
+from zenslackchat.models import ZendeskApp
 from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.models import NotFoundError
@@ -346,7 +348,7 @@ def messages_for_slack(slack, zendesk):
     return for_slack
 
 
-def update_with_comments_from_zendesk(event, zendesk_client, slack_client):
+def update_with_comments_from_zendesk(event, slack_client, zendesk_client):
     """Handle the raw event from a Zendesk webhook and return without error.
 
     This will log all exceptions rather than cause zendesk reject 
@@ -396,6 +398,56 @@ def update_with_comments_from_zendesk(event, zendesk_client, slack_client):
         post_message(slack_client, chat_id, issue.channel_id, msg)
 
 
-def update_from_zendesk_email(event, zendesk_client, slack_client):
+def update_from_zendesk_email(event, slack_client, zendesk_client):
     """
+
+    :returns: True issue handled ok. False indicates an error which was logged.
+
     """
+    returned = False
+    log = logging.getLogger(__name__)
+    
+    channel_id = event['channel_id']
+    ticket_id = event['ticket_id']
+    zendesk_uri = event['zendesk_uri']
+    workspace_uri = event['workspace_uri']
+    log.debug(f'Recovering ticket from Zendesk:<{ticket_id}>')
+    zendesk = ZendeskApp.client()
+    ticket = get_ticket(zendesk, ticket_id)
+    log.debug(f'Success. Got Zendesk ticket<{ticket_id}>')
+
+    message = f"(From Zendesk Email): {ticket.subject} {ticket.description}"
+
+    slack = SlackApp.client()
+    response = slack.chat_postMessage(
+        channel=channel_id,
+        text=message
+    )
+    message = response['message']
+    chat_id = message['ts']
+
+    # Store all the details in our DB:
+    ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
+
+    # Once-off response to parent thread:
+    url = zendesk_ticket_url(zendesk_uri, ticket.id)
+    message = f"Hello, your new support request is {url}"
+    post_message(slack_client, chat_id, channel_id, message)
+
+    slack_chat_url = message_url(workspace_uri, channel_id, chat_id)
+
+    add_comment(
+        zendesk_client, 
+        ticket, 
+        f'This is the message on slack {slack_chat_url}.'
+    )
+
+    on_call = PagerDutyApp.on_call()
+    if on_call != {}:
+        message = (
+            f"📧 Primary on call: {on_call['primary']}\n"
+            f"ℹ️ Secondary on call: {on_call['secondary']}."
+        )
+        post_message(slack_client, chat_id, channel_id, message)
+
+    return returned

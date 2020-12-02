@@ -169,10 +169,12 @@ def trigger_daily_report(request):
 
 # Restrict scope down to what I can interact with..
 ZENDESK_REQUESTED_SCOPES = "%20".join((
+    # general read:
+    'read',
     # allows me to be zenslackchat when managing tickets
     'impersonate', 
     # I only need access to tickets resources:
-    'tickets:read', 'tickets:write'
+    'tickets:read', 'tickets:write',
 ))
 
     

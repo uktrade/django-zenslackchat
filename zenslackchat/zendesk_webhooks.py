@@ -1,3 +1,4 @@
+from webapp import settings
 from zenslackchat.zendesk_base_webhook import BaseWebHook
 from zenslackchat.message import update_from_zendesk_email
 from zenslackchat.message import update_with_comments_from_zendesk
@@ -26,4 +27,8 @@ class EmailWebHook(BaseWebHook):
         Recover and update the comments with lastest from Zendesk.
 
         """
+        event['channel_id'] = settings.SRE_SUPPORT_CHANNEL
+        event['zendesk_uri'] = settings.ZENDESK_REDIRECT_URI
+        event['workspace_uri'] = settings.SLACK_WORKSPACE_URI
+
         update_from_zendesk_email(event, slack_client, zendesk_client)

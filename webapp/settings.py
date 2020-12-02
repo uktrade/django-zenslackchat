@@ -253,13 +253,12 @@ task_always_eager = False
 # Set the name for the app in logging:
 DLFE_APP_NAME = 'ZenSlackChat'
 
-
 ENV_FILE = os.path.join(BASE_DIR, '.env')
 if os.path.exists(ENV_FILE):
-    logging.getLogger(__name__).warn("Using .env override configuration.")
+    logging.getLogger(__name__).warn(
+        "Using .env file to override configuration."
+    )
     environ.Env.read_env(ENV_FILE)
-
-
 
 # Sentry set up:
 SENTRY_DSN = os.environ.get("SENTRY_DSN", None)
