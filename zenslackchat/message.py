@@ -28,6 +28,7 @@ from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.models import NotFoundError
 from zenslackchat.slack_api import message_url
+from zenslackchat.slack_api import create_thread
 from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import get_ticket
 from zenslackchat.zendesk_api import add_comment
@@ -48,6 +49,31 @@ IGNORED_SUBTYPES = [
 ]
 
 
+def message_who_is_on_call(slack_client, chat_id, channel_id):
+    """Post to the chat who is primary and secondary on call.
+
+    This will only message if the PagerDutyApp / OAuth set up has been done.
+    
+    """
+    on_call = PagerDutyApp.on_call()
+    if on_call != {}:
+        message = (
+            f"📧 Primary on call: {on_call['primary']}\n"
+            f"ℹ️ Secondary on call: {on_call['secondary']}."
+        )
+        post_message(slack_client, chat_id, channel_id, message)
+
+
+def message_issue_zendesk_url(
+    slack_client, zendesk_uri, ticket_id, chat_id, channel_id
+):
+    """Post to slack where the Zendesk URL of the issue.
+    """
+    url = zendesk_ticket_url(zendesk_uri, ticket_id)
+    message = f"Hello, your new support request is {url}"
+    post_message(slack_client, chat_id, channel_id, message)
+
+
 def is_resolved(command):
     """Return true if the given command string matches on of the accepted
     resolve strings.
@@ -59,6 +85,7 @@ def is_resolved(command):
     """
     _cmd = command.lower()
     return (_cmd == 'resolve' or _cmd == 'resolve ticket' or _cmd == '✅')
+
 
 
 def handler(
@@ -243,21 +270,12 @@ def handler(
                 log.exception("Zendesk API error: ")
 
             else:
-                # Store all the details in our DB:
+                # Store all the details and notify:
                 ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
-
-                # Once-off response to parent thread:
-                url = zendesk_ticket_url(zendesk_uri, ticket.id)
-                message = f"Hello, your new support request is {url}"
-                post_message(slack_client, chat_id, channel_id, message)
-
-                on_call = PagerDutyApp.on_call()
-                if on_call != {}:
-                    message = (
-                        f"📧 Primary on call: {on_call['primary']}\n"
-                        f"ℹ️ Secondary on call: {on_call['secondary']}."
-                    )
-                    post_message(slack_client, chat_id, channel_id, message)
+                message_issue_zendesk_url(
+                    slack_client, zendesk_uri, ticket_id, chat_id, channel_id                    
+                )
+                message_who_is_on_call(slack_client, chat_id, channel_id)
 
         else:
             # No, we have a ticket already for this.
@@ -399,55 +417,41 @@ def update_with_comments_from_zendesk(event, slack_client, zendesk_client):
 
 
 def update_from_zendesk_email(event, slack_client, zendesk_client):
-    """
-
-    :returns: True issue handled ok. False indicates an error which was logged.
+    """Open a ZenSlackChat issue and link to the Zendesk Ticket.
 
     """
-    returned = False
     log = logging.getLogger(__name__)
-    
+
+    zendesk = ZendeskApp.client()
+    slack = SlackApp.client()    
     channel_id = event['channel_id']
     ticket_id = event['ticket_id']
     zendesk_uri = event['zendesk_uri']
     workspace_uri = event['workspace_uri']
+
+    # Recover the zendesk issue the email has already created:
     log.debug(f'Recovering ticket from Zendesk:<{ticket_id}>')
-    zendesk = ZendeskApp.client()
     ticket = get_ticket(zendesk, ticket_id)
+
+    # We need to create a new thread for this on the slack channel.
+    # We will then add the usual message to this new thread.
     log.debug(f'Success. Got Zendesk ticket<{ticket_id}>')
-
     message = f"(From Zendesk Email): {ticket.subject} {ticket.description}"
+    chat_id = create_thread(slack, channel_id, message)
 
-    slack = SlackApp.client()
-    response = slack.chat_postMessage(
-        channel=channel_id,
-        text=message
-    )
-    message = response['message']
-    chat_id = message['ts']
-
-    # Store all the details in our DB:
+    # Store the zendesk ticket in our db and notify:
     ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
+    message_issue_zendesk_url(
+        slack_client, zendesk_uri, ticket_id, chat_id, channel_id                    
+    )
+    message_who_is_on_call(slack_client, chat_id, channel_id)
 
-    # Once-off response to parent thread:
-    url = zendesk_ticket_url(zendesk_uri, ticket.id)
-    message = f"Hello, your new support request is {url}"
-    post_message(slack_client, chat_id, channel_id, message)
-
+    # Indicate on the existing Zendesk ticket that the SRE team now knows
+    # about this issue.
     slack_chat_url = message_url(workspace_uri, channel_id, chat_id)
-
     add_comment(
         zendesk_client, 
         ticket, 
-        f'This is the message on slack {slack_chat_url}.'
+        f'The SRE team is aware of your issue on Slack here {slack_chat_url}.'
     )
 
-    on_call = PagerDutyApp.on_call()
-    if on_call != {}:
-        message = (
-            f"📧 Primary on call: {on_call['primary']}\n"
-            f"ℹ️ Secondary on call: {on_call['secondary']}."
-        )
-        post_message(slack_client, chat_id, channel_id, message)
-
-    return returned

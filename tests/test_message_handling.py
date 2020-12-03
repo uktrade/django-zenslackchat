@@ -4,9 +4,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from zenslackchat.message import handler
+from zenslackchat.models import PagerDutyApp
 from zenslackchat.message import is_resolved
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.message import IGNORED_SUBTYPES
+from zenslackchat.message import message_who_is_on_call
+from zenslackchat.message import message_issue_zendesk_url
 from zenslackchat.message import update_from_zendesk_email
 
 
@@ -26,6 +29,180 @@ class FakeUserResponse(object):
                 )
             )
         )
+
+
+@patch('zenslackchat.message.post_message')
+def test_message_issue_zendesk_url(post_message, db, log):
+    """Test slack message for the zendesk issue link.
+    """
+    channel_id = 'slack-channel-id'
+    chat_id = 'slack-chat-id'
+    ticket_id = 'ticket-id'
+    slack_client = MagicMock()
+    zendesk_uri = 'https://z.e.n.d.e.s.k/'
+
+    message_issue_zendesk_url(
+        slack_client, zendesk_uri, ticket_id, chat_id, channel_id
+    )
+    
+    # Verify the what should be sent to slack:
+    post_message.assert_called_with(
+        slack_client,
+        'slack-chat-id',
+        'slack-channel-id',
+        'Hello, your new support request is https://z.e.n.d.e.s.k/ticket-id'
+    )
+
+
+@patch('zenslackchat.message.post_message')
+@patch('zenslackchat.models.APISession.get')
+def test_message_who_is_on_call(session_get, post_message, db, log):
+    """Test the message sent / not sent for who is on call.
+    """
+    channel_id = 'slack-channel-id'
+    chat_id = 'slack-chat-id'
+    slack_client = MagicMock()
+
+    # With no PagerDutyApp set up then no message should be sent:
+    message_who_is_on_call(slack_client, chat_id, channel_id)
+    post_message.assert_not_called()    
+
+    post_message.reset_mock()
+
+    # Configure PageDurty and test the message sent:
+    pd = PagerDutyApp(
+        access_token='my-access-token',
+        token_type='my-token-type',
+        scope='my scopes for the token type'
+    )
+    pd.save()
+
+    # Mock the PagerDuty requests.get call recovering who is on call:
+    def loads():
+        # Representative of what PagerDuty returns
+        return {"oncalls": [
+            {
+                "escalation_policy": {
+                    "id": "my-policy-id",
+                    "type": "escalation_policy_reference",
+                    "summary": "Silver P1",
+                    "self": "https://api/escalation_policies/my-policy-id",
+                    "html_url": "https://etc/escalation_policies/my-policy-id"
+                },
+                "escalation_level": 1,
+                "schedule": {
+                    "id": "schedule-id",
+                    "type": "schedule_reference",
+                    "summary": "Extended Hours - Primary",
+                    "self": "https://api/schedules/schedule-id",
+                    "html_url": "https://etc/schedules/schedule-id"
+                },
+                "user": {
+                    "id": "user-id-1",
+                    "type": "user_reference",
+                    "summary": "Fred Sprocket",
+                    "self": "https://api...etc",
+                    "html_url": "https://uktrade...etc"
+                },
+                "start": "2020-12-03T08:00:00Z",
+                "end": "2020-12-03T22:00:00Z"
+            },
+            {
+                "escalation_policy": {
+                    "id": "my-policy-id",
+                    "type": "escalation_policy_reference",
+                    "summary": "Silver P1",
+                    "self": "https://api/escalation_policies/my-policy-id",
+                    "html_url": "https://etc/escalation_policies/my-policy-id"
+                },
+                "escalation_level": 2,
+                "schedule": {
+                    "id": "schedule-id-2",
+                    "type": "schedule_reference",
+                    "summary": "Extended Hours - Secondary",
+                    "self": "https://api/schedules/schedule-id-2",
+                    "html_url": "https://etc/schedules/schedule-id-2"
+                },
+                "user": {
+                    "id": "user-id-2",
+                    "type": "user_reference",
+                    "summary": "Tony Tiger",
+                    "self": "https://api...etc",
+                    "html_url": "https://uktrade...etc"
+                },
+                "start": "2020-12-02T08:00:00Z",
+                "end": "2020-12-02T22:00:00Z"
+            }
+        ],
+        "limit": 25,
+        "offset": 0,
+        "more": False,
+        "total": None
+    }
+    session_get.return_value.json = loads
+    settings = dict(DEBUG=True, PAGERDUTY_ESCALATION_POLICY_ID='my-policy-id')
+    message = (
+        "📧 Primary on call: Fred Sprocket\n"
+        "ℹ️ Secondary on call: Tony Tiger."
+    )
+    with patch.dict('webapp.settings.__dict__', settings, clear=True):
+        message_who_is_on_call(slack_client, chat_id, channel_id)
+
+    # Verify the what should be sent to slack:
+    post_message.assert_called_with(
+        slack_client,
+        'slack-chat-id',
+        'slack-channel-id',
+        message
+    )
+
+
+@patch('zenslackchat.message.get_ticket')
+@patch('zenslackchat.message.close_ticket')
+@patch('zenslackchat.message.create_ticket')
+@patch('zenslackchat.message.post_message')
+def test_email_from_zendesk_is_added_for_tracking(
+    post_message, create_ticket, close_ticket, get_ticket, log, db
+):
+    """Test the path to creating a zendesk ticket from new message receipt.
+    """
+    slack_client = MagicMock()
+    zendesk_client = MagicMock()
+    channel_id = 'C024JUTACTS'
+    workspace_uri = 'https://s.l.a.c.k'
+    zendesk_uri = 'https://z.e.n.d.e.s.k'
+    get_ticket.return_value = FakeTicket(ticket_id='32')
+    slack_client.users_info.return_value = FakeUserResponse()
+
+    # There should be no entries here yet:
+    assert ZenSlackChat.objects.count() == 0
+
+    # Zendesk has a new support request via email. Update our system 
+    # to start tracking this.
+    #
+    # The EmailWebHook.handle_event will add in the extra keys that 
+    # update_from_zendesk_email will need.
+    event = {
+        'ticket_id': '32',
+        # EmailWebHook.handle_event adds these to the event before calling:
+        'channel_id': channel_id,
+        'zendesk_uri': zendesk_uri,
+        'workspace_uri': workspace_uri
+    }
+    update_from_zendesk_email(event, slack_client, zendesk_client)
+
+    # There should now be one instance here:
+    assert ZenSlackChat.objects.count() == 1
+    assert len(ZenSlackChat.open_issues()) == 1
+
+    # Verify what the stored issue should look like:
+    issue = ZenSlackChat.get('C019JUGAGTS', '1597940362.013100')
+    assert issue.active is True
+    assert issue.opened is not None
+    assert issue.closed is None
+    assert issue.channel_id == 'C019JUGAGTS'
+    assert issue.chat_id == '1597940362.013100'
+    assert issue.ticket_id == '32'
 
 
 @patch('zenslackchat.message.get_ticket')
@@ -712,84 +889,3 @@ def test_channel_is_not_our_channel_so_message_is_ignored(
     create_ticket.assert_not_called()
     post_message.assert_not_called()
 
-
-
-@patch('zenslackchat.message.get_ticket')
-@patch('zenslackchat.message.close_ticket')
-@patch('zenslackchat.message.create_ticket')
-@patch('zenslackchat.message.post_message')
-def test_email_from_zendesk_is_added_for_tracking(
-    post_message,
-    create_ticket,
-    close_ticket,
-    get_ticket,
-    log,
-    db
-):
-    """Test the path to creating a zendesk ticket from new message receipt.
-    """
-    slack_client = MagicMock()
-    zendesk_client = MagicMock()
-    workspace_uri = 'https://s.l.a.c.k'
-    zendesk_uri = 'https://z.e.n.d.e.s.k'
-    user_id = '100000000009'
-    group_id = '200000000008'
-
-    # Set up the user details 'slack' will return    
-    slack_client.users_info.return_value = FakeUserResponse()
-
-    # No existing ticket should be returned:
-    get_ticket.return_value = None
-
-    # Return out fake ticket when asked to create:
-    ticket = FakeTicket(ticket_id='32')
-    create_ticket.return_value = ticket
-
-    # There should be no entries here yet:
-    assert ZenSlackChat.objects.count() == 0
-
-    # Zendesk has a new support request via email. Update our system 
-    # to start tracking this.
-    event = {'ticket_id': '32'}
-    assert update_from_zendesk_email(
-        event, slack_client, zendesk_client
-    ) is True
-
-    # There should now be one instance here:
-    assert ZenSlackChat.objects.count() == 1
-    assert len(ZenSlackChat.open_issues()) == 1
-
-    # Verify what the stored issue should look like:
-    issue = ZenSlackChat.get('C019JUGAGTS', '1597940362.013100')
-    assert issue.active is True
-    assert issue.opened is not None
-    assert issue.closed is None
-    assert issue.channel_id == 'C019JUGAGTS'
-    assert issue.chat_id == '1597940362.013100'
-    assert issue.ticket_id == '32'
-
-    # Verify the calls to the various mock are as I expect:
-
-    # called with the content of data['user']
-    slack_client.users_info.assert_called_with(user='UGF7MRWMS')
-
-    # Check how zendesk api was called:
-    create_ticket.assert_called_with(
-        zendesk_client,
-        chat_id='1597940362.013100',
-        user_id='100000000001',
-        group_id='200000000002',
-        recipient_email='bob@example.com',
-        subject='My 🖨 is on 🔥',
-        slack_message_url='https://s.l.a.c.k/C019JUGAGTS/p1597940362013100'
-    )
-
-    # finally check the posted message:
-    url = f'https://z.e.n.d.e.s.k/{ticket.id}'
-    message = f"Hello, your new support request is {url}"
-    post_message.assert_called_with(
-        slack_client,
-        '1597940362.013100',
-        'C019JUGAGTS',
-        message
-    )

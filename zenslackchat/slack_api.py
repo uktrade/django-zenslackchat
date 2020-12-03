@@ -21,6 +21,32 @@ def message_url(workspace_uri, channel, message_id):
     return '/'.join([workspace_uri.rstrip('/'), channel, msg_id])
 
 
+def create_thread(client, channel_id, message):
+    """Create a parent message which will be the thread for further comms.
+
+    :param client: The Slack web client to use.
+
+    :param channel_id: The slack support chanel ID.
+
+    :param message: The top level message.
+
+    :returns: The chat_id of the new parent message.
+
+    """
+    log = logging.getLogger(__name__)
+
+    log.debug(f"channel:<{channel_id}> message:<{message}>")
+    response = client.chat_postMessage(
+        channel=channel_id,
+        text=message,
+    )
+
+    chat_id = response['message']['ts']
+    log.debug(f"New message chat_id:<{chat_id}>")
+
+    return chat_id
+
+
 def post_message(client, chat_id, channel_id, message):
     """Send a message to the parent thread with an update.
 
@@ -40,5 +66,3 @@ def post_message(client, chat_id, channel_id, message):
         text=message,
         thread_ts=chat_id
     )
-
-

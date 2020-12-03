@@ -27,6 +27,8 @@ class EmailWebHook(BaseWebHook):
         Recover and update the comments with lastest from Zendesk.
 
         """
+        # Added so lower level code doesn't need to django settings. Makes
+        # testing easier.
         event['channel_id'] = settings.SRE_SUPPORT_CHANNEL
         event['zendesk_uri'] = settings.ZENDESK_REDIRECT_URI
         event['workspace_uri'] = settings.SLACK_WORKSPACE_URI
