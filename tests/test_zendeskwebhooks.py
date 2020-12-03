@@ -94,16 +94,36 @@ def test_zendesk_exception_raised_by_update_comments(
 
 @pytest.mark.parametrize(
     (
-        'WebHookView', 'patch_path'
+        'WebHookView', 'patch_path', 'zendesk_event', 'env'
     ),
     (
         (
             zendesk_webhooks.EmailWebHook, 
-            'zenslackchat.zendesk_webhooks.update_from_zendesk_email'
+            'zenslackchat.zendesk_webhooks.update_from_zendesk_email',
+            {
+                'token': 'the-correct-token',
+                'ticket_id': '32',
+                'channel_id': 'slack-channel-id',
+                'zendesk_uri': 'https://z.e.n.d.e.s.k',
+                'workspace_uri': 'https://s.l.a.c.k'
+            },
+            {
+                'ZENDESK_WEBHOOK_TOKEN': 'the-correct-token',
+                'SRE_SUPPORT_CHANNEL': 'slack-channel-id',
+                'ZENDESK_REDIRECT_URI': 'https://z.e.n.d.e.s.k',
+                'SLACK_WORKSPACE_URI': 'https://s.l.a.c.k'
+            }
         ),
         (
             zendesk_webhooks.CommentsWebHook, 
-            'zenslackchat.zendesk_webhooks.update_with_comments_from_zendesk'
+            'zenslackchat.zendesk_webhooks.update_with_comments_from_zendesk',
+            {
+                'token': 'the-correct-token',
+                'ticket_id': '1430',
+            },
+            {
+                'ZENDESK_WEBHOOK_TOKEN': 'the-correct-token'
+            }            
         ),
     )
 )
@@ -112,7 +132,7 @@ def test_zendesk_exception_raised_by_update_comments(
 @patch('zenslackchat.zendesk_webhooks.update_from_zendesk_email')
 def test_zendesk_webhook_events_ok_path(
     update_from_zendesk_email, ZendeskApp, SlackApp, 
-    WebHookView, patch_path,
+    WebHookView, patch_path, zendesk_event, env,
     log, db
 ):
     """Test OK cases for Zendesk webhooks.
@@ -131,16 +151,8 @@ def test_zendesk_webhook_events_ok_path(
     zendesk_client = MockClient('zendesk')
     ZendeskApp.client.return_value = zendesk_client
     assert ZendeskApp.client() == zendesk_client
-
-    zendesk_event = {
-        'token': 'the-correct-token',
-        'ticket_id': '1430',
-    }
-
-    override = {'ZENDESK_WEBHOOK_TOKEN': 'the-correct-token'}
-
     with patch(patch_path) as expected_function_call:    
-        with patch.dict('webapp.settings.__dict__', override):    
+        with patch.dict('webapp.settings.__dict__', env):    
             view = WebHookView.as_view()
             factory = APIRequestFactory()
             request = factory.post(

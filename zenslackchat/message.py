@@ -273,7 +273,7 @@ def handler(
                 # Store all the details and notify:
                 ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
                 message_issue_zendesk_url(
-                    slack_client, zendesk_uri, ticket_id, chat_id, channel_id                    
+                    slack_client, zendesk_uri, ticket.id, chat_id, channel_id                    
                 )
                 message_who_is_on_call(slack_client, chat_id, channel_id)
 
@@ -417,7 +417,7 @@ def update_with_comments_from_zendesk(event, slack_client, zendesk_client):
 
 
 def update_from_zendesk_email(event, slack_client, zendesk_client):
-    """Open a ZenSlackChat issue and link to the Zendesk Ticket.
+    """Open a ZenSlackChat issue and link it to the existing Zendesk Ticket.
 
     """
     log = logging.getLogger(__name__)

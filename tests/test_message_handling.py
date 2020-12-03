@@ -6,6 +6,7 @@ import pytest
 from zenslackchat.message import handler
 from zenslackchat.models import PagerDutyApp
 from zenslackchat.message import is_resolved
+from zenslackchat.models import ZendeskApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.message import IGNORED_SUBTYPES
 from zenslackchat.message import message_who_is_on_call
@@ -14,9 +15,11 @@ from zenslackchat.message import update_from_zendesk_email
 
 
 class FakeTicket(object):
-    def __init__(self, ticket_id):
+    def __init__(self, ticket_id, subject='', description=''):
         self.id = ticket_id
         self.status = 'open'
+        self.subject = subject
+        self.description = description
 
 
 class FakeUserResponse(object):
@@ -158,21 +161,37 @@ def test_message_who_is_on_call(session_get, post_message, db, log):
 
 
 @patch('zenslackchat.message.get_ticket')
-@patch('zenslackchat.message.close_ticket')
-@patch('zenslackchat.message.create_ticket')
 @patch('zenslackchat.message.post_message')
+@patch('zenslackchat.message.SlackApp')
+@patch('zenslackchat.message.ZendeskApp')
 def test_email_from_zendesk_is_added_for_tracking(
-    post_message, create_ticket, close_ticket, get_ticket, log, db
+    ZendeskApp, SlackApp, post_message, get_ticket, log, db
 ):
-    """Test the path to creating a zendesk ticket from new message receipt.
+    """Test linking an email created issue into our DB for tracking.
     """
     slack_client = MagicMock()
     zendesk_client = MagicMock()
     channel_id = 'C024JUTACTS'
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
-    get_ticket.return_value = FakeTicket(ticket_id='32')
+
     slack_client.users_info.return_value = FakeUserResponse()
+    slack_client.chat_postMessage.return_value = {
+        'message': {
+            'ts': 'slack-chat-id'
+        }
+    }
+    SlackApp.client.return_value = slack_client
+
+    # Return out fake ticket when asked to create:
+    get_ticket.return_value = FakeTicket(
+        ticket_id='32',
+        subject='My printer is on 🔥',
+        description='I was smoking next to it and it just went up.'
+    )
+
+    # Return out fake ticket when asked to create:
+    ZendeskApp.client.return_value = zendesk_client
 
     # There should be no entries here yet:
     assert ZenSlackChat.objects.count() == 0
