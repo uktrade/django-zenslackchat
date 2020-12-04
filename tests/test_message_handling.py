@@ -171,6 +171,7 @@ def test_email_from_zendesk_is_added_for_tracking(
     """
     slack_client = MagicMock()
     zendesk_client = MagicMock()
+    chat_id = '1597940362.013100'
     channel_id = 'C024JUTACTS'
     workspace_uri = 'https://s.l.a.c.k'
     zendesk_uri = 'https://z.e.n.d.e.s.k'
@@ -178,7 +179,7 @@ def test_email_from_zendesk_is_added_for_tracking(
     slack_client.users_info.return_value = FakeUserResponse()
     slack_client.chat_postMessage.return_value = {
         'message': {
-            'ts': 'slack-chat-id'
+            'ts': chat_id
         }
     }
     SlackApp.client.return_value = slack_client
@@ -191,6 +192,9 @@ def test_email_from_zendesk_is_added_for_tracking(
     )
 
     # Return out fake ticket when asked to create:
+    class ZendeskMe:
+        id = 'zendesk-user-id'
+    zendesk_client.users.me.return_value = ZendeskMe()
     ZendeskApp.client.return_value = zendesk_client
 
     # There should be no entries here yet:
@@ -215,11 +219,11 @@ def test_email_from_zendesk_is_added_for_tracking(
     assert len(ZenSlackChat.open_issues()) == 1
 
     # Verify what the stored issue should look like:
-    issue = ZenSlackChat.get('C019JUGAGTS', '1597940362.013100')
+    issue = ZenSlackChat.get('C024JUTACTS', '1597940362.013100')
     assert issue.active is True
     assert issue.opened is not None
     assert issue.closed is None
-    assert issue.channel_id == 'C019JUGAGTS'
+    assert issue.channel_id == 'C024JUTACTS'
     assert issue.chat_id == '1597940362.013100'
     assert issue.ticket_id == '32'
 
