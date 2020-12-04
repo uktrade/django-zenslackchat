@@ -441,7 +441,7 @@ def update_from_zendesk_email(event, slack_client, zendesk_client):
     # We need to create a new thread for this on the slack channel.
     # We will then add the usual message to this new thread.
     log.debug(f'Success. Got Zendesk ticket<{ticket_id}>')
-    message = f"(From Zendesk Email): {ticket.subject} {ticket.description}"
+    message = f"(From Zendesk Email): {ticket.description}"
     chat_id = create_thread(slack, channel_id, message)
 
     # Store the zendesk ticket in our db and notify:
