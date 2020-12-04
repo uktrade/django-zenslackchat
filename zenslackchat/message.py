@@ -78,14 +78,18 @@ def is_resolved(command):
     """Return true if the given command string matches on of the accepted
     resolve strings.
 
-    :param command: A string of 'resolve', 'resolve ticket' or '✅'
+    :param command: A string of 'resolve', 'resolve ticket', '🆗' or '✅'
 
     :returns: True the given string is a resolve command otherwise False.
 
     """
-    _cmd = command.lower()
-    return (_cmd == 'resolve' or _cmd == 'resolve ticket' or _cmd == '✅')
-
+    _cmd = emoji.emojize(command.lower(), use_aliases=True)
+    return (
+        _cmd == 'resolve' or 
+        _cmd == 'resolve ticket' or 
+        _cmd == '🆗' or
+        _cmd == '✅'
+    )
 
 
 def handler(
@@ -132,7 +136,8 @@ def handler(
     
     # I'm ignoring most subtypes, I might be able to ignore all. I can manage 
     # the message / message-reply based on the ts/thread_ts fields and whether 
-    # they are populated or not. I'm calling 'ts' chat_id and 'thread_ts' thread_id.
+    # they are populated or not. I'm calling 'ts' chat_id and 'thread_ts' 
+    # thread_id.
     subtype = event.get('subtype')
     if subtype in IGNORED_SUBTYPES:
         log.debug(f"Ignoring subtype we don't handle: {subtype}")
@@ -219,9 +224,8 @@ def handler(
                     slack_client, thread_id, channel_id, (
                        "I understand the follow commands:\n\n" 
                        "- help: <this command>\n"
-                       f"- ✅: close this ticket ({url})\n"
-                       f"- resolve: close this ticket ({url})\n"
-                       f"- resolve ticket: close this ticket ({url})\n"
+                       "- resolve, resolve ticket, ✅, 🆗: close this ticket "
+                       f"({url})\n"
                        "\nBest regards.\n\n🤖"
                     )
                )
@@ -235,6 +239,7 @@ def handler(
                     )
 
                 else:
+                    # Send this message on to Zendesk.
                     add_comment(
                         zendesk_client, 
                         ticket, 

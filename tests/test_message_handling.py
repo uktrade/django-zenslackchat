@@ -344,6 +344,7 @@ def test_new_support_message_creates_ticket(
         ('resolve ticket', True),
         ('resolve', True),
         ('✅', True),
+        ('🆗', True),
         ('Yo!', False),
         ('res', False),
         ('stfu', False),
@@ -364,7 +365,9 @@ def test_is_resolve(resolve_command, expected):
     [
         'resolve ticket',
         'resolve',
-        '✅'
+        ':white_check_mark:',
+        '✅',
+        '🆗'
     ]
 )
 def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
