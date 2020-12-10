@@ -21,11 +21,9 @@ app.conf.worker_hijack_root_logger = False
 def setup_periodic_tasks(sender, **kwargs):
     """Set up the daily report.
     """
-    
-    # Executes every Monday morning at 7:30 a.m.
     sender.add_periodic_task(
-        # 07:30 monday -> friday
-        crontab(hour=7, minute=30, day_of_week='1-5'),
+        # 9:00am Monday to Friday
+        crontab(hour=9, minute=0, day_of_week='1-5'),
         run_daily_summary,
     )
 
