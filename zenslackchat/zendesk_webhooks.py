@@ -30,7 +30,9 @@ class EmailWebHook(BaseWebHook):
         # Added so lower level code doesn't need to django settings. Makes
         # testing easier.
         event['channel_id'] = settings.SRE_SUPPORT_CHANNEL
-        event['zendesk_uri'] = settings.ZENDESK_REDIRECT_URI
+        event['zendesk_ticket_uri'] = settings.ZENDESK_TICKET_URI
+        event['group_id'] = settings.ZENDESK_GROUP_ID
+        event['user_id'] = settings.ZENDESK_USER_ID
         event['workspace_uri'] = settings.SLACK_WORKSPACE_URI
 
         update_from_zendesk_email(event, slack_client, zendesk_client)

@@ -421,6 +421,12 @@ def update_with_comments_from_zendesk(event, slack_client, zendesk_client):
         post_message(slack_client, chat_id, issue.channel_id, msg)
 
 
+def strip_signature_from_subject(content):
+    """Assume --\n is marker for email signature and return everything before.
+    """
+    return content.split('--\n')[0]
+
+
 def update_from_zendesk_email(event, slack_client, zendesk_client):
     """Open a ZenSlackChat issue and link it to the existing Zendesk Ticket.
 
@@ -431,7 +437,9 @@ def update_from_zendesk_email(event, slack_client, zendesk_client):
     slack = SlackApp.client()    
     channel_id = event['channel_id']
     ticket_id = event['ticket_id']
-    zendesk_uri = event['zendesk_uri']
+    user_id = event['user_id']
+    group_id = event['group_id']
+    zendesk_ticket_uri = event['zendesk_ticket_uri']
     workspace_uri = event['workspace_uri']
 
     # Recover the zendesk issue the email has already created:
@@ -441,13 +449,29 @@ def update_from_zendesk_email(event, slack_client, zendesk_client):
     # We need to create a new thread for this on the slack channel.
     # We will then add the usual message to this new thread.
     log.debug(f'Success. Got Zendesk ticket<{ticket_id}>')
-    message = f"(From Zendesk Email): {ticket.description}"
+    message = f"(From Zendesk Email): {ticket.subject}"
     chat_id = create_thread(slack, channel_id, message)
+    # Include descrition as next comment before who is on call to slack
+    # to give SREs more context:
+    email_body = strip_signature_from_subject(ticket.description)
+    post_message(slack_client, chat_id, channel_id, email_body)
+
+    # Assign the ticket to ZenSlackChat group and user so comments will 
+    # come back to us on slack.
+    log.debug(
+        f'Assigning Zendesk ticket to User:<{user_id}> and Group:{group_id}'
+    )
+    # Assign to User/Group
+    ticket.assingee_id = user_id
+    ticket.group_id = group_id
+    # Set to route comments back from zendesk to slack:
+    ticket.external_id = chat_id
+    zendesk.tickets.update(ticket)
 
     # Store the zendesk ticket in our db and notify:
     ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
     message_issue_zendesk_url(
-        slack_client, zendesk_uri, ticket_id, chat_id, channel_id                    
+        slack_client, zendesk_ticket_uri, ticket_id, chat_id, channel_id                    
     )
     message_who_is_on_call(slack_client, chat_id, channel_id)
 
@@ -459,4 +483,3 @@ def update_from_zendesk_email(event, slack_client, zendesk_client):
         ticket, 
         f'The SRE team is aware of your issue on Slack here {slack_chat_url}.'
     )
-
