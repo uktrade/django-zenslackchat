@@ -11,7 +11,7 @@ from zenslackchat.models import ZenSlackChat
 from zenslackchat.message import IGNORED_SUBTYPES
 from zenslackchat.message import message_who_is_on_call
 from zenslackchat.message_tools import message_issue_zendesk_url
-from zenslackchat.zendesk_to_slack_email import email_from_zendesk
+from zenslackchat.zendesk_email_to_slack import email_from_zendesk
 
 
 class FakeTicket(object):
@@ -34,12 +34,12 @@ class FakeUserResponse(object):
         )
 
 
-@patch('zenslackchat.zendesk_to_slack_email.get_ticket')
-@patch('zenslackchat.zendesk_to_slack_email.add_comment')
-@patch('zenslackchat.zendesk_to_slack_email.message_issue_zendesk_url')
-@patch('zenslackchat.zendesk_to_slack_email.message_who_is_on_call')
-@patch('zenslackchat.zendesk_to_slack_email.SlackApp')
-@patch('zenslackchat.zendesk_to_slack_email.ZendeskApp')
+@patch('zenslackchat.zendesk_email_to_slack.get_ticket')
+@patch('zenslackchat.zendesk_email_to_slack.add_comment')
+@patch('zenslackchat.zendesk_email_to_slack.message_issue_zendesk_url')
+@patch('zenslackchat.zendesk_email_to_slack.message_who_is_on_call')
+@patch('zenslackchat.zendesk_email_to_slack.SlackApp')
+@patch('zenslackchat.zendesk_email_to_slack.ZendeskApp')
 def test_email_from_zendesk_is_added_for_tracking(
     ZendeskApp, SlackApp, message_who_is_on_call, message_issue_zendesk_url, 
     add_comment, get_ticket, log, db

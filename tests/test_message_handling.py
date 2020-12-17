@@ -11,7 +11,7 @@ from zenslackchat.models import ZenSlackChat
 from zenslackchat.message import IGNORED_SUBTYPES
 from zenslackchat.message_tools import message_who_is_on_call
 from zenslackchat.message_tools import message_issue_zendesk_url
-from zenslackchat.zendesk_to_slack_email import email_from_zendesk
+from zenslackchat.zendesk_email_to_slack import email_from_zendesk
 
 
 class FakeTicket(object):
