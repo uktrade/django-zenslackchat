@@ -59,9 +59,9 @@ def test_zendesk_request_token_is_incorrect():
 
 @patch('zenslackchat.zendesk_base_webhook.SlackApp')
 @patch('zenslackchat.zendesk_base_webhook.ZendeskApp')
-@patch('zenslackchat.zendesk_webhooks.update_with_comments_from_zendesk')
+@patch('zenslackchat.zendesk_webhooks.comments_from_zendesk')
 def test_zendesk_exception_raised_by_update_comments(
-    update_with_comments_from_zendesk, ZendeskApp, SlackApp, log, db
+    comments_from_zendesk, ZendeskApp, SlackApp, log, db
 ):
     """Test that 200 ok is returned even if update blows up internally.
     """
@@ -78,7 +78,7 @@ def test_zendesk_exception_raised_by_update_comments(
         format='json'
     )
 
-    update_with_comments_from_zendesk.side_effect = ValueError(
+    comments_from_zendesk.side_effect = ValueError(
         'fake problem occurred internally'
     )
 
@@ -87,7 +87,7 @@ def test_zendesk_exception_raised_by_update_comments(
         response = view(request)
 
     assert response.status_code == 200
-    update_with_comments_from_zendesk.assert_called()
+    comments_from_zendesk.assert_called()
 
 
 @pytest.mark.parametrize(
@@ -97,7 +97,7 @@ def test_zendesk_exception_raised_by_update_comments(
     (
         (
             zendesk_webhooks.EmailWebHook, 
-            'zenslackchat.zendesk_webhooks.update_from_zendesk_email',
+            'zenslackchat.zendesk_webhooks.email_from_zendesk',
             {
                 'token': 'the-correct-token',
                 'ticket_id': '32',
@@ -114,7 +114,7 @@ def test_zendesk_exception_raised_by_update_comments(
         ),
         (
             zendesk_webhooks.CommentsWebHook, 
-            'zenslackchat.zendesk_webhooks.update_with_comments_from_zendesk',
+            'zenslackchat.zendesk_webhooks.comments_from_zendesk',
             {
                 'token': 'the-correct-token',
                 'ticket_id': '1430',
@@ -127,9 +127,9 @@ def test_zendesk_exception_raised_by_update_comments(
 )
 @patch('zenslackchat.zendesk_base_webhook.SlackApp')
 @patch('zenslackchat.zendesk_base_webhook.ZendeskApp')
-@patch('zenslackchat.zendesk_webhooks.update_from_zendesk_email')
+@patch('zenslackchat.zendesk_webhooks.email_from_zendesk')
 def test_zendesk_webhook_events_ok_path(
-    update_from_zendesk_email, ZendeskApp, SlackApp, 
+    email_from_zendesk, ZendeskApp, SlackApp, 
     WebHookView, patch_path, zendesk_event, env,
     log, db
 ):

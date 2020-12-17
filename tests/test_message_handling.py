@@ -37,9 +37,9 @@ class FakeUserResponse(object):
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')
-@patch('zenslackchat.message.post_message')
+@patch('zenslackchat.message.message_issue_zendesk_url')
 def test_new_support_message_creates_ticket(
-    post_message,
+    message_issue_zendesk_url,
     create_ticket,
     close_ticket,
     get_ticket,
@@ -133,14 +133,13 @@ def test_new_support_message_creates_ticket(
         slack_message_url='https://s.l.a.c.k/C019JUGAGTS/p1597940362013100'
     )
 
-    # finally check the posted message:
-    url = f'https://z.e.n.d.e.s.k/{ticket.id}'
-    message = f"Hello, your new support request is {url}"
-    post_message.assert_called_with(
+    # Check the args to the call that would post a message:
+    message_issue_zendesk_url.assert_called_with(
         slack_client,
+        'https://z.e.n.d.e.s.k',
+        '32',
         '1597940362.013100',
-        'C019JUGAGTS',
-        message
+        'C019JUGAGTS'
     )
 
 

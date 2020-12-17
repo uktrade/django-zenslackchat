@@ -34,12 +34,15 @@ class FakeUserResponse(object):
         )
 
 
-@patch('zenslackchat.message.get_ticket')
-@patch('zenslackchat.message.post_message')
-@patch('zenslackchat.message.SlackApp')
-@patch('zenslackchat.message.ZendeskApp')
+@patch('zenslackchat.zendesk_to_slack_email.get_ticket')
+@patch('zenslackchat.zendesk_to_slack_email.add_comment')
+@patch('zenslackchat.zendesk_to_slack_email.message_issue_zendesk_url')
+@patch('zenslackchat.zendesk_to_slack_email.message_who_is_on_call')
+@patch('zenslackchat.zendesk_to_slack_email.SlackApp')
+@patch('zenslackchat.zendesk_to_slack_email.ZendeskApp')
 def test_email_from_zendesk_is_added_for_tracking(
-    ZendeskApp, SlackApp, post_message, get_ticket, log, db
+    ZendeskApp, SlackApp, message_who_is_on_call, message_issue_zendesk_url, 
+    add_comment, get_ticket, log, db
 ):
     """Test linking an email created issue into our DB for tracking.
     """
@@ -59,11 +62,12 @@ def test_email_from_zendesk_is_added_for_tracking(
     SlackApp.client.return_value = slack_client
 
     # Return out fake ticket when asked to create:
-    get_ticket.return_value = FakeTicket(
+    ticket = FakeTicket(
         ticket_id='32',
         subject='My printer is on 🔥',
         description='I was smoking next to it and it just went up.'
     )
+    get_ticket.return_value = ticket
 
     # Return out fake ticket when asked to create:
     class ZendeskMe:
@@ -86,7 +90,16 @@ def test_email_from_zendesk_is_added_for_tracking(
         'zendesk_uri': zendesk_uri,
         'workspace_uri': workspace_uri
     }
-    email_from_zendesk(event, slack_client, zendesk_client)
+    settings = dict(
+        DEBUG=True, 
+        SRE_SUPPORT_CHANNEL=channel_id,
+        ZENDESK_USER_ID='1234',
+        ZENDESK_GROUP_ID='7890',
+        ZENDESK_TICKET_URI='https://z.e.n.d.e.s.k',
+        SLACK_WORKSPACE_URI='https://s.l.a.c.k',
+    )
+    with patch.dict('webapp.settings.__dict__', settings, clear=True):
+        email_from_zendesk(event, slack_client, zendesk_client)
 
     # There should now be one instance here:
     assert ZenSlackChat.objects.count() == 1
@@ -100,3 +113,24 @@ def test_email_from_zendesk_is_added_for_tracking(
     assert issue.channel_id == 'C024JUTACTS'
     assert issue.chat_id == '1597940362.013100'
     assert issue.ticket_id == '32'
+
+    # Check the args to the call that would post a message:
+    message_issue_zendesk_url.assert_called_with(
+        slack_client,
+        'https://z.e.n.d.e.s.k',
+        '32',
+        '1597940362.013100',
+        'C024JUTACTS'
+    )
+
+    # No pager duty configured so no message about this:
+    message_who_is_on_call.assert_called_with(
+        {}, slack_client, '1597940362.013100', 'C024JUTACTS'
+    )
+
+    # Zendesk issue will be updated with link to slack issue SRE team looks at
+    slack_chat_url = 'https://s.l.a.c.k/C024JUTACTS/p1597940362013100'
+    add_comment.assert_called_with(
+        zendesk_client, ticket, 
+        f'The SRE team is aware of your issue on Slack here {slack_chat_url}.'
+    )

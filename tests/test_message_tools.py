@@ -38,7 +38,7 @@ def test_is_resolve(resolve_command, expected):
 
 
 @patch('zenslackchat.message_tools.post_message')
-def test_message_issue_zendesk_url(post_message, db, log):
+def test_message_issue_zendesk_url_tools(post_message, db, log):
     """Test slack message for the zendesk issue link.
     """
     channel_id = 'slack-channel-id'
@@ -74,7 +74,6 @@ def test_message_who_is_on_call(session_get, post_message, db, log):
         PagerDutyApp.on_call(), slack_client, chat_id, channel_id
     )
     post_message.assert_not_called()    
-
     post_message.reset_mock()
 
     # Configure PageDurty and test the message sent:
@@ -148,8 +147,6 @@ def test_message_who_is_on_call(session_get, post_message, db, log):
         "total": None
     }
     session_get.return_value.json = loads
-    # settings = dict(DEBUG=True, PAGERDUTY_ESCALATION_POLICY_ID='my-policy-id')
-    # with patch.dict('webapp.settings.__dict__', settings, clear=True):
     message = (
         "📧 Primary on call: Fred Sprocket\n"
         "ℹ️ Secondary on call: Tony Tiger."
@@ -267,5 +264,3 @@ def test_new_message_for_slack_is_detected(log):
     # The thumbs up message is new so it should be added to slack here:
     assert len(results) == 1
     assert results[0]['body'] == '👍'
-
-
