@@ -1,40 +1,31 @@
 """
 The main bot message handler.
 
-This determines how to react to messages we receive from slack over the 
-real time messaging (RTM) API.
+This determines how to react to messages we receive from slack.
 
 Oisin Mulvihill
 2020-08-20
 
 """
-import os
-import json
-import time
-import pprint
 import logging
-import datetime
-from time import mktime
-from operator import itemgetter
 
-import emoji
 import zenpy
-from dateutil.parser import parse
 
 from webapp import settings
-from zenslackchat.models import SlackApp
-from zenslackchat.models import ZendeskApp
 from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.models import NotFoundError
 from zenslackchat.slack_api import message_url
-from zenslackchat.slack_api import create_thread
 from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import get_ticket
 from zenslackchat.zendesk_api import add_comment
 from zenslackchat.zendesk_api import close_ticket
 from zenslackchat.zendesk_api import create_ticket
 from zenslackchat.zendesk_api import zendesk_ticket_url
+from zenslackchat.message_tools import is_resolved
+from zenslackchat.message_tools import message_who_is_on_call
+from zenslackchat.message_tools import message_issue_zendesk_url
+
 
 
 # See https://api.slack.com/events/message for subtypes.
@@ -47,49 +38,6 @@ IGNORED_SUBTYPES = [
     "message_changed", "message_deleted", "message_replied", "pinned_item", 
     "thread_broadcast", "unpinned_item", "channel_rename"
 ]
-
-
-def message_who_is_on_call(slack_client, chat_id, channel_id):
-    """Post to the chat who is primary and secondary on call.
-
-    This will only message if the PagerDutyApp / OAuth set up has been done.
-    
-    """
-    on_call = PagerDutyApp.on_call()
-    if on_call != {}:
-        message = (
-            f"📧 Primary on call: {on_call['primary']}\n"
-            f"ℹ️ Secondary on call: {on_call['secondary']}."
-        )
-        post_message(slack_client, chat_id, channel_id, message)
-
-
-def message_issue_zendesk_url(
-    slack_client, zendesk_uri, ticket_id, chat_id, channel_id
-):
-    """Post to slack where the Zendesk URL of the issue.
-    """
-    url = zendesk_ticket_url(zendesk_uri, ticket_id)
-    message = f"Hello, your new support request is {url}"
-    post_message(slack_client, chat_id, channel_id, message)
-
-
-def is_resolved(command):
-    """Return true if the given command string matches on of the accepted
-    resolve strings.
-
-    :param command: A string of 'resolve', 'resolve ticket', '🆗' or '✅'
-
-    :returns: True the given string is a resolve command otherwise False.
-
-    """
-    _cmd = emoji.emojize(command.lower(), use_aliases=True)
-    return (
-        _cmd == 'resolve' or 
-        _cmd == 'resolve ticket' or 
-        _cmd == '🆗' or
-        _cmd == '✅'
-    )
 
 
 def handler(
@@ -221,13 +169,12 @@ def handler(
 
             elif command == 'help':
                 post_message(
-                    slack_client, thread_id, channel_id, (
-                       "I understand the follow commands:\n\n" 
-                       "- help: <this command>\n"
-                       "- resolve, resolve ticket, ✅, 🆗: close this ticket "
-                       f"({url})\n"
-                       "\nBest regards.\n\n🤖"
-                    )
+                    slack_client, thread_id, channel_id, 
+                    "I understand the follow commands:\n\n" 
+                    "- help: <this command>\n"
+                    "- resolve, resolve ticket, ✅, 🆗: close this ticket "
+                    f"({url})\n"
+                    "\nBest regards.\n\n🤖"
                )
 
             else:
@@ -280,7 +227,12 @@ def handler(
                 message_issue_zendesk_url(
                     slack_client, zendesk_uri, ticket.id, chat_id, channel_id                    
                 )
-                message_who_is_on_call(slack_client, chat_id, channel_id)
+                message_who_is_on_call(
+                    PagerDutyApp.on_call(),
+                    slack_client, 
+                    chat_id, 
+                    channel_id
+                )
 
         else:
             # No, we have a ticket already for this.
@@ -289,197 +241,3 @@ def handler(
             )
 
     return True
-
-
-def ts_to_datetime(epoch):
-    """Convert raw UTC slack message epoch times to datetime.
-
-    :param epoch: 1598459584.013100
-
-    :returns: datetime.datetime(2020, 8, 26, 17, 33, 4)
-
-    """
-    dt = datetime.datetime.fromtimestamp(mktime(time.localtime(float(epoch))))
-    dt = dt.replace(tzinfo=datetime.timezone.utc)
-    return dt
-
-
-def utc_to_datetime(iso8601_str):
-    """Convert raw UTC slack message epoch times to datetime.
-
-    :param iso8601_str: '2020-09-08T16:35:14Z'
-
-    An iso8601 string parse can interpret.
-
-    :returns: datetime.datetime(2020, 9, 8, 16, 35, 14, tzinfo=utc)
-
-    """
-    dt = parse(iso8601_str)
-    dt = dt.replace(tzinfo=datetime.timezone.utc)
-    return dt
-
-
-def messages_for_slack(slack, zendesk):
-    """Work out which messages from zendesk need to be added to the slack 
-    conversation.
-
-    :param slack: A list of slack messages.
-
-    :param zendesk: A list of zendesk comment message.
-
-    :returns: An empty list or list of messages to be added.
-
-    """
-    log = logging.getLogger(__name__)
-
-    slack = sorted(slack, key=itemgetter('created_at')) 
-    # msgs = [s['text'] for s in slack]
-    # log.debug(f"Raw Slack messages:\n{slack}")
-    # log.debug(f"Slack messages:\n{msgs}")
-
-    zendesk = sorted(zendesk, key=itemgetter('created_at'), reverse=True) 
-    # msgs = [z['body'] for z in zendesk]
-    # log.debug(f"Zendesk messages:\n{msgs}")
-
-    # Ignore the first message which is the parent message. Also ignore the 
-    # second message which is our "link to zendesk ticket" message.
-    lookup = {}
-    for msg in slack[2:]:
-        # text = msg['text']
-        # convert '... :palm_tree:​ ...' to its emoji character 🌴
-        # Slack seems to use the name whereas zendesk uses the actual emoji:
-        raw_text = msg['text'].split('(Zendesk):')[-1].strip()
-        text = emoji.emojize(raw_text)
-        # log.debug(f"slack msg to index:{text}")
-        lookup[text] = 1        
-    # log.debug(f"messages to consider from slack:{len(slack)}")
-    # log.debug(f"lookup:\n{lookup}")
-
-    # remove api messages which come from slack
-    for_slack = []
-    for msg in zendesk:
-        # compare like with like, although this might not be needed on zendesk
-        text = emoji.emojize(msg['body'])
-        if msg['via']['channel'] == 'web' and text not in lookup:
-            # log.debug(f"msg to be added:{text}")
-            for_slack.append(msg)
-        # else:
-        #     log.debug(f"msg ignored:{text}")
-    for_slack.reverse()
-
-    # log.debug(f"message for slack:\n{pprint.pformat(for_slack)}")
-    return for_slack
-
-
-def update_with_comments_from_zendesk(event, slack_client, zendesk_client):
-    """Handle the raw event from a Zendesk webhook and return without error.
-
-    This will log all exceptions rather than cause zendesk reject 
-    our endpoint.
-
-    """
-    log = logging.getLogger(__name__)
-    
-    chat_id = event['chat_id']
-    ticket_id = event['ticket_id']
-    if not chat_id:
-        log.debug(f'chat_id is empty, ignoring ticket comment.')    
-        return 
-
-    log.debug(f'Recovering ticket by its Zendesk ID:<{ticket_id}>')
-    try:
-        issue = ZenSlackChat.get_by_ticket(chat_id, ticket_id)
-
-    except NotFoundError:
-        log.debug(
-            f'chat_id:<{chat_id}> not found, ignoring ticket comment.'
-        )    
-        return 
-
-    # Recover all messages from the slack conversation:
-    slack = []
-    resp = slack_client.conversations_replies(
-        channel=issue.channel_id, ts=chat_id
-    )
-    for message in resp.data['messages']:
-        message['created_at'] = ts_to_datetime(message['ts'])
-        slack.append(message)
-
-    # Recover all comments on this ticket:
-    zendesk = []
-    for comment in zendesk_client.tickets.comments(ticket=ticket_id):
-        comment = comment.to_dict()
-        comment['created_at'] = utc_to_datetime(comment['created_at'])
-        zendesk.append(comment)
-
-    # Work out what needs to be posted to slack:
-    for_slack = messages_for_slack(slack, zendesk)
-
-    # Update the slack conversation:
-    for message in for_slack:
-        msg = f"(Zendesk): {message['body']}"
-        post_message(slack_client, chat_id, issue.channel_id, msg)
-
-
-def strip_signature_from_subject(content):
-    """Assume --\n is marker for email signature and return everything before.
-    """
-    return content.split('--\n')[0]
-
-
-def update_from_zendesk_email(event, slack_client, zendesk_client):
-    """Open a ZenSlackChat issue and link it to the existing Zendesk Ticket.
-
-    """
-    log = logging.getLogger(__name__)
-
-    zendesk = ZendeskApp.client()
-    slack = SlackApp.client()    
-    channel_id = event['channel_id']
-    ticket_id = event['ticket_id']
-    user_id = event['user_id']
-    group_id = event['group_id']
-    zendesk_ticket_uri = event['zendesk_ticket_uri']
-    workspace_uri = event['workspace_uri']
-
-    # Recover the zendesk issue the email has already created:
-    log.debug(f'Recovering ticket from Zendesk:<{ticket_id}>')
-    ticket = get_ticket(zendesk, ticket_id)
-
-    # We need to create a new thread for this on the slack channel.
-    # We will then add the usual message to this new thread.
-    log.debug(f'Success. Got Zendesk ticket<{ticket_id}>')
-    message = f"(From Zendesk Email): {ticket.subject}"
-    chat_id = create_thread(slack, channel_id, message)
-    # Include descrition as next comment before who is on call to slack
-    # to give SREs more context:
-    email_body = strip_signature_from_subject(ticket.description)
-    post_message(slack_client, chat_id, channel_id, email_body)
-
-    # Assign the ticket to ZenSlackChat group and user so comments will 
-    # come back to us on slack.
-    log.debug(
-        f'Assigning Zendesk ticket to User:<{user_id}> and Group:{group_id}'
-    )
-    # Assign to User/Group
-    ticket.assingee_id = user_id
-    ticket.group_id = group_id
-    # Set to route comments back from zendesk to slack:
-    ticket.external_id = chat_id
-    zendesk.tickets.update(ticket)
-
-    # Store the zendesk ticket in our db and notify:
-    ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
-    message_issue_zendesk_url(
-        slack_client, zendesk_ticket_uri, ticket_id, chat_id, channel_id                    
-    )
-    message_who_is_on_call(slack_client, chat_id, channel_id)
-
-    # Indicate on the existing Zendesk ticket that the SRE team now knows
-    # about this issue.
-    slack_chat_url = message_url(workspace_uri, channel_id, chat_id)
-    add_comment(
-        zendesk_client, 
-        ticket, 
-        f'The SRE team is aware of your issue on Slack here {slack_chat_url}.'
-    )

@@ -11,8 +11,6 @@ from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
 from zenslackchat import zendesk_webhooks
 from zenslackchat import zendesk_base_webhook
-from zenslackchat.message import update_from_zendesk_email
-from zenslackchat.message import update_with_comments_from_zendesk
 
 
 def test_zendesk_request_is_rejected_with_missing_token_field():
