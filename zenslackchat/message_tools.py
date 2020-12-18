@@ -119,7 +119,7 @@ def messages_for_slack(slack, zendesk):
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
         # Slack seems to use the name whereas zendesk uses the actual emoji:
         text = emoji.emojize(strip_zendesk_origin(msg['text']))
-        log.debug(f"Text to store for lookup: {text}")
+        # log.debug(f"Text to store for lookup: {text}")
         lookup[text] = 1        
 
     # remove api messages which come from slack
@@ -131,16 +131,16 @@ def messages_for_slack(slack, zendesk):
         text = strip_signature_from_subject(msg['body'])
         text = strip_zendesk_origin(text)
         text = emoji.emojize(text)
-        log.debug(f"Text to compare to compare with lookup: {text}")
-        log.debug(f"Texts in lookup: {lookup}")
+        # log.debug(f"Text to compare to compare with lookup: {text}")
+        # log.debug(f"Texts in lookup: {lookup}")
 
         # allow email/web/other channels excluding api which bot sends on.
         if msg['via']['channel'] != 'api' and text not in lookup:
-            log.debug(f"msg to be added: {text}")
+            # log.debug(f"msg to be added: {text}")
             if msg['via']['channel'] == 'email':
                 msg['body'] = strip_signature_from_subject(msg['body'])            
             for_slack.append(msg)
-        else:
-            log.debug(f"Zendesk message not sent to slack: {text}")
+        # else:
+        #     log.debug(f"Zendesk message not sent to slack: {text}")
 
     return for_slack
