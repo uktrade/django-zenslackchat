@@ -52,20 +52,16 @@ def comments_from_zendesk(event, slack_client, zendesk_client):
         return 
 
     # Recover all messages from the slack conversation:
-    slack = []
     resp = slack_client.conversations_replies(
         channel=issue.channel_id, ts=chat_id
     )
-    for message in resp.data['messages']:
-        message['created_at'] = ts_to_datetime(message['ts'])
-        slack.append(message)
-
+    slack = [message for message in resp.data['messages']]
+    
     # Recover all comments on this ticket:
-    zendesk = []
-    for comment in zendesk_client.tickets.comments(ticket=ticket_id):
-        comment = comment.to_dict()
-        comment['created_at'] = utc_to_datetime(comment['created_at'])
-        zendesk.append(comment)
+    zendesk = [
+        comment.to_dict() 
+        for comment in zendesk_client.tickets.comments(ticket=ticket_id)
+    ]
 
     # Work out what needs to be posted to slack:
     for_slack = messages_for_slack(slack, zendesk)
@@ -74,3 +70,5 @@ def comments_from_zendesk(event, slack_client, zendesk_client):
     for message in for_slack:
         msg = f"(Zendesk): {message['body']}"
         post_message(slack_client, chat_id, issue.channel_id, msg)
+
+    return for_slack

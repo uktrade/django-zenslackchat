@@ -12,7 +12,6 @@ import datetime
 import logging
 from time import mktime
 from time import localtime
-from operator import itemgetter
 
 import emoji
 from dateutil.parser import parse
@@ -97,6 +96,10 @@ def strip_signature_from_subject(content):
     return content.split('--')[0]
 
 
+def strip_zendesk_origin(text):
+    return text.split('(Zendesk):')[-1].strip()
+
+
 def messages_for_slack(slack, zendesk):
     """Work out which messages from zendesk need to be added to the slack 
     conversation.
@@ -110,27 +113,27 @@ def messages_for_slack(slack, zendesk):
     """
     log = logging.getLogger(__name__)
 
-    slack = sorted(slack, key=itemgetter('created_at')) 
-    zendesk = sorted(zendesk, key=itemgetter('created_at'), reverse=True) 
-
-    # Ignore the first message which is the parent message. Also ignore the 
-    # second message which is our "link to zendesk ticket" message.
     lookup = {}
-    for msg in slack[2:]:
+    for msg in slack:
         # text = msg['text']
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
         # Slack seems to use the name whereas zendesk uses the actual emoji:
-        raw_text = msg['text'].split('(Zendesk):')[-1].strip()
-        text = emoji.emojize(raw_text)
+        text = emoji.emojize(strip_zendesk_origin(msg['text']))
         log.debug(f"Text to store for lookup: {text}")
         lookup[text] = 1        
 
     # remove api messages which come from slack
     for_slack = []
     for msg in zendesk:
-        # compare like with like, although this might not be needed on zendesk
-        text = strip_signature_from_subject(emoji.emojize(msg['body']))
+        # Compare like with like, although this might not be needed on zendesk.
+        # Apply the zendesk origin filter to prevent repeated email body
+        # messages on slack.
+        text = strip_signature_from_subject(msg['body'])
+        text = strip_zendesk_origin(text)
+        text = emoji.emojize(text)
         log.debug(f"Text to compare to compare with lookup: {text}")
+        log.debug(f"Texts in lookup: {lookup}")
+
         # allow email/web/other channels excluding api which bot sends on.
         if msg['via']['channel'] != 'api' and text not in lookup:
             log.debug(f"msg to be added: {text}")
@@ -139,6 +142,5 @@ def messages_for_slack(slack, zendesk):
             for_slack.append(msg)
         else:
             log.debug(f"Zendesk message not sent to slack: {text}")
-    for_slack.reverse()
 
     return for_slack
