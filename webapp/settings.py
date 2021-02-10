@@ -255,7 +255,7 @@ DLFE_APP_NAME = 'ZenSlackChat'
 
 ENV_FILE = os.path.join(BASE_DIR, '.env')
 if os.path.exists(ENV_FILE):
-    logging.getLogger(__name__).warn(
+    logging.getLogger(__name__).warning(
         "Using .env file to override configuration."
     )
     environ.Env.read_env(ENV_FILE)

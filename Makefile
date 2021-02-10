@@ -40,6 +40,9 @@ runworker:
 migrate:
 	python manage.py migrate
 
+superuser:
+	python manage.py createsuperuser
+
 up:
 	docker-compose --project-name ${NAMESPACE} up --remove-orphans
 
