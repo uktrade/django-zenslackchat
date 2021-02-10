@@ -4,15 +4,22 @@ from unittest.mock import MagicMock
 import pytest
 
 from zenslackchat.message import handler
+from zenslackchat.models import PagerDutyApp
 from zenslackchat.message import is_resolved
+from zenslackchat.models import ZendeskApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.message import IGNORED_SUBTYPES
+from zenslackchat.message_tools import message_who_is_on_call
+from zenslackchat.message_tools import message_issue_zendesk_url
+from zenslackchat.zendesk_email_to_slack import email_from_zendesk
 
 
 class FakeTicket(object):
-    def __init__(self, ticket_id):
+    def __init__(self, ticket_id, subject='', description=''):
         self.id = ticket_id
         self.status = 'open'
+        self.subject = subject
+        self.description = description
 
 
 class FakeUserResponse(object):
@@ -30,9 +37,9 @@ class FakeUserResponse(object):
 @patch('zenslackchat.message.get_ticket')
 @patch('zenslackchat.message.close_ticket')
 @patch('zenslackchat.message.create_ticket')
-@patch('zenslackchat.message.post_message')
+@patch('zenslackchat.message.message_issue_zendesk_url')
 def test_new_support_message_creates_ticket(
-    post_message,
+    message_issue_zendesk_url,
     create_ticket,
     close_ticket,
     get_ticket,
@@ -126,14 +133,13 @@ def test_new_support_message_creates_ticket(
         slack_message_url='https://s.l.a.c.k/C019JUGAGTS/p1597940362013100'
     )
 
-    # finally check the posted message:
-    url = f'https://z.e.n.d.e.s.k/{ticket.id}'
-    message = f"Hello, your new support request is {url}"
-    post_message.assert_called_with(
+    # Check the args to the call that would post a message:
+    message_issue_zendesk_url.assert_called_with(
         slack_client,
+        'https://z.e.n.d.e.s.k',
+        '32',
         '1597940362.013100',
-        'C019JUGAGTS',
-        message
+        'C019JUGAGTS'
     )
 
 
@@ -143,6 +149,7 @@ def test_new_support_message_creates_ticket(
         ('resolve ticket', True),
         ('resolve', True),
         ('✅', True),
+        ('🆗', True),
         ('Yo!', False),
         ('res', False),
         ('stfu', False),
@@ -163,7 +170,9 @@ def test_is_resolve(resolve_command, expected):
     [
         'resolve ticket',
         'resolve',
-        '✅'
+        ':white_check_mark:',
+        '✅',
+        '🆗'
     ]
 )
 def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(

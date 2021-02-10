@@ -21,7 +21,6 @@ test_install:
 
 clean:
 	rm -rf dist/ build/
-	rm -f README.pdf
 	find . -iname '*.pyc' -exec rm {} \; -print
 
 collect:
@@ -40,6 +39,9 @@ runworker:
 
 migrate:
 	python manage.py migrate
+
+superuser:
+	python manage.py createsuperuser
 
 up:
 	docker-compose --project-name ${NAMESPACE} up --remove-orphans

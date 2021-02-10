@@ -1,6 +1,9 @@
 """
 Useful code to aid the main message handler.
 
+To simplify testing I keep these functions django free and pass in whats needed 
+in arguments. This can then be easily faked/mocked.
+
 Oisin Mulvihill
 2020-08-18
 
@@ -19,6 +22,32 @@ def message_url(workspace_uri, channel, message_id):
 
     # handle trailing slash being there or not (urljoin doesn't).
     return '/'.join([workspace_uri.rstrip('/'), channel, msg_id])
+
+
+def create_thread(client, channel_id, message):
+    """Create a parent message which will be the thread for further comms.
+
+    :param client: The Slack web client to use.
+
+    :param channel_id: The slack support chanel ID.
+
+    :param message: The top level message.
+
+    :returns: The chat_id of the new parent message.
+
+    """
+    log = logging.getLogger(__name__)
+
+    log.debug(f"channel:<{channel_id}> message:<{message}>")
+    response = client.chat_postMessage(
+        channel=channel_id,
+        text=message,
+    )
+
+    chat_id = response['message']['ts']
+    log.debug(f"New message chat_id:<{chat_id}>")
+
+    return chat_id
 
 
 def post_message(client, chat_id, channel_id, message):
@@ -40,5 +69,3 @@ def post_message(client, chat_id, channel_id, message):
         text=message,
         thread_ts=chat_id
     )
-
-

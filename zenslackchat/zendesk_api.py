@@ -1,6 +1,9 @@
 """
 Wrapper around Zendesk API using the Zenpy library.
 
+To simplify testing I keep these functions django free and pass in whats needed 
+in arguments. This can then be easily faked/mocked.
+
 Oisin Mulvihill
 2020-08-18
 

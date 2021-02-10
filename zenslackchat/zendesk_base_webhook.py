@@ -1,4 +1,3 @@
-import base64
 import pprint
 import logging
 
@@ -7,23 +6,26 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from webapp import settings
-from zenslackchat import message
 from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
-from zenslackchat.message import update_with_comments_from_zendesk
 
 
-class WebHook(APIView):
-    """Handle Zendesk Events.
+class BaseWebHook(APIView):
+    """Handle Zendesk Events with authentication token.
 
     Zendesk will need to have a HTTP notifier and trigger configured to 
     forward us comments.
 
     """    
     def post(self, request, *args, **kwargs):
-        """Handle the comment trigger event we have been POSTed.
+        """Handle the POSTed request from Zendesk.
 
-        Recover and update the comments with lastest from Zendesk.
+        This will verify the shared token. If this not found or not as expected
+        then 403 Forbidden will be raised.
+
+        In all other situations the reponse 200 OK is returned. Any exceptions
+        will be logged instead. This is to prevent Zendesk from think our end
+        point is broken and not sending any further events.
 
         """
         log = logging.getLogger(__name__)
@@ -38,7 +40,7 @@ class WebHook(APIView):
             )
 
             if token == settings.ZENDESK_WEBHOOK_TOKEN:
-                update_with_comments_from_zendesk(
+                self.handle_event(
                     request.data,
                     slack_client=SlackApp.client(),
                     zendesk_client=ZendeskApp.client()
@@ -62,3 +64,16 @@ class WebHook(APIView):
             log.exception(f'Failed handling webhook because:')
 
         return response
+
+    def handle_event(self, event, slack_client, zendesk_client):
+        """Over-ridden to implement event handling.
+
+        :param event: The POSTed dict of fields.
+
+        :param slack_client: Slack instance to use.
+
+        :param zendesk_client: Zendesk instance to use.
+
+        :returns: None
+
+        """

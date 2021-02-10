@@ -4,7 +4,7 @@ from django.contrib.auth import views as auth_views
 
 from . import views
 from . import eventsview
-from . import zendesk_webhook_view
+from . import zendesk_webhooks
 
 
 urlpatterns = [
@@ -19,8 +19,13 @@ urlpatterns = [
     path('zendesk/oauth/', views.zendesk_oauth, name='zendesk_oauth'),
     path(
         'zendesk/webhook/', 
-        zendesk_webhook_view.WebHook.as_view(), 
-        name='slack_events'
+        zendesk_webhooks.CommentsWebHook.as_view(), 
+        name='zenslackchat_comments'
+    ),
+    path(
+        'zendesk/email/webhook/', 
+        zendesk_webhooks.EmailWebHook.as_view(), 
+        name='zenslackchat_emails'
     ),
 
     path('pagerduty/oauth/', views.pagerduty_oauth, name='pagerduty_oauth'),
