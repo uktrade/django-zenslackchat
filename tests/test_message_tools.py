@@ -319,7 +319,7 @@ def test_truncate_email(email_body, truncated, character_limit):
 
 
 def test_markdown_links_correctly_stripped(log):
-    """Test only four lines of the email body are use as a summary
+    """Regression test to make sure markdown links don't reappear.
     """
     text = "<http://QUAY.IO|QUAY.IO> MICRO PLAN"
     cleaned = "QUAY.IO MICRO PLAN"
