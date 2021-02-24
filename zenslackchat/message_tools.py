@@ -8,12 +8,15 @@ Oisin Mulvihill
 2020-12-17
 
 """
+import re
 import datetime
 import logging
 from time import mktime
 from time import localtime
 
 import emoji
+from bs4 import BeautifulSoup
+from markdown import markdown
 from dateutil.parser import parse
 
 from zenslackchat.slack_api import post_message
@@ -97,7 +100,45 @@ def strip_signature_from_subject(content):
 
 
 def strip_zendesk_origin(text):
-    return text.split('(Zendesk):')[-1].strip()
+    text = text.split('(Zendesk):')[-1].strip()
+    text = text.split('(From Zendesk Email):')[-1].strip()
+    return text
+
+
+def strip_formatting(text):
+    """Strip all markdown formatting returning only text.    
+    """
+    # md -> html -> text since BeautifulSoup can extract text cleanly
+    html = markdown(text)
+
+    # extract text
+    soup = BeautifulSoup(html, "html.parser")
+    text = ''.join(soup.findAll(text=True))
+
+    # Remove the URLs that may be present after conversion e.g.
+    # text like https://QUAY.IO|QUAY.IO leaving QUAY.IO
+    text = re.sub(r'(http|https):\/\/(.*?)\|', '', text)
+
+    return text
+
+
+def strip(text):
+    text = strip_zendesk_origin(text)
+    text = strip_formatting(text)
+    return emoji.emojize(text)
+
+
+def truncate_email(content, characters=320):
+    """Only show a truncated email content.
+    
+    By default this will return the first 160 characters.
+
+    """
+    sample = content[:characters]
+    sample_or_full = '...' if len(content) > characters else ''
+    email_sample = f"{sample}{sample_or_full}"
+    return email_sample
+
 
 
 def messages_for_slack(slack, zendesk):
@@ -118,9 +159,9 @@ def messages_for_slack(slack, zendesk):
         # text = msg['text']
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
         # Slack seems to use the name whereas zendesk uses the actual emoji:
-        text = emoji.emojize(strip_zendesk_origin(msg['text']))
-        # log.debug(f"Text to store for lookup: {text}")
-        lookup[text] = 1        
+        text = strip(msg['text'])
+        # log.debug(f"Text to store for lookup:'{text}' hash:{hash(text)}")
+        lookup[hash(text)] = 1        
 
     # remove api messages which come from slack
     for_slack = []
@@ -128,19 +169,22 @@ def messages_for_slack(slack, zendesk):
         # Compare like with like, although this might not be needed on zendesk.
         # Apply the zendesk origin filter to prevent repeated email body
         # messages on slack.
-        text = strip_signature_from_subject(msg['body'])
-        text = strip_zendesk_origin(text)
-        text = emoji.emojize(text)
-        # log.debug(f"Text to compare to compare with lookup: {text}")
-        # log.debug(f"Texts in lookup: {lookup}")
+        text = strip_signature_from_subject(strip(msg['body']))
+        if msg['via']['channel'] == 'email':
+            # only show a sample of the email
+            text = truncate_email(text)
+        msg['body'] = text
 
-        # allow email/web/other channels excluding api which bot sends on.
-        if msg['via']['channel'] != 'api' and text not in lookup:
-            # log.debug(f"msg to be added: {text}")
-            if msg['via']['channel'] == 'email':
-                msg['body'] = strip_signature_from_subject(msg['body'])            
+        if msg['via']['channel'] == 'api':
+            # Exclude the API channel as the bot is posting this message only 
+            # for Zendesk e.g. Messages for email user's not needed on slack.
+            log.debug(f"Ignoring message from API channel.")
+
+        elif hash(text) not in lookup:
+            # log.debug(f"msg to be added:'{text}'")
             for_slack.append(msg)
-        # else:
-        #     log.debug(f"Zendesk message not sent to slack: {text}")
+
+        else:
+            log.debug(f"Zendesk message not sent to slack:'{text}'")
 
     return for_slack

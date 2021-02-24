@@ -1,3 +1,5 @@
+bleach
+markdown
 zenpy
 emoji
 slackclient

@@ -91,6 +91,10 @@ def handler(
         log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
 
+    elif 'bot_id' in event:
+        log.debug(f"Ignoring bot message to prevent repeats: {text}")
+        return False
+
     if settings.DISABLE_MESSAGE_PROCESSING:
         log.warn(
             "MESSAGE HANDLING IS DISABLED! "
