@@ -9,8 +9,9 @@ Oisin Mulvihill
 
 """
 import re
-import datetime
+import hashlib
 import logging
+import datetime
 from time import mktime
 from time import localtime
 
@@ -122,7 +123,12 @@ def strip_formatting(text):
     return text
 
 
+def compare_hash(text):
+    return hashlib.sha1(text.encode()).hexdigest()
+
+
 def strip(text):
+    text = text.strip()
     text = strip_zendesk_origin(text)
     text = strip_formatting(text)
     return emoji.emojize(text)
@@ -138,7 +144,6 @@ def truncate_email(content, characters=320):
     sample_or_full = '...' if len(content) > characters else ''
     email_sample = f"{sample}{sample_or_full}"
     return email_sample
-
 
 
 def messages_for_slack(slack, zendesk):
@@ -160,8 +165,10 @@ def messages_for_slack(slack, zendesk):
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
         # Slack seems to use the name whereas zendesk uses the actual emoji:
         text = strip(msg['text'])
-        # log.debug(f"Text to store for lookup:'{text}' hash:{hash(text)}")
-        lookup[hash(text)] = 1        
+        # log.debug(
+        #     f"Text to store for lookup:'{text}' hash:{compare_hash(text)}"
+        # )
+        lookup[compare_hash(text)] = 1        
 
     # remove api messages which come from slack
     for_slack = []
@@ -169,7 +176,7 @@ def messages_for_slack(slack, zendesk):
         # Compare like with like, although this might not be needed on zendesk.
         # Apply the zendesk origin filter to prevent repeated email body
         # messages on slack.
-        text = strip_signature_from_subject(strip(msg['body']))
+        text = strip(strip_signature_from_subject(msg['body']))
         if msg['via']['channel'] == 'email':
             # only show a sample of the email
             text = truncate_email(text)
@@ -180,7 +187,7 @@ def messages_for_slack(slack, zendesk):
             # for Zendesk e.g. Messages for email user's not needed on slack.
             log.debug(f"Ignoring message from API channel.")
 
-        elif hash(text) not in lookup:
+        elif compare_hash(text) not in lookup:
             # log.debug(f"msg to be added:'{text}'")
             for_slack.append(msg)
 
