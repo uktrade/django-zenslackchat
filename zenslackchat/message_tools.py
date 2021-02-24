@@ -115,7 +115,7 @@ def strip_formatting(text):
     soup = BeautifulSoup(html, "html.parser")
     text = ''.join(soup.findAll(text=True))
 
-    # Remove the URLs that may be present after conversion e.g.
+    # Remove the markdown URLs that may be present after conversion e.g.
     # text like https://QUAY.IO|QUAY.IO leaving QUAY.IO
     text = re.sub(r'(http|https):\/\/(.*?)\|', '', text)
 

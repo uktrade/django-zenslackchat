@@ -318,17 +318,15 @@ def test_truncate_email(email_body, truncated, character_limit):
     ) == truncated
 
 
-def test_markdown_links_correctly_stripped(log):
+@pytest.mark.parametrize(
+    ('markdown', 'plain_text'),
+    [
+        ("<http://QUAY.IO|QUAY.IO> MICRO PLAN", "QUAY.IO MICRO PLAN"),
+        ("<https://QUAY.IO|QUAY.IO> MICRO PLAN", "QUAY.IO MICRO PLAN"),
+        ('', '')
+    ]
+)
+def test_markdown_links_correctly_stripped(log, markdown, plain_text):
     """Regression test to make sure markdown links don't reappear.
     """
-    text = "<http://QUAY.IO|QUAY.IO> MICRO PLAN"
-    cleaned = "QUAY.IO MICRO PLAN"
-    assert message_tools.strip_formatting(text) == cleaned
-
-    text = "<https://QUAY.IO|QUAY.IO> MICRO PLAN"
-    cleaned = "QUAY.IO MICRO PLAN"
-    assert message_tools.strip_formatting(text) == cleaned
-
-    text = "<https://QUAY.IO> MICRO PLAN"
-    cleaned = "QUAY.IO MICRO PLAN"
-    assert message_tools.strip_formatting(text) == cleaned
+    assert message_tools.strip_formatting(markdown) == plain_text
