@@ -203,10 +203,11 @@ email body of subject 111
 -- 
 
 Oisin Mulvihill | Webops/SRE | Digital
-Department for International Trade | 50 Victoria Street, London SW1E 5LB | E-mail: oisin.mulvihill@digital.trade.gov.uk
+Department for International Trade | 50 Victoria Street, London SW1E 5LB | 
+E-mail: ..
 
-
-Communications with the Department for International Trade may be automatically logged, monitored and/or recorded for legal purposes.
+Communications with the Department for International Trade may be automatically 
+logged, monitored and/or recorded for legal purposes.
 """, 
             # newline before -- kept
             """
@@ -264,3 +265,68 @@ def test_new_message_for_slack_is_detected(log):
     # The thumbs up message is new so it should be added to slack here:
     assert len(results) == 1
     assert results[0]['body'] == '👍'
+
+
+@pytest.mark.parametrize(
+    ('email_body', 'truncated', 'character_limit'),
+    [
+        # The message characters including whitespace is longer that 4 so 
+        # will result in ... indicating truncation.
+        (
+            r"""1
+2
+3
+4
+5
+6
+7
+8
+""",
+            "1\n2\n...",
+            4
+        ),
+        # All message fits in 16 characters so ... won't appear:
+        (
+            "1\n2\n3\n4\n5\n6\n7\n8\n",
+            "1\n2\n3\n4\n5\n6\n7\n8\n",
+            16
+        ),
+        (
+            """Dear Webops,
+
+Could you please add Person into XYZ User Group on Jira? 
+
+Thank you,
+
+--
+
+Name
+
+Department for International Trade 
+
+            """.strip(),
+            """Dear Webops,
+
+Could you please add Person into XYZ User Group on Jira?...""",
+            70
+        )
+    ]
+)
+def test_truncate_email(email_body, truncated, character_limit):
+    assert message_tools.truncate_email(
+        email_body, character_limit
+    ) == truncated
+
+
+@pytest.mark.parametrize(
+    ('markdown', 'plain_text'),
+    [
+        ("<http://QUAY.IO|QUAY.IO> MICRO PLAN", "QUAY.IO MICRO PLAN"),
+        ("<https://QUAY.IO|QUAY.IO> MICRO PLAN", "QUAY.IO MICRO PLAN"),
+        ('', '')
+    ]
+)
+def test_markdown_links_correctly_stripped(log, markdown, plain_text):
+    """Regression test to make sure markdown links don't reappear.
+    """
+    assert message_tools.strip_formatting(markdown) == plain_text
