@@ -120,6 +120,7 @@ def strip_formatting(text):
     # text like https://QUAY.IO|QUAY.IO leaving QUAY.IO
     text = re.sub(r'(http|https):(\/\/)(.*?)\|', '', text)
 
+    # Regex a modified version of that from https://emailregex.com/
     # replace
     #   MAILER-DAEMON@eu-west-2...com|MAILER-DAEMON@eu-west-2...com
     # with
