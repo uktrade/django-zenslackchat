@@ -327,6 +327,10 @@ def test_truncate_email(email_body, truncated, character_limit):
             "<mailto:MAILER-DAEMON@a.b.cin|MAILER-DAEMON@a.b.com>",
             "MAILER-DAEMON@a.b.com"
         ),
+        (
+            'The attached message was received from <mailto:MAILER-DAEMON@eu-west-2.amazonses.com|MAILER-DAEMON@eu-west-2.amazonses.com>. This message is archived at <http://s3.console.aws.amazon.com/s3/object/ci-uktrade-digital-ses/anf3l84h3qtm9vonki5v0tvo03gql2n7llbsfu81?region=eu-west-2',
+            'The attached message was received from MAILER-DAEMON@eu-west-2.amazonses.com. This message is archived at <http://s3.console.aws.amazon.com/s3/object/ci-uktrade-digital-ses/anf3l84h3qtm9vonki5v0tvo03gql2n7llbsfu81?region=eu-west-2'
+        ),
         ('', '')
     ]
 )

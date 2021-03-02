@@ -119,7 +119,14 @@ def strip_formatting(text):
     # Remove the markdown URLs that may be present after conversion e.g.
     # text like https://QUAY.IO|QUAY.IO leaving QUAY.IO
     text = re.sub(r'(http|https):(\/\/)(.*?)\|', '', text)
-    text = re.sub(r'^(.*?)\|', '', text)
+
+    # replace
+    #   MAILER-DAEMON@eu-west-2...com|MAILER-DAEMON@eu-west-2...com
+    # with
+    #   MAILER-DAEMON@eu-west-2...com
+    text = re.sub(
+        r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\|)', '', text
+    )
 
     return text
 
