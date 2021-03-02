@@ -323,6 +323,10 @@ def test_truncate_email(email_body, truncated, character_limit):
     [
         ("<http://QUAY.IO|QUAY.IO> MICRO PLAN", "QUAY.IO MICRO PLAN"),
         ("<https://QUAY.IO|QUAY.IO> MICRO PLAN", "QUAY.IO MICRO PLAN"),
+        (
+            "<mailto:MAILER-DAEMON@a.b.cin|MAILER-DAEMON@a.b.com>",
+            "MAILER-DAEMON@a.b.com"
+        ),
         ('', '')
     ]
 )
