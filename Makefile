@@ -13,7 +13,14 @@ export DISABLE_ECS_LOG_FORMAT?=1
 all:
 	echo "Please choose a make target to run."
 
-install:
+pip-compile:
+	python -m pip install pip-tools
+
+requirements.txt: pip-compile
+	pip-compile requirements.in
+
+install: pip-compile requirements.txt
+	pip install --upgrade pip
 	pip install -r requirements.txt
 
 test_install:
