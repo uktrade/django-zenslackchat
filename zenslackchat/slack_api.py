@@ -32,8 +32,9 @@ def url_to_chat_id(slack_url):
     To: 1614771038.052300
     
     """
-    # Recover the last element in URL and convert to chat_id
-    chat_id = (slack_url.split('/')[-1]).lower().strip()
+    # Recover the last element in URL and convert to chat_id. handle trailing /
+    chat_id = [part for part in slack_url.split('/') if part][-1]
+    chat_id = chat_id.lower().strip()
 
     # convert to chat_id stripping the trailing p
     chat_id = chat_id[1:] if chat_id[0] == 'p' else chat_id
