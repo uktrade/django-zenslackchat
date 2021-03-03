@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
@@ -7,6 +8,7 @@ from zenslackchat.models import ZendeskApp
 from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.slack_api import message_url
+from zenslackchat.slack_api import url_to_chat_id
 from zenslackchat.zendesk_api import zendesk_ticket_url
 
 
@@ -38,28 +40,42 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
     date_hierarchy = 'opened'
 
     list_display = (
-        'chat_id', 'channel_id', 'ticket_id_url', 'slack_chat_url', 'active',
-        'opened', 'closed'
+        'chat_id', 'channel_id', 'ticket_url', 'chat_url', 'active', 'opened', 
+        'closed'
     )
-
-    list_filter = ('active', 'opened', 'closed')
 
     search_fields = ('chat_id', 'ticket_id')
 
+    list_filter = ('active', 'opened', 'closed')
+
     actions = ('mark_resolved',)
 
-    def slack_chat_url(self, obj):
-        chat_url = message_url(
+    def chat_url(self, obj):
+        """Provide a link to the slack chat."""
+        url = message_url(
             settings.SLACK_WORKSPACE_URI, obj.channel_id, obj.chat_id
         )
-        sid = chat_url.split('/')[-1]
-        return format_html(f'<a href="{chat_url}">{sid}</a>')
+        sid = url.split('/')[-1]
+        return format_html(f'<a href="{url}">{sid}</a>')
 
-    def ticket_id_url(self, obj):
+    def ticket_url(self, obj):
+        """Provide a link to the issue on Zendesk."""
         url = zendesk_ticket_url(
             settings.ZENDESK_TICKET_URI, obj.ticket_id
         )
         return format_html(f'<a href="{url}">{obj.ticket_id}</a>')
+
+    def get_search_results(self, request, queryset, search_term):
+        """Support Slack chat url to chat_id conversion and searching."""
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
+        
+        if queryset.count() == 0:
+            chat_id = url_to_chat_id(search_term)
+            queryset |= self.model.objects.filter(chat_id=chat_id)
+
+        return queryset, use_distinct
 
     def mark_resolved(modeladmin, request, queryset):
         """Allow the admin to close issue.

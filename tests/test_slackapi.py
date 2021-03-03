@@ -22,6 +22,21 @@ def test_slack_message_url(log):
     assert url == 'https://example.com/ASK323K/pQWD42D'
 
 
+
+def test_slack_url_to_chat_id(log):
+    """Verify the conversion from URL to chat ID.
+    """
+    chat_id = '1597935682.010800'
+    url = 'https://example.com/C018JUAGGTS/p1597935682010800'
+    result = slack_api.url_to_chat_id(url)
+    assert result == chat_id
+
+    chat_id = '1597935682.010800'
+    url = 'https://example.com/C018JUAGGTS/p1597935682010800/'
+    result = slack_api.url_to_chat_id(url)
+    assert result == chat_id
+
+
 def test_post_message(log):
     """Verify the URL generated to point at (UI not API) ticket in zendesk.
     """

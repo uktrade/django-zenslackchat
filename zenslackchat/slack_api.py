@@ -24,6 +24,26 @@ def message_url(workspace_uri, channel, message_id):
     return '/'.join([workspace_uri.rstrip('/'), channel, msg_id])
 
 
+def url_to_chat_id(slack_url):
+    """Convert a copy-n-pasted slack chat URL to the chat_id
+
+    Go from: https://xyz.slack.com/archives/.../p1614771038052300
+
+    To: 1614771038.052300
+    
+    """
+    # Recover the last element in URL and convert to chat_id
+    chat_id = (slack_url.split('/')[-1]).lower().strip()
+
+    # convert to chat_id stripping the trailing p
+    chat_id = chat_id[1:] if chat_id[0] == 'p' else chat_id
+
+    # convert to timestamp with:
+    chat_id = f"{chat_id[:-6]}.{chat_id[-6:]}"
+    
+    return chat_id
+
+
 def create_thread(client, channel_id, message):
     """Create a parent message which will be the thread for further comms.
 
