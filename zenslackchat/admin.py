@@ -46,6 +46,8 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
 
     search_fields = ('chat_id', 'ticket_id')
 
+    actions = ('mark_resolved',)
+
     def slack_chat_url(self, obj):
         chat_url = message_url(
             settings.SLACK_WORKSPACE_URI, obj.channel_id, obj.chat_id
@@ -58,3 +60,19 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
             settings.ZENDESK_TICKET_URI, obj.ticket_id
         )
         return format_html(f'<a href="{url}">{obj.ticket_id}</a>')
+
+    def mark_resolved(modeladmin, request, queryset):
+        """Allow the admin to close issue.
+        
+        This only resolves the issue in our database, stopping the bot from 
+        monitoring it further. Zendesk will not be notified and no notice will 
+        be sent on Slack.
+        
+        It allows the admin to remove an issue if something went wrong. For 
+        example zendesk was down and the issue was partially created.
+
+        """
+        for obj in queryset:
+            ZenSlackChat.resolve(obj.channel_id, obj.chat_id)
+    
+    mark_resolved.short_description = "Remove an issue by marking it resolved."

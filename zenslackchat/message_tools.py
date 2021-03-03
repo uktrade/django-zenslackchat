@@ -174,9 +174,9 @@ def messages_for_slack(slack, zendesk):
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
         # Slack seems to use the name whereas zendesk uses the actual emoji:
         text = strip(msg['text'])
-        log.debug(
-            f"Text to store for lookup:'{text}' hash:{compare_hash(text)}"
-        )
+        # log.debug(
+        #     f"Text to store for lookup:'{text}' hash:{compare_hash(text)}"
+        # )
         lookup[compare_hash(text)] = 1        
 
     # remove api messages which come from slack
@@ -190,23 +190,23 @@ def messages_for_slack(slack, zendesk):
             # only show a sample of the email
             text = truncate_email(text)
         msg['body'] = text
-        log.debug(f"""
+#         log.debug(f"""
 
 
--------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
-Lookups: {lookup}
+# Lookups: {lookup}
 
-Hash:{compare_hash(text)} of Text to compare:'{text}'
+# Hash:{compare_hash(text)} of Text to compare:'{text}'
 
-Channel: {msg['via']['channel']}
+# Channel: {msg['via']['channel']}
 
-Text present in lookup? {compare_hash(text) in lookup}
+# Text present in lookup? {compare_hash(text) in lookup}
 
--------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
-""")
+# """)
         if msg['via']['channel'] == 'api':
             # Exclude the API channel as the bot is posting this message only 
             # for Zendesk e.g. Messages for email user's not needed on slack.
@@ -216,7 +216,7 @@ Text present in lookup? {compare_hash(text) in lookup}
             log.debug(f"msg to be added:'{text}'")
             for_slack.append(msg)
 
-        else:
-            log.debug(f"Zendesk message not sent to slack:'{text}'")
+        # else:
+        #     log.debug(f"Zendesk message not sent to slack:'{text}'")
 
     return for_slack
