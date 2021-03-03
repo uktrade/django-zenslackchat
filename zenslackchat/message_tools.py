@@ -107,7 +107,7 @@ def strip_zendesk_origin(text):
 
 
 def strip_formatting(text):
-    """Strip all markdown formatting returning only text.    
+    """Strip all formatting returning only text.    
     """
     # md -> html -> text since BeautifulSoup can extract text cleanly
     html = markdown(text)
