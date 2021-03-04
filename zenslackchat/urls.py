@@ -1,5 +1,4 @@
 from django.urls import path
-from django.urls import include
 from django.contrib.auth import views as auth_views
 
 from . import views
@@ -18,21 +17,21 @@ urlpatterns = [
 
     path('zendesk/oauth/', views.zendesk_oauth, name='zendesk_oauth'),
     path(
-        'zendesk/webhook/', 
-        zendesk_webhooks.CommentsWebHook.as_view(), 
+        'zendesk/webhook/',
+        zendesk_webhooks.CommentsWebHook.as_view(),
         name='zenslackchat_comments'
     ),
     path(
-        'zendesk/email/webhook/', 
-        zendesk_webhooks.EmailWebHook.as_view(), 
+        'zendesk/email/webhook/',
+        zendesk_webhooks.EmailWebHook.as_view(),
         name='zenslackchat_emails'
     ),
 
     path('pagerduty/oauth/', views.pagerduty_oauth, name='pagerduty_oauth'),
 
     path(
-        'trigger/report/daily', 
-        views.trigger_daily_report, 
+        'trigger/report/daily',
+        views.trigger_daily_report,
         name='daily_report'
     ),
 ]

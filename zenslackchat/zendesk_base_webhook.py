@@ -13,10 +13,10 @@ from zenslackchat.models import ZendeskApp
 class BaseWebHook(APIView):
     """Handle Zendesk Events with authentication token.
 
-    Zendesk will need to have a HTTP notifier and trigger configured to 
+    Zendesk will need to have a HTTP notifier and trigger configured to
     forward us comments.
 
-    """    
+    """
     def post(self, request, *args, **kwargs):
         """Handle the POSTed request from Zendesk.
 
@@ -45,7 +45,7 @@ class BaseWebHook(APIView):
                     slack_client=SlackApp.client(),
                     zendesk_client=ZendeskApp.client()
                 )
-            
+
             else:
                 log.error(
                     'Webhook JSON body token does no match expected token '
@@ -60,8 +60,9 @@ class BaseWebHook(APIView):
 
                 response = Response(status=status.HTTP_403_FORBIDDEN)
 
-        except:
-            log.exception(f'Failed handling webhook because:')
+        except: # noqa: I'm logging rather than hidding.
+            # I need to respond OK or I won't receive further events.
+            log.exception('Failed handling webhook because:')
 
         return response
 

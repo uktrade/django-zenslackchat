@@ -161,25 +161,6 @@ Handy Zendesk OAuth client registration documentation:
 - https://support.zendesk.com/hc/en-us/articles/203663836-Using-OAuth-authentication-with-your-application
 
 
-HTTP Target
-~~~~~~~~~~~
-
-You need to create a HTTP target which can then be used in the trigger set up. 
-From ``https://<your zendesk>.zendesk.com/agent/admin/extensions`` you click 
-"add target" and then set:
-
-- Title: zenslackchat zendesk comment notification
-- URL: <Ngrok.io URI or Production URI>/zendesk/webhook
-- Method: POST
-
-You can test the target if you have set up the end point in advance. Otherwise
-just select "Create Target" in the drop down. and move on to creating the 
-trigger for this HTTP target. More detail on how to set up a webhook can be
-found in the Zendesk:
-
-- https://support.zendesk.com/hc/en-us/articles/204890268-Creating-webhooks-with-the-HTTP-target
-
-
 Zendesk Agent
 ~~~~~~~~~~~~~
 
@@ -228,8 +209,7 @@ need to create a trigger and then do the following set up:
 
 - Actions
 
-   - Notifiy target
-   - Select the trigger created earlier
+   - Notifiy target -> zenslackchat-ticket-comment
    - Set the JSON body set up::
 
    {
@@ -245,6 +225,71 @@ these don't match the webhook request will be rejected and logged as an error.
 The "meet any condition" is a bit of a hack to get comments sent to us. I would 
 also put the trigger order first above any existing triggers although thats 
 just me.
+
+
+Zendesk SRE Email Address
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To create an issue via email and then tell ZenSlackChat about it, you must first 
+create an email address in Zendesk. Then the HTTP target and new email trigger 
+need to be created.
+
+As admin go to https://<subdomain>.zendesk.com/agent/admin/email to add a new 
+email. The fillout the following details:
+
+- Select "Add Address" -> "Create new Zendesk address"
+- Enter the local part for the email for example sre or sre-staging.
+- Click "Create Now"
+
+Send an email to this address to verify it is working. Zendesk will create a 
+new issue for the received email, if it is working correctly.
+
+
+New Email HTTP Target
+~~~~~~~~~~~~~~~~~~~~~
+
+You need to create a HTTP target which can then be used in the new email 
+trigger set up. From ``https://<your zendesk>.zendesk.com/agent/admin/extensions`` 
+you click "add target" and then set:
+
+- Title: zendesk-to-zenslackchat-email-event
+- URL: <Ngrok.io URI, Staging or Production URI>/zendesk/email/webhook/
+- Method: POST
+
+You can test the target if you have set up the end point in advance. Otherwise
+just select "Create Target" in the drop down. and move on to creating the 
+trigger for this HTTP target.
+
+
+New Email Trigger
+~~~~~~~~~~~~~~~~~
+
+Now the email address and HTTP target are set up a trigger is needed to react
+to new created issues via email. Go to ``https://<your zendesk>.zendesk.com/agent/admin/triggers``
+and click "Add Trigger" filling out the following details:
+
+- Trigger Name: zendesk-new-request
+- Description: zendesk-new-request
+- Meet All of the following conditions
+
+   - Ticket Is Created
+   - Status Is not Solved
+   - Status Is not Closed
+   - Channel Is Email
+   - Received at Is <zendesk email created earlier>
+
+- Actions
+
+  - Notify target -> zendesk-to-zenslackchat-email-event
+   - Set the JSON body set up::
+
+   {
+      "token": "<shared secret token>",
+      "ticket_id": "{{ticket.id}}"
+   }
+
+The token is the same token set up for the comment trigger. See that for more
+details.
 
 
 Slack Set-up

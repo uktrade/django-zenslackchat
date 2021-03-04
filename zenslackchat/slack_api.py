@@ -1,14 +1,13 @@
 """
 Useful code to aid the main message handler.
 
-To simplify testing I keep these functions django free and pass in whats needed 
+To simplify testing I keep these functions django free and pass in whats needed
 in arguments. This can then be easily faked/mocked.
 
 Oisin Mulvihill
 2020-08-18
 
 """
-import os
 import logging
 
 
@@ -30,7 +29,7 @@ def url_to_chat_id(slack_url):
     Go from: https://xyz.slack.com/archives/.../p1614771038052300
 
     To: 1614771038.052300
-    
+
     """
     # Recover the last element in URL and convert to chat_id. handle trailing /
     chat_id = [part for part in slack_url.split('/') if part][-1]
@@ -41,7 +40,7 @@ def url_to_chat_id(slack_url):
 
     # convert to timestamp with:
     chat_id = f"{chat_id[:-6]}.{chat_id[-6:]}"
-    
+
     return chat_id
 
 

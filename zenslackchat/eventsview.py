@@ -11,7 +11,6 @@ from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
 
 
-
 class Events(APIView):
     """Handle Events using the webapp instead of using the RTM API.
 
@@ -20,9 +19,9 @@ class Events(APIView):
 
     Handy documentation for Slack events: https://api.slack.com/events-api
 
-    The app needs to subscribe to events to receive them. From 
+    The app needs to subscribe to events to receive them. From
     https://api.slack.com/apps/<APP ID>/event-subscriptions you need to:
-    
+
     - Enable Events from "Off" to "On"
     - Enter the "Request URL" e.g.: http://<instance id>.ngrok.io/slack/events/
     - Then "Subscribe to events on behalf of users"
@@ -31,7 +30,7 @@ class Events(APIView):
     Message on channels will now start being recieved. The bot will need to be
     invited to a channel first.
 
-    """    
+    """
     def post(self, request, *args, **kwargs):
         """Events will come in over a POST request.
         """
@@ -45,7 +44,7 @@ class Events(APIView):
 
         # verification challenge, convert to signature verification instead:
         if slack_message.get('type') == 'url_verification':
-            return Response(data=slack_message, status=status.HTTP_200_OK)  
+            return Response(data=slack_message, status=status.HTTP_200_OK)
 
         if 'event' in slack_message:
             event = slack_message.get('event')
@@ -53,7 +52,7 @@ class Events(APIView):
                 log.debug(f'event received:\n{pprint.pformat(event)}\n')
             try:
                 handler(
-                    event, 
+                    event,
                     our_channel=settings.SRE_SUPPORT_CHANNEL,
                     slack_client=SlackApp.client(),
                     zendesk_client=ZendeskApp.client(),
@@ -62,8 +61,11 @@ class Events(APIView):
                     user_id=settings.ZENDESK_USER_ID,
                     group_id=settings.ZENDESK_GROUP_ID,
                 )
-        
-            except:
+
+            except:  # noqa
+                # I want all event even if they cause me problems. If I don't
+                # accept the webhook will be marked as broken and then no more
+                # events will be sent.
                 log.exception("Slack message_handler error: ")
 
         return Response(status=status.HTTP_200_OK)

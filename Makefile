@@ -8,7 +8,7 @@ export DISABLE_ECS_LOG_FORMAT?=1
 
 .DEFAULT_GOAL := all
 
-.PHONY: all collect run run_beat run_worker migrate remove release reinstall test up ps down 
+.PHONY: all collect run run_beat run_worker migrate remove release reinstall test up ps down
 
 all:
 	echo "Please choose a make target to run."
@@ -64,5 +64,5 @@ lint:
 	flake8 --ignore=E501 webapp
 	flake8 --ignore=E501 zenslackchat
 
-test:
+test: lint
 	pytest -s --ds=webapp.settings --cov=zenslackchat --cov=webapp

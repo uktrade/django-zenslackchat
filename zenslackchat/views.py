@@ -18,7 +18,6 @@ from zenslackchat.models import ZendeskApp
 from zenslackchat.models import PagerDutyApp
 
 
-
 def slack_oauth(request):
     """Complete the OAuth process recovering the details needed to access the
     slack workspace we have just been added to.
@@ -30,9 +29,9 @@ def slack_oauth(request):
         log.error("The code parameter was missing in the request!")
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    code = request.GET['code']    
+    code = request.GET['code']
     log.debug(f"Received Slack OAuth request code:<{code}>")
-    params = { 
+    params = {
         'code': code,
         'client_id': settings.SLACK_CLIENT_ID,
         'client_secret': settings.SLACK_CLIENT_SECRET
@@ -45,9 +44,9 @@ def slack_oauth(request):
     data = json.loads(json_response.text)
 
     SlackApp.objects.create(
-        team_name=data['team_name'], 
+        team_name=data['team_name'],
         team_id=data['team_id'],
-        bot_user_id=data['bot']['bot_user_id'],     
+        bot_user_id=data['bot']['bot_user_id'],
         bot_access_token=data['bot']['bot_access_token']
     )
     log.debug("Create local Team for this bot. Bot Added OK.")
@@ -56,7 +55,7 @@ def slack_oauth(request):
 
 
 def zendesk_oauth(request):
-    """Complete the Zendesk OAuth process recovering the access_token needed to 
+    """Complete the Zendesk OAuth process recovering the access_token needed to
     perform API requests to the Zendesk Support API.
 
     """
@@ -70,13 +69,13 @@ def zendesk_oauth(request):
     request_url = f"https://{subdomain}.zendesk.com/oauth/tokens"
     redirect_uri = settings.ZENDESK_REDIRECT_URI
 
-    code = request.GET['code']    
+    code = request.GET['code']
     log.debug(
         f"Received Zendesk OAuth request code:<{code}>. "
         f"Recovering access token from {request_url}. "
         f"Redirect URL is {redirect_uri}. "
     )
-    data = { 
+    data = {
         'code': code,
         'client_id': settings.ZENDESK_CLIENT_IDENTIFIER,
         'client_secret': settings.ZENDESK_CLIENT_SECRET,
@@ -84,7 +83,7 @@ def zendesk_oauth(request):
         'redirect_uri': redirect_uri,
     }
     response = requests.post(
-        request_url, 
+        request_url,
         data=json.dumps(data),
         headers={"Content-Type": "application/json"}
     )
@@ -93,9 +92,9 @@ def zendesk_oauth(request):
     data = response.json()
     log.debug(f"Result status from Zendesk:\n{pprint.pformat(data)}>")
     ZendeskApp.objects.create(
-        access_token=data['access_token'], 
-        token_type=data['token_type'], 
-        scope=data['scope'], 
+        access_token=data['access_token'],
+        token_type=data['token_type'],
+        scope=data['scope'],
     )
     log.debug("Created local ZendeskApp instance OK.")
 
@@ -110,12 +109,12 @@ def pagerduty_oauth(request):
 
     """
     log = logging.getLogger(__name__)
-    
+
     if 'code' not in request.GET:
         log.error("The code parameter was missing in the request!")
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    code = request.GET['code']    
+    code = request.GET['code']
     subdomain = request.GET['subdomain']
     log.debug(
         f"Received Zendesk OAuth request code:<{code}> for subdomain:"
@@ -138,9 +137,9 @@ def pagerduty_oauth(request):
     if settings.DEBUG:
         log.debug(f"Result status from PagerDuty:\n{pprint.pformat(data)}>")
     PagerDutyApp.objects.create(
-        access_token=data['access_token'], 
-        token_type=data['token_type'], 
-        scope=data['scope'], 
+        access_token=data['access_token'],
+        token_type=data['token_type'],
+        scope=data['scope'],
     )
     log.debug("Created local PagerDutyApp instance OK.")
 
@@ -172,12 +171,12 @@ ZENDESK_REQUESTED_SCOPES = "%20".join((
     # general read:
     'read',
     # allows me to be zenslackchat when managing tickets
-    'impersonate', 
+    'impersonate',
     # I only need access to tickets resources:
     'tickets:read', 'tickets:write',
 ))
 
-    
+
 @login_required
 def index(request):
     """A page Pingdom can log-in to test site uptime and DB readiness.
@@ -217,8 +216,6 @@ def index(request):
             zendesk_oauth_request_uri=zendesk_oauth_request_uri,
             slack_oauth_request_uri=slack_oauth_request_uri,
             pagerduty_oauth_request_uri=pagerduty_oauth_request_uri
-        ), 
+        ),
         request
     ))
-
-    

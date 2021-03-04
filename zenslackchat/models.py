@@ -33,7 +33,7 @@ class ZenSlackChat(models.Model):
     """
     # The channel which the slack message happening:
     # e.g. C019JUGAGTS
-    channel_id = models.CharField(max_length=22)    
+    channel_id = models.CharField(max_length=22)
 
     # The slack message 'ts' that represent the conversation:
     # An epoch time e.g. 1597931771.007500
@@ -97,7 +97,7 @@ class ZenSlackChat(models.Model):
         :param chat_id: The conversation parent message identifier.
 
         :returns: A ZenSlackChat instance.
-        
+
         If nothing is found for channel_id and chat_id then NotFoundError will
         be raised.
 
@@ -125,7 +125,7 @@ class ZenSlackChat(models.Model):
 
         If nothing is found for chat_id and ticket_id then NotFoundError will
         be raised.
-        
+
         """
         try:
             found = cls.objects.get(chat_id=chat_id, ticket_id=ticket_id)
@@ -187,8 +187,8 @@ class ZenSlackChat(models.Model):
 
         :param when: None or UTC datetime instance for 'today'.
 
-        Used to work yesterday's date. All open tickets are counted and not 
-        just those for the yesterday. Only yesterday's closed tickets on are 
+        Used to work yesterday's date. All open tickets are counted and not
+        just those for the yesterday. Only yesterday's closed tickets on are
         counted.
 
         :returns: A dict(open=[..links to slack issues..], closed=<a count>)
@@ -215,8 +215,8 @@ class ZenSlackChat(models.Model):
         for issue in cls.open_issues():
             returned['open'].append(slack_api.message_url(
                 workspace_uri,
-                issue.channel_id, 
-                issue.chat_id, 
+                issue.channel_id,
+                issue.chat_id,
             ))
 
         returned['closed'] = cls.objects.filter(
@@ -256,11 +256,11 @@ Cheers,
 🤖 ZenSlackChat
         """.strip()
 
-        return report 
+        return report
 
 
 class SlackApp(models.Model):
-    """Used to store Slack OAuth client / bot details after successfull 
+    """Used to store Slack OAuth client / bot details after successfull
     completion of the OAuth process.
 
     """
@@ -274,7 +274,7 @@ class SlackApp(models.Model):
     def client(cls):
         """Returns a Slack web client ready for use.
 
-        This recovers the latest SlackApp instance and uses its 
+        This recovers the latest SlackApp instance and uses its
         bot_access_token field for the web client.
 
         """
@@ -288,13 +288,12 @@ class SlackApp(models.Model):
         return WebClient(token=app.bot_access_token)
 
 
-
 class CustomHeaderAdapter(requests.adapters.HTTPAdapter):
     """Allow custom request headers for Zenpy requests.
     """
     def add_headers(self, request, **kwargs):
         """Add in custom X-On-Behalf-Of for zenslackchat.
-        
+
         This allows us to impersonate Zenslackchat directly so their
         email is assigned to the issue at the top level. Otherwise it
         seems the admin email gets used.
@@ -309,9 +308,9 @@ class CustomHeaderAdapter(requests.adapters.HTTPAdapter):
 
 
 class ZendeskApp(models.Model):
-    """Used to store Zendesk OAuth client / app details after successfull 
+    """Used to store Zendesk OAuth client / app details after successfull
     completion of the OAuth process.
-    
+
     """
     access_token = models.CharField(max_length=512)
     token_type = models.CharField(max_length=50)
@@ -345,9 +344,9 @@ class ZendeskApp(models.Model):
 
 
 class PagerDutyApp(models.Model):
-    """Used to store Pager Duty OAuth client / app details after successfull 
+    """Used to store Pager Duty OAuth client / app details after successfull
     completion of the OAuth process.
-    
+
     """
     access_token = models.CharField(max_length=512)
     token_type = models.CharField(max_length=50)
@@ -400,7 +399,7 @@ class PagerDutyApp(models.Model):
         data = session.get(path).json()
 
         # level 1 is the person on call, 2 is the secondary backup
-        priority = sorted(data['oncalls'], key=itemgetter('escalation_level')) 
+        priority = sorted(data['oncalls'], key=itemgetter('escalation_level'))
         primary, secondary = [i['user']['summary'] for i in priority][:2]
 
         return dict(primary=primary, secondary=secondary)

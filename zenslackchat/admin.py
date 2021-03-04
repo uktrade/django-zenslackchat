@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
@@ -40,7 +39,7 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
     date_hierarchy = 'opened'
 
     list_display = (
-        'chat_id', 'channel_id', 'ticket_url', 'chat_url', 'active', 'opened', 
+        'chat_id', 'channel_id', 'ticket_url', 'chat_url', 'active', 'opened',
         'closed'
     )
 
@@ -70,7 +69,7 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
         queryset, use_distinct = super().get_search_results(
             request, queryset, search_term
         )
-        
+
         if queryset.count() == 0:
             chat_id = url_to_chat_id(search_term)
             queryset |= self.model.objects.filter(chat_id=chat_id)
@@ -79,16 +78,16 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
 
     def mark_resolved(modeladmin, request, queryset):
         """Allow the admin to close issue.
-        
-        This only resolves the issue in our database, stopping the bot from 
-        monitoring it further. Zendesk will not be notified and no notice will 
+
+        This only resolves the issue in our database, stopping the bot from
+        monitoring it further. Zendesk will not be notified and no notice will
         be sent on Slack.
-        
-        It allows the admin to remove an issue if something went wrong. For 
+
+        It allows the admin to remove an issue if something went wrong. For
         example zendesk was down and the issue was partially created.
 
         """
         for obj in queryset:
             ZenSlackChat.resolve(obj.channel_id, obj.chat_id)
-    
+
     mark_resolved.short_description = "Remove an issue by marking it resolved."

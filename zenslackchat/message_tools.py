@@ -1,7 +1,7 @@
 """
 Functions used to aid in zendesk, slack, email messaging.
 
-To simplify testing I keep these functions django free and pass in whats needed 
+To simplify testing I keep these functions django free and pass in whats needed
 in arguments. This can then be easily faked/mocked.
 
 Oisin Mulvihill
@@ -28,7 +28,7 @@ def message_who_is_on_call(on_call, slack_client, chat_id, channel_id):
     """Post to the chat who is primary and secondary on call.
 
     This will only message if the PagerDutyApp / OAuth set up has been done.
-    
+
     """
     if on_call != {}:
         message = (
@@ -48,6 +48,9 @@ def message_issue_zendesk_url(
     post_message(slack_client, chat_id, channel_id, message)
 
 
+_resolve_cmds = ['resolve', 'resolve ticket', '🆗', '✅']
+
+
 def is_resolved(command):
     """Return true if the given command string matches on of the accepted
     resolve strings.
@@ -58,18 +61,13 @@ def is_resolved(command):
 
     """
     _cmd = emoji.emojize(command.lower(), use_aliases=True)
-    return (
-        _cmd == 'resolve' or 
-        _cmd == 'resolve ticket' or 
-        _cmd == '🆗' or
-        _cmd == '✅'
-    )
+    return (_cmd in _resolve_cmds)
 
 
 def ts_to_datetime(epoch):
     """Convert raw UTC slack message epoch times to datetime.
 
-    :param epoch: A string epoch decimal e.g. '1598459584.013100' 
+    :param epoch: A string epoch decimal e.g. '1598459584.013100'
 
     :returns: datetime.datetime(2020, 8, 26, 17, 33, 4, tzinfo=utc)
 
@@ -107,7 +105,7 @@ def strip_zendesk_origin(text):
 
 
 def strip_formatting(text):
-    """Strip all formatting returning only text.    
+    """Strip all formatting returning only text.
     """
     # md -> html -> text since BeautifulSoup can extract text cleanly
     html = markdown(text)
@@ -145,7 +143,7 @@ def strip(text):
 
 def truncate_email(content, characters=320):
     """Only show a truncated email content.
-    
+
     By default this will return the first 160 characters.
 
     """
@@ -156,7 +154,7 @@ def truncate_email(content, characters=320):
 
 
 def messages_for_slack(slack, zendesk):
-    """Work out which messages from zendesk need to be added to the slack 
+    """Work out which messages from zendesk need to be added to the slack
     conversation.
 
     :param slack: A list of slack messages.
@@ -177,7 +175,7 @@ def messages_for_slack(slack, zendesk):
         # log.debug(
         #     f"Text to store for lookup:'{text}' hash:{compare_hash(text)}"
         # )
-        lookup[compare_hash(text)] = 1        
+        lookup[compare_hash(text)] = 1
 
     # remove api messages which come from slack
     for_slack = []
@@ -190,27 +188,11 @@ def messages_for_slack(slack, zendesk):
             # only show a sample of the email
             text = truncate_email(text)
         msg['body'] = text
-#         log.debug(f"""
 
-
-# -------------------------------------------------------------------------------
-
-# Lookups: {lookup}
-
-# Hash:{compare_hash(text)} of Text to compare:'{text}'
-
-# Channel: {msg['via']['channel']}
-
-# Text present in lookup? {compare_hash(text) in lookup}
-
-# -------------------------------------------------------------------------------
-
-
-# """)
         if msg['via']['channel'] == 'api':
-            # Exclude the API channel as the bot is posting this message only 
+            # Exclude the API channel as the bot is posting this message only
             # for Zendesk e.g. Messages for email user's not needed on slack.
-            log.debug(f"Ignoring message from API channel.")
+            log.debug("Ignoring message from API channel.")
 
         elif compare_hash(text) not in lookup:
             log.debug(f"msg to be added:'{text}'")

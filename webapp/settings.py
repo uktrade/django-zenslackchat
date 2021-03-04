@@ -127,7 +127,7 @@ PAGERDUTY_ESCALATION_POLICY_ID = os.environ.get(
     'PAGERDUTY_ESCALATION_POLICY_ID', 'PagerDuty Policy ID'
 )
 
-# Used to work out our external URI for redirects. Also used as the entry in 
+# Used to work out our external URI for redirects. Also used as the entry in
 # ALLOWED_HOSTS.
 PAAS_FQDN = os.environ.get(
     'PAAS_FQDN', 'The fully qualified domain name of the PaaS webapp'
@@ -191,7 +191,7 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {}
-DATABASES['default'] =  dj_database_url.config()
+DATABASES['default'] = dj_database_url.config()
 
 
 # Password validation

@@ -3,10 +3,11 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 
+from zenslackchat import botlogging
+
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webapp.settings')
 
-from zenslackchat import botlogging
 botlogging.log_setup()
 
 app = Celery('django-zenslackchat')
@@ -43,4 +44,4 @@ def run_daily_summary():
     text = ZenSlackChat.daily_report(report_data)
 
     client = SlackApp.client()
-    client.chat_postMessage(channel=channel_id, text=text)    
+    client.chat_postMessage(channel=channel_id, text=text)
