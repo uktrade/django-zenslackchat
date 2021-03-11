@@ -15,6 +15,7 @@ from webapp import settings
 from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
 from zenslackchat.models import NotFoundError
+from zenslackchat.models import OutOfHoursInformation
 from zenslackchat.slack_api import message_url
 from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import get_ticket
@@ -23,6 +24,7 @@ from zenslackchat.zendesk_api import close_ticket
 from zenslackchat.zendesk_api import create_ticket
 from zenslackchat.zendesk_api import zendesk_ticket_url
 from zenslackchat.message_tools import is_resolved
+from zenslackchat.message_tools import ts_to_datetime
 from zenslackchat.message_tools import message_who_is_on_call
 from zenslackchat.message_tools import message_issue_zendesk_url
 
@@ -235,6 +237,17 @@ def handler(
                     slack_client,
                     chat_id,
                     channel_id
+                )
+
+                # Is this an issue created out of hours?
+                OutOfHoursInformation.inform_if_out_of_hours(
+                    # ID is UTC epoch time. I use this for the 'now' time. This
+                    # should handle any delay with messages from slack to the
+                    # bot.
+                    ts_to_datetime(chat_id),
+                    chat_id,
+                    channel_id,
+                    slack_client
                 )
 
         else:

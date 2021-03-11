@@ -4,13 +4,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from zenslackchat.message import handler
-from zenslackchat.models import PagerDutyApp
 from zenslackchat.message import is_resolved
-from zenslackchat.models import ZendeskApp
 from zenslackchat.models import ZenSlackChat
+from zenslackchat.models import OutOfHoursInformation
 from zenslackchat.message import IGNORED_SUBTYPES
-from zenslackchat.message_tools import message_who_is_on_call
-from zenslackchat.message_tools import message_issue_zendesk_url
 from zenslackchat.zendesk_email_to_slack import email_from_zendesk
 
 
@@ -55,7 +52,9 @@ def test_new_support_message_creates_ticket(
     user_id = '100000000001'
     group_id = '200000000002'
 
-    # Set up the user details 'slack' will return    
+    OutOfHoursInformation.update("Contact XYZ", ("09:00", "17:00"))
+
+    # Set up the user details 'slack' will return
     slack_client.users_info.return_value = FakeUserResponse()
 
     # No existing ticket should be returned:
@@ -158,7 +157,7 @@ def test_new_support_message_creates_ticket(
 )
 def test_is_resolve(resolve_command, expected):
     assert is_resolved(resolve_command) is expected
-    
+
 
 @patch('zenslackchat.message.add_comment')
 @patch('zenslackchat.message.get_ticket')
@@ -181,7 +180,7 @@ def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
     close_ticket,
     get_ticket,
     add_comment,
-    resolve_command, 
+    resolve_command,
     log,
     db
 ):
@@ -195,6 +194,8 @@ def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
     zendesk_uri = 'https://z.e.n.d.e.s.k'
     user_id = '100000000004'
     group_id = '200000000005'
+
+    OutOfHoursInformation.update("Contact XYZ", ("09:00", "17:00"))
 
     slack_client.users_info.return_value = FakeUserResponse()
     get_ticket.return_value = None
@@ -317,9 +318,9 @@ def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
     # Check the message that should go to slack closing the issue:
     url = f'https://z.e.n.d.e.s.k/{ticket.id}'
     post_message.assert_called_with(
-        slack_client, 
-        '1602064330.001600', 
-        'C0192NP3TFG', 
+        slack_client,
+        '1602064330.001600',
+        'C0192NP3TFG',
         f'🤖 Understood. Ticket {url} has been closed.'
     )
 
@@ -345,7 +346,7 @@ def test_message_with_existing_support_ticket_in_zendesk(
     user_id = '100000000001'
     group_id = '200000000002'
 
-    # Set up the user details 'slack' will return    
+    # Set up the user details 'slack' will return
     slack_client.users_info.return_value = FakeUserResponse()
 
     # Return the ticket which will indicate we know about this issue and
@@ -356,12 +357,12 @@ def test_message_with_existing_support_ticket_in_zendesk(
     # There should be no entries here yet:
     assert ZenSlackChat.objects.count() == 0
 
-    # For this situation we need an exiting support ticket present for the 
+    # For this situation we need an exiting support ticket present for the
     # message handler to detail with in our DB:
     ZenSlackChat.open(
-        channel_id="C019JUGAGTS", 
-        chat_id="1598022004.004900", 
-        ticket_id="21", 
+        channel_id="C019JUGAGTS",
+        chat_id="1598022004.004900",
+        ticket_id="21",
     )
     assert len(ZenSlackChat.open_issues()) == 1
 
@@ -410,7 +411,7 @@ def test_message_with_existing_support_ticket_in_zendesk(
     assert issue.channel_id == 'C019JUGAGTS'
     assert issue.chat_id == '1598022004.004900'
     assert issue.ticket_id == '21'
-    
+
     # Verify the calls to the various mock are as I expect:
 
     # called with the content of data['user']
@@ -445,7 +446,7 @@ def test_thread_message_with_support_ticket_in_zendesk(
     user_id = '100000000001'
     group_id = '200000000002'
 
-    # Set up the user details 'slack' will return    
+    # Set up the user details 'slack' will return
     slack_client.users_info.return_value = FakeUserResponse()
 
     # Return the ticket which will indicate we know about this issue and
@@ -456,12 +457,12 @@ def test_thread_message_with_support_ticket_in_zendesk(
     # There should be no entries here yet:
     assert ZenSlackChat.objects.count() == 0
 
-    # For this situation we need an exiting support ticket present for the 
+    # For this situation we need an exiting support ticket present for the
     # message handler to detail with in our DB:
     ZenSlackChat.open(
-        channel_id="C019JUGAGTS", 
-        chat_id="1598021907.003600", 
-        ticket_id="83", 
+        channel_id="C019JUGAGTS",
+        chat_id="1598021907.003600",
+        ticket_id="83",
     )
     assert len(ZenSlackChat.open_issues()) == 1
 
@@ -525,7 +526,7 @@ def test_thread_message_with_support_ticket_in_zendesk(
     get_ticket.assert_called_with(zendesk_client, '83')
     add_comment.assert_called_with(
         zendesk_client,
-        ticket, 
+        ticket,
         'Bob Sprocket (Slack): Oh, wait, my bad 🤦‍♀️, its ok now.'
     )
 
@@ -551,7 +552,7 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     """Test when old message threads are replied to.
 
     When no ticket is found in zendesk and ts & thread_ts are set, This
-    indicates an old message thread with new chatter on it. I'm going to ignore 
+    indicates an old message thread with new chatter on it. I'm going to ignore
     this. We just log that we ignore it and move on.
 
     """
@@ -562,10 +563,10 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     user_id = '100000000001'
     group_id = '200000000002'
 
-    # Set up the user details 'slack' will return    
+    # Set up the user details 'slack' will return
     slack_client.users_info.return_value = FakeUserResponse()
 
-    # With no known issue for this and set ts & thread_ts, it will indicate an 
+    # With no known issue for this and set ts & thread_ts, it will indicate an
     # old message thread with new chatter on it. I'm going to ignore this.
     get_ticket.return_value = None
     assert len(ZenSlackChat.open_issues()) == 0
@@ -613,8 +614,8 @@ def test_old_message_thread_with_message_and_no_support_ticket_in_zendesk(
     # called with the content of data['user']
     slack_client.users_info.assert_called_with(user='UGF7MRWMS')
 
-    # In a conversation the thread_ts is actually a reference to the parent 
-    # message and ts refers to the message that has come in. Check this has 
+    # In a conversation the thread_ts is actually a reference to the parent
+    # message and ts refers to the message that has come in. Check this has
     # been taken into account.
 
     # No new issue should be created in this case
@@ -719,4 +720,3 @@ def test_channel_is_not_our_channel_so_message_is_ignored(
     get_ticket.assert_not_called()
     create_ticket.assert_not_called()
     post_message.assert_not_called()
-

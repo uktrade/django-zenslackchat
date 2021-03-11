@@ -13,6 +13,7 @@ from pdpyras import APISession
 
 from webapp import settings
 from zenslackchat import slack_api
+from zenslackchat.slack_api import post_message
 
 
 def utcnow():
@@ -403,3 +404,128 @@ class PagerDutyApp(models.Model):
         primary, secondary = [i['user']['summary'] for i in priority][:2]
 
         return dict(primary=primary, secondary=secondary)
+
+
+class OutOfHoursInformation(models.Model):
+    """Store who to contact out of hours
+
+    """
+    office_hours_begin = models.TimeField(default="09:00")
+
+    office_hours_end = models.TimeField(default="17:00")
+
+    message = models.CharField(max_length=2048)
+
+    created_at = models.DateTimeField(default=utcnow)
+
+    @classmethod
+    def help(cls):
+        """Returns the latest out of hours instance.
+
+        Only the latest instance is returned. You can remove it in the admin to
+        revert back to the previous message.
+
+        """
+        return cls.objects.order_by('-created_at').first()
+
+    @classmethod
+    def help_text(cls):
+        """Returns the latest out of hours support information.
+
+        Only the latest message is returned. You can remove it in the admin to
+        revert back to the previous message.
+
+        """
+        oohi = cls.help()
+        text = oohi.message if oohi else 'No Out Of Hours Message Set!'
+
+        return text
+
+    @classmethod
+    def is_out_of_hours(cls, now):
+        """Is this given UTC time out of office hours?
+
+        :param now: A UTC datetime instance.
+
+        :returns: True or False
+
+        """
+        oohi = cls.help()
+        date = now.date()
+
+        ohb = oohi.office_hours_begin
+        begin = datetime(
+            date.year, date.month, date.day,
+            ohb.hour, ohb.minute, ohb.second, ohb.microsecond
+        )
+        begin = begin.replace(tzinfo=timezone.utc)
+
+        ohe = oohi.office_hours_end
+        end = datetime(
+            date.year, date.month, date.day,
+            ohe.hour, ohe.minute, ohe.second, ohe.microsecond
+        )
+        end = end.replace(tzinfo=timezone.utc)
+
+        return not (now >= begin and now <= end)
+
+    @classmethod
+    def update(cls, message=None, hours=("09:00", "17:00")):
+        """Add a new out of hours instance replacing the previous.
+
+        The old instance is still present, this only adds a new entry which
+        will instead.
+
+        :param message: The latest text to use.
+
+        :param hours: (begin, end)
+
+        This is the office hours to use. Outside will be used when calculating
+        when to notify about contact details.
+
+        :returns: The newly added instance.
+
+        """
+        msg = message
+        if message is None:
+            msg = 'No Out Of Hours Message Set!'
+
+        oohi = cls(
+            office_hours_begin=hours[0],
+            office_hours_end=hours[1],
+            message=msg
+        )
+        oohi.save()
+
+        # https://code.djangoproject.com/ticket/27825#comment:2
+        oohi.refresh_from_db()
+
+        return oohi
+
+    @classmethod
+    def inform_if_out_of_hours(cls, now, chat_id, channel_id, slack_client):
+        """Inform the slack channel about outside hour contact details.
+
+        :returns: True | False
+
+        True means out of hours message was sent.
+
+        """
+        is_ooh = cls.is_out_of_hours(now)
+
+        if is_ooh:
+            post_message(
+                slack_client,
+                chat_id,
+                channel_id,
+                cls.help_text()
+            )
+
+        return is_ooh
+
+    def __str__(self) -> str:
+        return (
+            f"{self.office_hours_begin}-"
+            f"{self.office_hours_end} "
+            f"{self.message}"
+        )

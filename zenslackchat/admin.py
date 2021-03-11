@@ -6,6 +6,7 @@ from zenslackchat.models import SlackApp
 from zenslackchat.models import ZendeskApp
 from zenslackchat.models import PagerDutyApp
 from zenslackchat.models import ZenSlackChat
+from zenslackchat.models import OutOfHoursInformation
 from zenslackchat.slack_api import message_url
 from zenslackchat.slack_api import url_to_chat_id
 from zenslackchat.zendesk_api import zendesk_ticket_url
@@ -91,3 +92,10 @@ class ZenSlackChatAdmin(admin.ModelAdmin):
             ZenSlackChat.resolve(obj.channel_id, obj.chat_id)
 
     mark_resolved.short_description = "Remove an issue by marking it resolved."
+
+
+@admin.register(OutOfHoursInformation)
+class OutOfHoursInformationAdmin(admin.ModelAdmin):
+    """Manage the stored support resquests
+    """
+    date_hierarchy = 'created_at'
