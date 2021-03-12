@@ -1,3 +1,5 @@
+from django import forms
+from django.db import models
 from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
@@ -99,3 +101,10 @@ class OutOfHoursInformationAdmin(admin.ModelAdmin):
     """Manage the stored support resquests
     """
     date_hierarchy = 'created_at'
+
+    # Give a better box to enter a multi-line message.
+    formfield_overrides = {
+        models.TextField: {
+            'widget': forms.Textarea(attrs={"rows": 10, "cols": 80})
+        }
+    }

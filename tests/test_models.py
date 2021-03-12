@@ -36,7 +36,7 @@ def test_inform_if_out_of_hours(post_message, log, db, now, expected):
 
     assert OutOfHoursInformation.inform_if_out_of_hours(
         now,
-        chat_id='some-chat-id-usual-used-as-now',
+        chat_id='some-chat-id',
         channel_id='A0192KL3TFG',
         slack_client=slack_client
     ) == expected
@@ -44,7 +44,7 @@ def test_inform_if_out_of_hours(post_message, log, db, now, expected):
     if expected is True:
         post_message.assert_called_with(
             slack_client,
-            'some-chat-id-usual-used-as-now',
+            'some-chat-id',
             'A0192KL3TFG',
             "Contact XYZ"
         )

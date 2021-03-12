@@ -414,7 +414,7 @@ class OutOfHoursInformation(models.Model):
 
     office_hours_end = models.TimeField(default="17:00")
 
-    message = models.CharField(max_length=2048)
+    message = models.TextField()
 
     created_at = models.DateTimeField(default=utcnow)
 
