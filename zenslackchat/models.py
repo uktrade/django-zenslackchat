@@ -450,24 +450,32 @@ class OutOfHoursInformation(models.Model):
         :returns: True or False
 
         """
+        returned = False
         oohi = cls.help()
         date = now.date()
 
-        ohb = oohi.office_hours_begin
-        begin = datetime(
-            date.year, date.month, date.day,
-            ohb.hour, ohb.minute, ohb.second, ohb.microsecond
-        )
-        begin = begin.replace(tzinfo=timezone.utc)
+        if now.isoweekday() in (6, 7):
+            # Monday: 1, Sat, Sun: 6, 7
+            returned = True
 
-        ohe = oohi.office_hours_end
-        end = datetime(
-            date.year, date.month, date.day,
-            ohe.hour, ohe.minute, ohe.second, ohe.microsecond
-        )
-        end = end.replace(tzinfo=timezone.utc)
+        else:
+            ohb = oohi.office_hours_begin
+            begin = datetime(
+                date.year, date.month, date.day,
+                ohb.hour, ohb.minute, ohb.second, ohb.microsecond
+            )
+            begin = begin.replace(tzinfo=timezone.utc)
 
-        return not (now >= begin and now <= end)
+            ohe = oohi.office_hours_end
+            end = datetime(
+                date.year, date.month, date.day,
+                ohe.hour, ohe.minute, ohe.second, ohe.microsecond
+            )
+            end = end.replace(tzinfo=timezone.utc)
+
+            returned = not (now >= begin and now <= end)
+
+        return returned
 
     @classmethod
     def update(cls, message=None, hours=("09:00", "17:00")):

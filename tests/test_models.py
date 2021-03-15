@@ -24,7 +24,11 @@ UTC = datetime.timezone.utc
         (datetime.datetime(2021, 3, 9, 8, 59, 59, tzinfo=UTC), True),
         (datetime.datetime(2021, 3, 9, 17, 0, 1, tzinfo=UTC), True),
         (datetime.datetime(2021, 3, 9, 22, 40, 2, tzinfo=UTC), True),
-    ]
+        # weekend is oo:
+        (datetime.datetime(2021, 3, 13, 9, 0, 0, tzinfo=UTC), True),
+        (datetime.datetime(2021, 3, 14, 17, 0, 0, tzinfo=UTC), True),
+        (datetime.datetime(2021, 3, 7, 8, 59, 59, tzinfo=UTC), True),
+]
 )
 @patch('zenslackchat.models.post_message')
 def test_inform_if_out_of_hours(post_message, log, db, now, expected):
@@ -64,6 +68,12 @@ def test_inform_if_out_of_hours(post_message, log, db, now, expected):
         (datetime.datetime(2021, 3, 9, 8, 59, 59, tzinfo=UTC), True),
         (datetime.datetime(2021, 3, 9, 17, 0, 1, tzinfo=UTC), True),
         (datetime.datetime(2021, 3, 9, 22, 40, 2, tzinfo=UTC), True),
+        # Weekend is out of hours:
+        # saturday
+        (datetime.datetime(2021, 3, 13, 9, 0, 0, tzinfo=UTC), True),
+        # sunday
+        (datetime.datetime(2021, 3, 14, 17, 0, 0, tzinfo=UTC), True),
+        (datetime.datetime(2021, 3, 7, 8, 59, 59, tzinfo=UTC), True),
     ]
 )
 def test_is_out_of_hours_with_default(log, db, now, expected):
