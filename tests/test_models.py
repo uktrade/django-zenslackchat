@@ -83,6 +83,34 @@ def test_is_out_of_hours_with_default(log, db, now, expected):
     assert OutOfHoursInformation.is_out_of_hours(now) == expected
 
 
+@pytest.mark.parametrize(
+    ('now',),
+    [
+        (datetime.datetime(2021, 3, 9, 9, 0, 0, tzinfo=UTC),),
+        (datetime.datetime(2021, 3, 9, 8, 59, 59, tzinfo=UTC),),
+    ]
+)
+@patch('zenslackchat.models.post_message')
+def test_no_out_of_hours_defined(post_message, log, db, now):
+    """Veify the behaviour when office hours are defined.
+
+    False is returned indicating all day is office hours.
+
+    """
+    slack_client = MagicMock()
+
+    assert OutOfHoursInformation.is_out_of_hours(now) is False
+
+    assert OutOfHoursInformation.inform_if_out_of_hours(
+        now,
+        chat_id='some-chat-id',
+        channel_id='A0192KL3TFG',
+        slack_client=slack_client
+    ) is False
+
+    post_message.assert_not_called()
+
+
 def test_out_of_hours_information(log, db):
     """Test default and help text recovery.
     """

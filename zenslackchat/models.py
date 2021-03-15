@@ -450,11 +450,14 @@ class OutOfHoursInformation(models.Model):
         :returns: True or False
 
         """
-        returned = False
         oohi = cls.help()
         date = now.date()
 
-        if now.isoweekday() in (6, 7):
+        if oohi is None:
+            # When not definied, all day is office hours:
+            returned = False
+
+        elif now.isoweekday() in (6, 7):
             # Monday: 1, Sat, Sun: 6, 7
             returned = True
 

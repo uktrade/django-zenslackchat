@@ -6,7 +6,6 @@ import pytest
 from zenslackchat.message import handler
 from zenslackchat.message import is_resolved
 from zenslackchat.models import ZenSlackChat
-from zenslackchat.models import OutOfHoursInformation
 from zenslackchat.message import IGNORED_SUBTYPES
 from zenslackchat.zendesk_email_to_slack import email_from_zendesk
 
@@ -51,8 +50,6 @@ def test_new_support_message_creates_ticket(
     zendesk_uri = 'https://z.e.n.d.e.s.k'
     user_id = '100000000001'
     group_id = '200000000002'
-
-    OutOfHoursInformation.update("Contact XYZ", ("09:00", "17:00"))
 
     # Set up the user details 'slack' will return
     slack_client.users_info.return_value = FakeUserResponse()
@@ -194,8 +191,6 @@ def test_zendesk_comment_and_resolve_ticket_command_closes_the_issue(
     zendesk_uri = 'https://z.e.n.d.e.s.k'
     user_id = '100000000004'
     group_id = '200000000005'
-
-    OutOfHoursInformation.update("Contact XYZ", ("09:00", "17:00"))
 
     slack_client.users_info.return_value = FakeUserResponse()
     get_ticket.return_value = None
