@@ -36,6 +36,11 @@ def test_slack_url_to_chat_id(log):
     result = slack_api.url_to_chat_id(url)
     assert result == chat_id
 
+    chat_id = ''
+    url = ''
+    result = slack_api.url_to_chat_id(url)
+    assert result == chat_id
+
 
 def test_post_message(log):
     """Verify the URL generated to point at (UI not API) ticket in zendesk.

@@ -32,7 +32,13 @@ def url_to_chat_id(slack_url):
 
     """
     # Recover the last element in URL and convert to chat_id. handle trailing /
-    chat_id = [part for part in slack_url.split('/') if part][-1]
+    try:
+        chat_id = [part for part in slack_url.split('/') if part][-1]
+
+    except IndexError:
+        # empty string given, just return it
+        return slack_url
+
     chat_id = chat_id.lower().strip()
 
     # convert to chat_id stripping the trailing p
