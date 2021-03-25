@@ -4,6 +4,80 @@ from unittest.mock import MagicMock
 import pytest
 
 from zenslackchat.message_tools import messages_for_slack
+from zenslackchat.zendesk_comments_to_slack import comments_from_zendesk
+
+
+class FakeTicket(object):
+    def __init__(self, ticket_id, subject='', description=''):
+        self.id = ticket_id
+        self.status = 'open'
+        self.subject = subject
+        self.description = description
+
+
+class FakeZendeskComment(object):
+    def __init__(self, message):
+        self.data = dict()
+
+    def to_dict(self):
+        return self.data
+
+
+class FakeZenSlackChatIssue(object):
+    def __init__(self, ticket_id, chat_id, channel_id):
+        self.ticket_id = ticket_id
+        self.chat_id = chat_id
+        self.channel_id = channel_id
+
+
+@patch('zenslackchat.zendesk_comments_to_slack.post_message')
+@patch('zenslackchat.zendesk_comments_to_slack.ZenSlackChat')
+@patch('zenslackchat.zendesk_comments_to_slack.messages_for_slack')
+def test_comments_to_slack(
+    messages_for_slack,
+    ZenSlackChat,
+    post_message,
+    log,
+    db
+):
+    """
+    """
+    zendesk_client = MagicMock()
+    zendesk_client.tickets.comments.return_value = []
+
+    slack_client = MagicMock()
+    slack_client.conversation_replies.return_value = []
+    messages_for_slack.return_value = []
+
+    ZenSlackChat.get_by_ticket.return_value = FakeZenSlackChatIssue(
+        ticket_id='1430',
+        chat_id='slack-chat-id',
+        channel_id='slack-channel-id'
+    )
+
+    event = {
+        'token': 'the-correct-token',
+        'chat_id': 'slack-chat-id',
+        'ticket_id': '1430',
+    }
+
+    # No messages to compare or post
+    assert comments_from_zendesk(event, slack_client, zendesk_client) == []
+    messages_for_slack.assert_called_with([], [])
+    post_message.assert_not_called()
+
+    # One message for posting to slack
+    messages_for_slack.return_value = [dict(body='hello world')]
+    assert comments_from_zendesk(event, slack_client, zendesk_client) == [
+        dict(body='hello world')
+    ]
+    messages_for_slack.assert_called_with([], [])
+    post_message.assert_called_with(
+        slack_client,
+        'slack-chat-id',
+        'slack-channel-id',
+        '(Zendesk): hello world'
+    )
 
 
 def test_normal_issue_flow(log):
@@ -112,7 +186,7 @@ def test_normal_issue_flow(log):
     ) == []
 
 
-    # Now a comment is made on Zendesk. Check this results in a message for 
+    # Now a comment is made on Zendesk. Check this results in a message for
     # slack.
     #
     first_comment_from_zendesk = {
@@ -147,7 +221,7 @@ def test_normal_issue_flow(log):
         }
     }
     assert messages_for_slack(
-        slack_issue, 
+        slack_issue,
         [zendesk_with_link_to_slack, first_comment_from_zendesk]
     ) == [
         first_comment_from_zendesk
@@ -245,11 +319,10 @@ def test_normal_issue_flow(log):
         slack_issue + [
             first_slack_comment,
             slack_side_of_first_comment_from_zendesk
-        ], 
+        ],
         [
             zendesk_with_link_to_slack,
             first_comment_from_zendesk,
             zendesk_side_of_first_comment_from_slack
         ]
     ) == []
-    

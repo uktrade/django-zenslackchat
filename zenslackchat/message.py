@@ -33,12 +33,16 @@ from zenslackchat.message_tools import message_issue_zendesk_url
 IGNORED_SUBTYPES = [
     "bot_message", "channel_archive", "channel_join", "channel_leave",
     "channel_name", "channel_purpose", "channel_topic", "channel_unarchive",
-    "ekm_access_denied", "file_comment", "file_mention", "file_share",
+    "ekm_access_denied", "file_comment", "file_mention",
     "group_archive", "group_join", "group_leave", "group_name",
     "group_purpose", "group_topic", "group_unarchive", "me_message",
     "message_changed", "message_deleted", "message_replied", "pinned_item",
     "thread_broadcast", "unpinned_item", "channel_rename"
 ]
+
+# "file_share" was ignored. I don't handle the files attached, however I
+# respond to the message now. Users were posting screenshots with issue
+# description and the bot was ignoring this.
 
 
 def handler(

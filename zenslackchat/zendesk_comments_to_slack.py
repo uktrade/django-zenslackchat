@@ -27,7 +27,7 @@ def comments_from_zendesk(event, slack_client, zendesk_client):
     ticket_id = event['ticket_id']
     if not chat_id:
         log.debug('chat_id is empty, ignoring ticket comment.')
-        return
+        return []
 
     log.debug(f'Recovering ticket by its Zendesk ID:<{ticket_id}>')
     try:
@@ -37,7 +37,7 @@ def comments_from_zendesk(event, slack_client, zendesk_client):
         log.debug(
             f'chat_id:<{chat_id}> not found, ignoring ticket comment.'
         )
-        return
+        return []
 
     # Recover all messages from the slack conversation:
     resp = slack_client.conversations_replies(
