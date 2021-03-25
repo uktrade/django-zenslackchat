@@ -7,22 +7,6 @@ from zenslackchat.message_tools import messages_for_slack
 from zenslackchat.zendesk_comments_to_slack import comments_from_zendesk
 
 
-class FakeTicket(object):
-    def __init__(self, ticket_id, subject='', description=''):
-        self.id = ticket_id
-        self.status = 'open'
-        self.subject = subject
-        self.description = description
-
-
-class FakeZendeskComment(object):
-    def __init__(self, message):
-        self.data = dict()
-
-    def to_dict(self):
-        return self.data
-
-
 class FakeZenSlackChatIssue(object):
     def __init__(self, ticket_id, chat_id, channel_id):
         self.ticket_id = ticket_id
@@ -40,7 +24,7 @@ def test_comments_to_slack(
     log,
     db
 ):
-    """
+    """Verify when a message gets posted to slack.
     """
     zendesk_client = MagicMock()
     zendesk_client.tickets.comments.return_value = []
