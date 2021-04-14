@@ -105,6 +105,23 @@ You can run the tests as follows::
    make test
 
 
+Upgrade Dependancies
+~~~~~~~~~~~~~~~~~~~~
+
+I use pip tools to manage the project dependancies https://github.com/jazzband/pip-tools.
+The requirements.in is used as the unpinned source for dependancies. Add new
+thing here. Then to update the requirements.txt you can do the following::
+
+   # Install pip tools if needed and update the requirements:
+   make pip-compile requirements.txt
+
+   # Update the virtual environment:
+   make install
+
+Don't edit requirements.txt directly. Any changes will be lost when the file is
+regenerated.
+
+
 Zendesk Set-up
 --------------
 
