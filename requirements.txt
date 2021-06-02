@@ -134,7 +134,7 @@ sqlparse==0.4.1
     # via django
 typing-extensions==3.7.4.3
     # via aiohttp
-urllib3==1.26.4
+urllib3==1.26.5
     # via
     #   pdpyras
     #   requests
