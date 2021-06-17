@@ -13,9 +13,10 @@ sentry-sdk
 celery[redis]
 dj-database-url
 django_log_formatter_ecs
-django
+django==3.2.4
 djangorestframework
 django-environ
 django-staff-sso-client
+urllib3==1.26.5
 whitenoise
 waitress

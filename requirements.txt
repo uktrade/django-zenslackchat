@@ -55,7 +55,7 @@ django-log-formatter-ecs==0.0.5
     # via -r requirements.in
 django-staff-sso-client==3.1.0
     # via -r requirements.in
-django==3.2
+django==3.2.4
     # via
     #   -r requirements.in
     #   django-staff-sso-client
@@ -142,8 +142,9 @@ sqlparse==0.4.1
     # via django
 typing-extensions==3.7.4.3
     # via aiohttp
-urllib3==1.26.4
+urllib3==1.26.5
     # via
+    #   -r requirements.in
     #   pdpyras
     #   requests
     #   sentry-sdk
