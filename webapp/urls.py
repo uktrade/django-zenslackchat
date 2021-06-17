@@ -21,4 +21,5 @@ from django.urls import include
 urlpatterns = [
     path('', include('zenslackchat.urls')),
     path('admin/', admin.site.urls),
+    path('auth/', include('authbroker_client.urls', namespace='authbroker')),
 ]
