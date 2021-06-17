@@ -23,7 +23,6 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from zenslackchat import botlogging
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -153,6 +152,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'zenslackchat.apps.ZenSlackChatConfig',
+    'authbroker_client',
 ]
 
 MIDDLEWARE = [
@@ -193,6 +193,10 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 DATABASES = {}
 DATABASES['default'] = dj_database_url.config()
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'authbroker_client.backends.AuthbrokerBackend',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -266,3 +270,11 @@ if SENTRY_DSN:
     sentry_sdk.init(dsn=SENTRY_DSN, integrations=[DjangoIntegration()])
 else:
     logging.getLogger(__name__).info("SENTRY_DSN not set. Sentry is diabled.")
+
+# Authbroker set-up to lock admin
+LOGIN_URL = "/auth/login/"
+LOGIN_REDIRECT_URL = "/admin/"
+AUTHBROKER_URL = os.environ.get("AUTHBROKER_URL")
+AUTHBROKER_CLIENT_ID = os.environ.get("AUTHBROKER_CLIENT_ID")
+AUTHBROKER_CLIENT_SECRET = os.environ.get("AUTHBROKER_CLIENT_SECRET")
+AUTHBROKER_SCOPES = "read write"

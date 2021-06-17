@@ -16,5 +16,6 @@ django_log_formatter_ecs
 django
 djangorestframework
 django-environ
+django-staff-sso-client
 whitenoise
 waitress
