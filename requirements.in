@@ -10,10 +10,10 @@ psycopg2-binary
 requests
 pdpyras
 sentry-sdk
-celery[redis]
+celery[redis]==5.2.2
 dj-database-url
 django_log_formatter_ecs
-django==3.2.4
+django==3.2.5
 djangorestframework
 django-environ
 django-staff-sso-client
