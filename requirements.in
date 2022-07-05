@@ -13,7 +13,7 @@ sentry-sdk
 celery[redis]==5.2.2
 dj-database-url
 django_log_formatter_ecs
-django==3.2.13
+django==3.2.14
 djangorestframework
 django-environ
 django-staff-sso-client
