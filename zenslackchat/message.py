@@ -77,8 +77,6 @@ def handler(
     log = logging.getLogger(__name__)
 
     channel_id = event.get('channel', "").strip()
-    text = event.get('text', '')
-
     if channel_id != our_channel:
         if settings.DEBUG:
             log.debug(
@@ -95,9 +93,14 @@ def handler(
     if subtype in IGNORED_SUBTYPES:
         log.debug(f"Ignoring subtype we don't handle: {subtype}")
         return False
+    
+    text = event.get('text', '')
+    bot_id = event.get("bot_id")
 
-    elif 'bot_id' in event:
-        log.debug(f"Ignoring bot message to prevent repeats: {text}")
+    if bot_id not in settings.ALLOWED_BOT_IDS:
+        log.debug(
+            f"Ignoring bot ({bot_id}) message to prevent repeats: {text}"
+        )
         return False
 
     if settings.DISABLE_MESSAGE_PROCESSING:
@@ -107,8 +110,7 @@ def handler(
         )
         return False
 
-    else:
-        log.debug(f"New message on support channel<{channel_id}>: {text}")
+    log.debug(f"New message on support channel<{channel_id}>: {text}")
 
     # A message
     slack_user_id = event['user']
@@ -122,15 +124,23 @@ def handler(
     resp = slack_client.users_info(user=slack_user_id)
     # print(f"resp.event:\n{resp.event}\n")
     real_name = resp.data['user']['real_name']
-    recipient_email = resp.data['user']['profile'].get('email', '')
-    if not recipient_email:
+    recipient_profile = resp.data['user'].get('profile')
+    if not recipient_profile and not bot_id:
         log.error(
-            f"For slack profile '{real_name}' I was not able to recover an "
-            "email. Is the bot token scope users:read.email set? (Re)install "
-            "the slack app?"
+            f"For slack user '{real_name}' I was not able to recover a profile."
         )
-        # hmm this is not the answer as its getting into a loop :(
         return False
+
+    recipient_email = None
+    if recipient_profile:
+        recipient_email = recipient_profile.get('email', '')
+        if not recipient_email and not bot_id:
+            log.error(
+                f"For slack profile '{real_name}' I was not able to recover an "
+                "email. Is the bot token scope users:read.email set? (Re)install "
+                "the slack app?"
+            )
+            return False
 
     # zendesk ticket instance
     ticket = None

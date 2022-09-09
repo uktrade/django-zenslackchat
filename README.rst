@@ -521,6 +521,12 @@ like ``C0192NP3TFG``.
 The bot has the potential to receive *all* messages on slack, so the code
 rejects anything that does not come from this channel.
 
+ALLOWED_BOT_IDS
+~~~~~~~~~~~~~~~~~~~
+
+This is a comma separated list of Slack Bot IDs that are allowed to create tickets in
+Zendesk.
+
 
 DISABLE_MESSAGE_PROCESSING
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
