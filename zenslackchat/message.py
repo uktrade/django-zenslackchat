@@ -80,6 +80,7 @@ def handler(
 
     bot_id = event.get("bot_id")
     if bot_id and bot_id not in settings.ALLOWED_BOT_IDS:
+        raise Exception(f"Ignoring bot ({bot_id}) message to prevent repeats")
         log.debug(
             f"Ignoring bot ({bot_id}) message to prevent repeats: {text}"
         )
