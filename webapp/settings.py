@@ -9,18 +9,17 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-import os
-import sys
+import binascii
 import json
 import logging
-import binascii
+import os
+import sys
 from pathlib import Path
 
+import dj_database_url
 import environ
 import sentry_sdk
-import dj_database_url
 from sentry_sdk.integrations.django import DjangoIntegration
-
 from zenslackchat import botlogging
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -77,6 +76,13 @@ SLACK_WORKSPACE_URI = os.environ.get(
 SRE_SUPPORT_CHANNEL = os.environ.get(
     'SRE_SUPPORT_CHANNEL', 'YOUR SUPPORT CHANNEL ID'
 )
+
+# A list of bots that are allowed to create Zendesk tickets.
+ALLOWED_BOT_IDS = [
+    allowed_bot_id
+    for allowed_bot_id in os.environ.get('ALLOWED_BOT_IDS', '').split(",")
+    if allowed_bot_id
+]
 
 ZENDESK_CLIENT_IDENTIFIER = os.environ.get(
     'ZENDESK_CLIENT_IDENTIFIER', 'YOUR ZENDESK CLIENT UNIQUE IDENTIFIER'

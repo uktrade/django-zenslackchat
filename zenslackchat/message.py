@@ -29,9 +29,9 @@ from zenslackchat.message_tools import message_who_is_on_call
 from zenslackchat.message_tools import message_issue_zendesk_url
 
 
-# See https://api.slack.com/events/message for subtypes.
+# See https://api.slack.com/events/message for subtypes. (we allow bot_message)
 IGNORED_SUBTYPES = [
-    "bot_message", "channel_archive", "channel_join", "channel_leave",
+    "channel_archive", "channel_join", "channel_leave",
     "channel_name", "channel_purpose", "channel_topic", "channel_unarchive",
     "ekm_access_denied", "file_comment", "file_mention",
     "group_archive", "group_join", "group_leave", "group_name",
@@ -76,9 +76,16 @@ def handler(
     """
     log = logging.getLogger(__name__)
 
-    channel_id = event.get('channel', "").strip()
     text = event.get('text', '')
 
+    bot_id = event.get("bot_id")
+    if bot_id and bot_id not in settings.ALLOWED_BOT_IDS:
+        log.debug(
+            f"Ignoring bot ({bot_id}) message to prevent repeats: {text}"
+        )
+        return False
+
+    channel_id = event.get('channel', "").strip()
     if channel_id != our_channel:
         if settings.DEBUG:
             log.debug(
@@ -87,17 +94,9 @@ def handler(
             )
         return False
 
-    # I'm ignoring most subtypes, I might be able to ignore all. I can manage
-    # the message / message-reply based on the ts/thread_ts fields and whether
-    # they are populated or not. I'm calling 'ts' chat_id and 'thread_ts'
-    # thread_id.
     subtype = event.get('subtype')
     if subtype in IGNORED_SUBTYPES:
         log.debug(f"Ignoring subtype we don't handle: {subtype}")
-        return False
-
-    elif 'bot_id' in event:
-        log.debug(f"Ignoring bot message to prevent repeats: {text}")
         return False
 
     if settings.DISABLE_MESSAGE_PROCESSING:
@@ -107,30 +106,44 @@ def handler(
         )
         return False
 
-    else:
-        log.debug(f"New message on support channel<{channel_id}>: {text}")
+    log.debug(f"New message on support channel<{channel_id}>: {text}")
 
-    # A message
-    slack_user_id = event['user']
     chat_id = event['ts']
-    # won't be present in a new top-level message we will reply too
+    # Only present in a new top-level message
     thread_id = event.get('thread_ts', '')
 
-    # Recover the slack channel message author's email address. I assume
-    # this is always set on all accounts.
-    log.debug(f"Recovering profile for user <{slack_user_id}>")
-    resp = slack_client.users_info(user=slack_user_id)
-    # print(f"resp.event:\n{resp.event}\n")
-    real_name = resp.data['user']['real_name']
-    recipient_email = resp.data['user']['profile'].get('email', '')
-    if not recipient_email:
-        log.error(
-            f"For slack profile '{real_name}' I was not able to recover an "
-            "email. Is the bot token scope users:read.email set? (Re)install "
-            "the slack app?"
-        )
-        # hmm this is not the answer as its getting into a loop :(
-        return False
+    real_name = None
+    recipient_email = None
+    
+    if subtype == "bot_message":
+        real_name = event.get("username", "Unnamed bot")
+        recipient_email = None
+    else:
+        slack_user_id = event['user']
+
+        # Recover the slack channel message author's email address. I assume
+        # this is always set on all accounts.
+        log.debug(f"Recovering profile for user <{slack_user_id}>")
+        resp = slack_client.users_info(user=slack_user_id)
+        # print(f"resp.event:\n{resp.event}\n")
+        real_name = resp.data['user']['real_name']
+        recipient_profile = resp.data['user'].get('profile')
+        if not recipient_profile and not bot_id:
+            log.error(
+                f"For slack user '{real_name}' I was not able to recover a profile."
+            )
+            return False
+
+        recipient_email = None
+        if recipient_profile:
+            recipient_email = recipient_profile.get('email', '')
+            if not recipient_email and not bot_id:
+                log.error(
+                    f"For slack profile '{real_name}' I was not able to recover an "
+                    "email. Is the bot token scope users:read.email set? (Re)install "
+                    "the slack app?"
+                )
+                return False
 
     # zendesk ticket instance
     ticket = None
@@ -206,7 +219,6 @@ def handler(
         slack_chat_url = message_url(workspace_uri, channel_id, chat_id)
         try:
             issue = ZenSlackChat.get(channel_id, chat_id)
-
         except NotFoundError:
             # No issue found. It looks like its new issue:
             log.debug(
