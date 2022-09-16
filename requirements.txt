@@ -94,7 +94,7 @@ multidict==5.1.0
     # via
     #   aiohttp
     #   yarl
-oauthlib==3.1.1
+oauthlib==3.2.1
     # via requests-oauthlib
 pdpyras==4.1.4
     # via -r requirements.in
