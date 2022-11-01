@@ -15,8 +15,8 @@ class WebAppAndAPITest(TestCase):
         self.factory = RequestFactory()
         self.api_factory = APIRequestFactory()
         self.user = User.objects.create_user(
-            username='bob', 
-            email='bob.sprocket@example.com', 
+            username='bob',
+            email='bob.sprocket@example.com',
             password='Password1'
         )
 
@@ -29,7 +29,7 @@ class WebAppAndAPITest(TestCase):
         # As there is no logged in user this should result in a redirect
         self.assertEqual(response.status_code, 302)
         # We should be redirected to the login page:
-        self.assertEqual(response.url, '/accounts/login/?next=/')        
+        self.assertEqual(response.url, '/auth/login/?next=/')
 
     def test_identified_user_on_index_view(self):
         """Check that anonymous user requires login.
@@ -54,7 +54,7 @@ class WebAppAndAPITest(TestCase):
         request.user = AnonymousUser()
         response = views.trigger_daily_report(request)
         assert response.status_code == 302
-        self.assertEqual(response.url, '/accounts/login/?next=/')        
+        self.assertEqual(response.url, '/auth/login/?next=/')
         messages.success.assert_not_called()
 
         # Now try with a logged-in user:
@@ -64,5 +64,5 @@ class WebAppAndAPITest(TestCase):
         # We should be redirect back to root and the messages should have
         # been called.
         assert response.status_code == 302
-        self.assertEqual(response.url, '/')        
+        self.assertEqual(response.url, '/')
         messages.success.assert_called()
