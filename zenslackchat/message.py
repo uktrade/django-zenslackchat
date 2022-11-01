@@ -8,7 +8,6 @@ Oisin Mulvihill
 
 """
 import logging
-
 import zenpy
 
 from webapp import settings
