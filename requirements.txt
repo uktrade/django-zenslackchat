@@ -24,7 +24,7 @@ cachetools==4.2.1
     # via zenpy
 celery[redis]==5.2.2
     # via -r requirements.in
-certifi==2020.12.5
+certifi==2022.12.7
     # via
     #   requests
     #   sentry-sdk
