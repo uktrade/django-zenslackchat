@@ -22,3 +22,4 @@ whitenoise
 waitress
 # Pinning version for Dependabot Alert
 oauthlib>=3.2.1
+certifi==2022.12.7
