@@ -23,3 +23,5 @@ waitress
 # Pinning version for Dependabot Alert
 oauthlib>=3.2.1
 certifi>=2022.12.7
+slackclient>=2.9.4
+slackeventsapi>=3.0.1
