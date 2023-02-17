@@ -10,7 +10,7 @@ psycopg2-binary
 requests
 pdpyras
 sentry-sdk
-celery[redis]==5.2.2
+celery[redis]>=5.2.2
 dj-database-url
 django_log_formatter_ecs
 django>=3.2.16
@@ -22,4 +22,6 @@ whitenoise
 waitress
 # Pinning version for Dependabot Alert
 oauthlib>=3.2.1
-certifi==2022.12.7
+certifi>=2022.12.7
+slackclient>=2.9.4
+slackeventsapi>=3.0.1
