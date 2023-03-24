@@ -113,7 +113,7 @@ def handler(
 
     real_name = None
     recipient_email = None
-    
+
     if subtype == "bot_message":
         real_name = event.get("username", "Unnamed bot")
         recipient_email = None
