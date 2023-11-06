@@ -1,0 +1,4 @@
+---
+applications:
+  - name: django-zenslackchat
+    stack: cflinuxfs4
