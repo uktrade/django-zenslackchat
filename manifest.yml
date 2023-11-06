@@ -2,3 +2,5 @@
 applications:
   - name: django-zenslackchat
     stack: cflinuxfs4
+    buildpacks:
+      - https://github.com/cloudfoundry/python-buildpack.git
