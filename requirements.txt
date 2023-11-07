@@ -36,10 +36,10 @@ certifi==2022.12.7
     #   -r requirements.in
     #   requests
     #   sentry-sdk
-chardet==4.0.0
-    # via requests
 charset-normalizer==3.1.0
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   requests
 click==8.0.3
     # via
     #   celery
@@ -129,7 +129,7 @@ redis==4.5.4
     # via
     #   -r requirements.in
     #   celery
-requests==2.25.1
+requests==2.31.0
     # via
     #   -r requirements.in
     #   pdpyras
