@@ -579,7 +579,120 @@ When running via ``make run`` this is set automatically.
 I have made this extra step of not allowing you to set DEBUG directly from the
 environment, to slow you down and think before you set this.
 
+ZenSlackChat AS-IS Architecture
+-------------------------------
 
+.. image:: docs/zenslackchat-overview.png
+    :align: center
+
+XML
+~~~~
+::
+<mxfile host="app.diagrams.net" modified="2023-07-31T10:54:27.888Z" type="device">
+  <diagram name="Page-1" id="ho_-8FaknvWiQzevA0_S">
+    <mxGraphModel dx="941" dy="509" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-12">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1045" y="1040" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-23" value="Y" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="abcUdvEtyeqS7iwiEpK1-16">
+          <mxGeometry x="-0.0637" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-87" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-12" target="abcUdvEtyeqS7iwiEpK1-38">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="910" y="909" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-89" value="N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="abcUdvEtyeqS7iwiEpK1-87">
+          <mxGeometry x="-0.65" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-12" value="Is this message part&lt;br&gt;of a thread?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="830" y="995.47" width="160" height="89.06" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-64" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-13" target="abcUdvEtyeqS7iwiEpK1-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-83" value="Y" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="abcUdvEtyeqS7iwiEpK1-64">
+          <mxGeometry x="0.1012" y="4" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-13" target="abcUdvEtyeqS7iwiEpK1-39">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-84" value="N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="abcUdvEtyeqS7iwiEpK1-76">
+          <mxGeometry x="-0.1747" y="5" relative="1" as="geometry">
+            <mxPoint y="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-13" value="Is the issue&amp;nbsp;&lt;br&gt;resolved?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1045" y="995.47" width="140" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-35" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Zendesk_logo.svg/2560px-Zendesk_logo.svg.png;" vertex="1" parent="1">
+          <mxGeometry x="1093.97" y="844.23" width="42.05" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-38" target="abcUdvEtyeqS7iwiEpK1-53">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-38" value="Create new Zendesk&lt;br&gt;ticket" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="879.23" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-39" value="Add comment to Zendesk ticket" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1258.98" y="1010" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-52" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://logos-world.net/wp-content/uploads/2020/10/Slack-Logo.png;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="846" width="71.11" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-53" value="Send ticket&lt;br&gt;created confirmation" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1258.98" y="879.23" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-74" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-58" target="abcUdvEtyeqS7iwiEpK1-73">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-58" value="Set Zendesk ticket&lt;br&gt;status to &quot;closed&quot;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="1142" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-69" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-60" target="abcUdvEtyeqS7iwiEpK1-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-60" value="Message received from&amp;nbsp;SRE requests&lt;br&gt;channel" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="1010.47" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-73" value="Send Slack message&lt;br&gt;confirming ticket resolution" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="1255" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-80" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Zendesk_logo.svg/2560px-Zendesk_logo.svg.png;" vertex="1" parent="1">
+          <mxGeometry x="1297.95" y="975" width="42.05" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-81" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Zendesk_logo.svg/2560px-Zendesk_logo.svg.png;" vertex="1" parent="1">
+          <mxGeometry x="1007" y="1157" width="42.05" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-82" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://logos-world.net/wp-content/uploads/2020/10/Slack-Logo.png;" vertex="1" parent="1">
+          <mxGeometry x="978.89" y="1265" width="71.11" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-85" value="Thread id and chat id are stored as a look up" style="text;strokeColor=none;align=center;fillColor=none;html=1;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="855" y="1100" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-93" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="abcUdvEtyeqS7iwiEpK1-91" target="abcUdvEtyeqS7iwiEpK1-60">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="abcUdvEtyeqS7iwiEpK1-91" value="Person needing&lt;br&gt;support" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="546" y="1010" width="30" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
 
 .. |ss| raw:: html
 
