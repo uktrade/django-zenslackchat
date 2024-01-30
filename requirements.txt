@@ -68,7 +68,7 @@ django-log-formatter-ecs==0.0.5
     # via -r requirements.in
 django-staff-sso-client==4.2.1
     # via -r requirements.in
-djangorestframework==3.12.4
+djangorestframework==3.14.0
     # via -r requirements.in
 emoji==1.2.0
     # via -r requirements.in
@@ -123,6 +123,7 @@ python-decouple==3.4
 pytz==2023.3
     # via
     #   celery
+    #   djangorestframework
     #   zenpy
 redis==4.5.4
     # via
