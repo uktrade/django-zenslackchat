@@ -29,3 +29,4 @@ slackeventsapi>=3.0.1
 sentry-sdk==1.14.0
 redis>=4.4.4
 aiohttp>=3.8.4
+typing-extensions>=4

@@ -30,9 +30,7 @@ bs4==0.0.1
 cachetools==4.2.1
     # via zenpy
 celery[redis]==5.2.7
-    # via
-    #   -r requirements.in
-    #   celery
+    # via -r requirements.in
 certifi==2022.12.7
     # via
     #   -r requirements.in
@@ -153,8 +151,10 @@ soupsieve==2.2.1
     # via beautifulsoup4
 sqlparse==0.4.2
     # via django
-typing-extensions==3.7.4.3
-    # via pyee
+typing-extensions==4.9.0
+    # via
+    #   -r requirements.in
+    #   pyee
 urllib3==1.26.15
     # via
     #   -r requirements.in
