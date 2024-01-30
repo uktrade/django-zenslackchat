@@ -14,7 +14,7 @@ celery[redis]
 dj-database-url
 django_log_formatter_ecs
 django==4.2.8
-djangorestframework
+djangorestframework==3.14.0
 django-environ
 django-staff-sso-client==4.2.1
 urllib3>=1.26.5
