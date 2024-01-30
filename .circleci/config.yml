@@ -4,7 +4,7 @@ jobs:
         docker:
             - image: python:3.8      
             - image: redis:5
-            - image: postgres:11
+            - image: postgres:12
               environment:
                 POSTGRES_PASSWORD: service
                 POSTGRES_USER: service
