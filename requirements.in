@@ -10,7 +10,7 @@ psycopg2-binary
 requests
 pdpyras
 sentry-sdk
-celery[redis]>=5.2.7
+celery[redis]
 dj-database-url
 django_log_formatter_ecs
 django==4.2.8
