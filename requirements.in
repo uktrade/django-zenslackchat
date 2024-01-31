@@ -10,13 +10,13 @@ psycopg2-binary
 requests
 pdpyras
 sentry-sdk
-celery[redis]>=5.2.7
+celery[redis]
 dj-database-url
 django_log_formatter_ecs
-django>=3.2.16
-djangorestframework
+django==4.2.8
+djangorestframework==3.14.0
 django-environ
-django-staff-sso-client
+django-staff-sso-client==4.2.1
 urllib3>=1.26.5
 whitenoise
 waitress
@@ -29,3 +29,4 @@ slackeventsapi>=3.0.1
 sentry-sdk==1.14.0
 redis>=4.4.4
 aiohttp>=3.8.4
+typing-extensions>=4
