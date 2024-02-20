@@ -284,3 +284,6 @@ AUTHBROKER_URL = os.environ.get("AUTHBROKER_URL")
 AUTHBROKER_CLIENT_ID = os.environ.get("AUTHBROKER_CLIENT_ID")
 AUTHBROKER_CLIENT_SECRET = os.environ.get("AUTHBROKER_CLIENT_SECRET")
 AUTHBROKER_SCOPES = "read write"
+
+# CSRF variable required for Django 4
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")

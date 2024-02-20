@@ -16,6 +16,7 @@ jobs:
             DJANGO_SETTINGS_MODULE: webapp.settings
             SECRET_KEY: c0b395ac13212cb5251c5f55eab9ed8a518ce7793c9971076153860bab4e0290
             ALLOWED_HOSTS: localhost,localhost:8000
+            CSRF_TRUSTED_ORIGINS: http://localhost
             
         working_directory: ~/app
 

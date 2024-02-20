@@ -407,6 +407,12 @@ and a link to "Add".
 Environment Variables
 ---------------------
 
+CSRF_TRUSTED_ORIGINS
+~~~~~~~~~~~~~~~~~~~~
+Required for Django 4 and above. Separate multiple trusted origins with commas.
+
+Further documentation can be found here: https://docs.djangoproject.com/en/4.2/ref/settings/#csrf-trusted-origins
+
 WEBAPP_SECRET_KEY
 ~~~~~~~~~~~~~~~~~
 
