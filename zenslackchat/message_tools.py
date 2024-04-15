@@ -60,7 +60,7 @@ def is_resolved(command):
     :returns: True the given string is a resolve command otherwise False.
 
     """
-    _cmd = emoji.emojize(command.lower(), use_aliases=True)
+    _cmd = emoji.emojize(command.lower(), language="alias")
     return (_cmd in _resolve_cmds)
 
 
