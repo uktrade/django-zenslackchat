@@ -55,7 +55,7 @@ click-repl==0.3.0
     # via celery
 dj-database-url==2.1.0
     # via -r requirements.in
-django==4.2.8
+django==4.2.11
     # via
     #   -r requirements.in
     #   dj-database-url
