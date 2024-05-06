@@ -177,7 +177,7 @@ waitress==3.0.0
     # via -r requirements.in
 wcwidth==0.2.13
     # via prompt-toolkit
-werkzeug==3.0.2
+werkzeug==3.0.3
     # via flask
 whitenoise==6.6.0
     # via -r requirements.in
