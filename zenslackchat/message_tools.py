@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Functions used to aid in zendesk, slack, email messaging.
 
@@ -8,17 +9,17 @@ Oisin Mulvihill
 2020-12-17
 
 """
-import re
-import logging
-import hashlib
+
 import datetime
-from time import mktime
-from time import localtime
+import hashlib
+import logging
+import re
+from time import localtime, mktime
 
 import emoji
 from bs4 import BeautifulSoup
-from markdown import markdown
 from dateutil.parser import parse
+from markdown import markdown
 
 from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import zendesk_ticket_url
@@ -41,14 +42,13 @@ def message_who_is_on_call(on_call, slack_client, chat_id, channel_id):
 def message_issue_zendesk_url(
     slack_client, zendesk_uri, ticket_id, chat_id, channel_id
 ):
-    """Post to slack where the Zendesk URL of the issue.
-    """
+    """Post to slack where the Zendesk URL of the issue."""
     url = zendesk_ticket_url(zendesk_uri, ticket_id)
     message = f"Hello, your new support request is {url}"
     post_message(slack_client, chat_id, channel_id, message)
 
 
-_resolve_cmds = ['resolve', 'resolve ticket', '🆗', '✅']
+_resolve_cmds = ["resolve", "resolve ticket", "🆗", "✅"]
 
 
 def is_resolved(command):
@@ -61,7 +61,7 @@ def is_resolved(command):
 
     """
     _cmd = emoji.emojize(command.lower(), language="alias")
-    return (_cmd in _resolve_cmds)
+    return _cmd in _resolve_cmds
 
 
 def ts_to_datetime(epoch):
@@ -93,39 +93,35 @@ def utc_to_datetime(iso8601_str):
 
 
 def strip_signature_from_subject(content):
-    """Assume --\n is marker for email signature and return everything before.
-    """
-    return content.split('--')[0]
+    """Assume --\n is marker for email signature and return everything before."""
+    return content.split("--")[0]
 
 
 def strip_zendesk_origin(text):
-    text = text.split('(Zendesk):')[-1].strip()
-    text = text.split('(From Zendesk Email):')[-1].strip()
+    text = text.split("(Zendesk):")[-1].strip()
+    text = text.split("(From Zendesk Email):")[-1].strip()
     return text
 
 
 def strip_formatting(text):
-    """Strip all formatting returning only text.
-    """
+    """Strip all formatting returning only text."""
     # md -> html -> text since BeautifulSoup can extract text cleanly
     html = markdown(text)
 
     # extract text
     soup = BeautifulSoup(html, "html.parser")
-    text = ''.join(soup.findAll(text=True))
+    text = "".join(soup.findAll(string=True))
 
     # Remove the markdown URLs that may be present after conversion e.g.
     # text like https://QUAY.IO|QUAY.IO leaving QUAY.IO
-    text = re.sub(r'(http|https):(\/\/)(.*?)\|', '', text)
+    text = re.sub(r"(http|https):(\/\/)(.*?)\|", "", text)
 
     # Regex a modified version of that from https://emailregex.com/
     # replace
     #   MAILER-DAEMON@eu-west-2...com|MAILER-DAEMON@eu-west-2...com
     # with
     #   MAILER-DAEMON@eu-west-2...com
-    text = re.sub(
-        r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\|)', '', text
-    )
+    text = re.sub(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\|)", "", text)
 
     return text
 
@@ -148,7 +144,7 @@ def truncate_email(content, characters=320):
 
     """
     sample = content[:characters]
-    sample_or_full = '...' if len(content) > characters else ''
+    sample_or_full = "..." if len(content) > characters else ""
     email_sample = f"{sample}{sample_or_full}"
     return email_sample
 
@@ -171,7 +167,7 @@ def messages_for_slack(slack, zendesk):
         # text = msg['text']
         # convert '... :palm_tree:​ ...' to its emoji character 🌴
         # Slack seems to use the name whereas zendesk uses the actual emoji:
-        text = strip(msg['text'])
+        text = strip(msg["text"])
         # log.debug(
         #     f"Text to store for lookup:'{text}' hash:{compare_hash(text)}"
         # )
@@ -183,13 +179,13 @@ def messages_for_slack(slack, zendesk):
         # Compare like with like, although this might not be needed on zendesk.
         # Apply the zendesk origin filter to prevent repeated email body
         # messages on slack.
-        text = strip(strip_signature_from_subject(msg['body']))
-        if msg['via']['channel'] == 'email':
+        text = strip(strip_signature_from_subject(msg["body"]))
+        if msg["via"]["channel"] == "email":
             # only show a sample of the email
             text = truncate_email(text)
-        msg['body'] = text
+        msg["body"] = text
 
-        if msg['via']['channel'] == 'api':
+        if msg["via"]["channel"] == "api":
             # Exclude the API channel as the bot is posting this message only
             # for Zendesk e.g. Messages for email user's not needed on slack.
             log.debug("Ignoring message from API channel.")

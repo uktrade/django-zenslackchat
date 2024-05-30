@@ -140,3 +140,4 @@ static/
 local_settings.py
 
 .env
+pdtest.py

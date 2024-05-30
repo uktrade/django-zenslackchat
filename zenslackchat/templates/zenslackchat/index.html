@@ -1,92 +1,97 @@
 {% extends "base.html" %}
-
+<!--  -->
 {% block content %}
 <div class="row">
-  <div class="col-sm-12 ">
+  <div class="col-sm-12">
     {# NOTE: Pingdom relies on this id when checking it logged in ok #}
     <h3 id="user_login_ok">🤖 Welcome!</h3>
-    {% if user.is_authenticated %}<a href="/accounts/logout">Logout</a>{% endif %}
+    {% if user.is_authenticated %}
+    <a href="/accounts/logout">Logout</a>
+    {% endif %}
   </div>
 </div>
 <div class="row">
-  <div class="col-sm-12 ">
-    <hr/>
+  <div class="col-sm-12">
+    <hr />
   </div>
 </div>
 <div class="row">
-  <div class="col-sm-12 ">
+  <div class="col-sm-12">
     <h4>OAuth integrations for</h4>
   </div>
 </div>
 <div class="row">
-  <div class="col-sm-2">
-    Zendesk
-  </div>
+  <div class="col-sm-2">Zendesk</div>
   <div class="col-sm-10">
-    <a 
-      id="add_zendesk_app" 
-      title="ZenSlackChat only uses the most recently stored access token. Zendesk OAuth access tokens doen't expire." 
-      href="{{ zendesk_oauth_request_uri }}" 
-      rel="noopener noreferrer" 
-      target="_blank">Add</a>
+    <a
+      id="add_zendesk_app"
+      title="ZenSlackChat only uses the most recently stored access token. Zendesk OAuth access tokens doen't expire."
+      href="{{ zendesk_oauth_request_uri }}"
+      rel="noopener noreferrer"
+      target="_blank"
+      >Add</a
+    >
   </div>
 </div>
 <div class="row">
-  <div class="col-sm-2">
-    Slack
-  </div>
+  <div class="col-sm-2">Slack</div>
   <div class="col-sm-10">
-    <a 
-      id="add_slack_app" 
-      title="ZenSlackChat only uses the most recently stored Bot User Token." 
-      href="{{ slack_oauth_request_uri }}" 
+    <a
+      id="add_slack_app"
+      title="ZenSlackChat only uses the most recently stored Bot User Token."
+      href="{{ slack_oauth_request_uri }}"
+      rel="noopener noreferrer"
+      target="_blank"
+      >Add</a
+    >
+  </div>
+</div>
+<!-- <div class="row">
+  <div class="col-sm-2">Page Duty</div>
+  <div class="col-sm-10">
+    <a
+      id="add_pagerduty_app"
+      title="Make Page Duty OAuth2 code grant request to add our integration."
+      href="{{ pagerduty_oauth_request_uri }}"
       rel="noopener noreferrer"
       target="_blank">Add</a>
   </div>
-</div>
-<div class="row">
-  <div class="col-sm-2">
-    Page Duty
-  </div>
-  <div class="col-sm-10">
-    <a 
-      id="add_pagerduty_app" 
-      title="Make Page Duty OAuth2 code grant request to add our integration." 
-      href="{{ pagerduty_oauth_request_uri }}" 
-      rel="noopener noreferrer" 
-      target="_blank">Add</a>
-  </div>
-</div>
+</div> -->
 
-<div class="row">
-  <div class="col-sm-12 ">
-    <hr/>
+  <div class="row">
+    <div class="col-sm-12">
+      <hr />
+    </div>
   </div>
-</div>
 
-<div class="row">
-  <div class="col-sm-12 ">
-    <h4>Administration actions</h4>
+  <div class="row">
+    <div class="col-sm-12">
+      <h4>Administration actions</h4>
+    </div>
   </div>
-</div>
-<div class="row">
-  <div class="col-sm-2">
-    Trigger Report
+  <div class="row">
+    <div class="col-sm-2">Trigger Report</div>
+    <div class="col-sm-2">
+      <a
+        id="trigger_daily_report"
+        href="{% url 'daily_report' %}"
+        target="_blank"
+        >Daily Report</a
+      >
+    </div>
+    <div class="col-sm-6">
+      <em
+        >Reports on all open tickets & tickets closed "yesterday" relative to
+        "now".</em
+      >
+    </div>
   </div>
-  <div class="col-sm-2">
-    <a id="trigger_daily_report" href="{% url 'daily_report' %}" target="_blank">Daily Report</a>
-  </div>
-  <div class="col-sm-6">
-    <em>Reports on all open tickets & tickets closed "yesterday" relative to "now".</em>
-  </div>
-</div>
 
-<div class="row">
-  <div class="col-sm-2">
-    Django Admin Site
+  <div class="row">
+    <div class="col-sm-2">Django Admin Site</div>
+    <div class="col-sm-10">
+      <a id="add_zendesk_app" href="/admin" target="_blank">Open</a>
+    </div>
   </div>
-  <div class="col-sm-10">
-    <a id="add_zendesk_app" href="/admin" target="_blank">Open</a>
-  </div>
+  {% endblock %}
 </div>
-{% endblock %}
