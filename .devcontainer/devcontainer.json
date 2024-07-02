@@ -1,0 +1,86 @@
+{
+  "name": "zenslackbot",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "zenslackbot",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/vscode/workspace,type=bind"
+  ],
+  "onCreateCommand": ["/bin/bash", "-c", "source .devcontainer/on-create.sh"],
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+  "workspaceFolder": "/vscode/workspace",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "streetsidesoftware.code-spell-checker",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "codezombiech.gitignore",
+        "fabiospampinato.vscode-diff",
+        "ms-python.python",
+        "ms-python.isort",
+        "ms-python.vscode-pylance",
+        "ms-python.pylint",
+        "DavidAnson.vscode-markdownlint",
+        "shd101wyy.markdown-preview-enhanced",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "ms-python.black-formatter"
+      ],
+      "settings": {
+        "[markdown]": {
+          "editor.codeActionsOnSave": {
+            "source.fixAll.markdownlint": true
+          },
+          "editor.formatOnPaste": true,
+          "editor.formatOnSave": true
+        },
+        "[python]": {
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          },
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnPaste": false,
+          "editor.formatOnSave": true
+        },
+        "breadcrumbs.enabled": false,
+        "cSpell.language": "en-GB",
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.minimap.enabled": false,
+        "editor.tabCompletion": "on",
+        "files.exclude": {
+          "**/.DS_Store": true,
+          "**/.git": true,
+          "**/Thumbs.db": true
+        },
+        "files.trimTrailingWhitespace": true,
+        "git.autofetch": true,
+        "isort.args": ["--profile", "black"],
+        "python.languageServer": "Pylance",
+        "python.terminal.activateEnvironment": false,
+        "pylint.showNotifications": "onWarning",
+        "pylint.args": [
+          "--load-plugins=pylint_django",
+          "--django-settings-module=config.settings"
+        ],
+        "python.testing.pytestEnabled": true,
+
+        "sqltools.connections": [
+          {
+            "database": "zenslackbot",
+            "driver": "PostgreSQL",
+            "name": "zenslackbot_db",
+            "password": "",
+            "port": 5432,
+            "previewLimit": 50,
+            "server": "zenslackbot_db",
+            "username": "root"
+          }
+        ]
+      }
+    }
+  }
+}

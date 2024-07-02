@@ -171,7 +171,7 @@ for the OAuth process.
 
 In local development this runs on:
 
-- http://localhost:8000/zendesk/oauth/
+- http://localhost:5000/zendesk/oauth/
 
 
 Handy Zendesk OAuth client registration documentation:
