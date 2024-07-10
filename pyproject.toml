@@ -37,7 +37,7 @@ oauthlib = "^3.2.2"
 certifi = "^2024.6.2"
 aiohttp = "^3.9.5"
 typing-extensions = "^4.12.2"
-django = "^4.2.13"
+django = "^4.2.14"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
