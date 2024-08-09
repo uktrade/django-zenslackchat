@@ -35,7 +35,7 @@ waitress = "^3.0.0"
 async-timeout = "^4.0.3"
 oauthlib = "^3.2.2"
 certifi = "^2024.6.2"
-aiohttp = "^3.9.5"
+aiohttp = "^3.10.2"
 typing-extensions = "^4.12.2"
 django = "^4.2.13"
 
