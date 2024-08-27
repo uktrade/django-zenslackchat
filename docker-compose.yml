@@ -1,4 +1,3 @@
-version: "3.4"
 services:
   zenslackbot:
     image: python:3.11
