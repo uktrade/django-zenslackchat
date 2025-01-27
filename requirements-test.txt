@@ -740,7 +740,7 @@ werkzeug==3.0.6 ; python_version >= "3.11" and python_version < "4.0" \
 whitenoise==6.7.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:58c7a6cd811e275a6c91af22e96e87da0b1109e9a53bb7464116ef4c963bf636 \
     --hash=sha256:a1ae85e01fdc9815d12fa33f17765bc132ed2c54fa76daf9e39e879dd93566f6
-yarl==1.9.4 ; python_version >= "3.11" and python_version < "4.0" \
+yarl==1.18.3 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:008d3e808d03ef28542372d01057fd09168419cdc8f848efe2804f894ae03e51 \
     --hash=sha256:03caa9507d3d3c83bca08650678e25364e1843b484f19986a527630ca376ecce \
     --hash=sha256:07574b007ee20e5c375a8fe4a0789fad26db905f9813be0f9fef5a68080de559 \
