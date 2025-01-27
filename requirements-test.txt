@@ -573,7 +573,7 @@ platformdirs==4.2.2 ; python_version >= "3.11" and python_version < "4.0" \
 pluggy==1.5.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1 \
     --hash=sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669
-propcache==0.2.0 ; python_version >= "3.11" and python_version < "4.0" \ 
+propcache==0.2.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:4c7dde9e533c0a49d802b4f3f218fa9ad0a1ce21f2c2eb80d5216565202acab4
 prompt-toolkit==3.0.47 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:0d7bfa67001d5e39d02c224b663abc33687405033a8c422d0d675a5a13361d10 \
