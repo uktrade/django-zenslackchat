@@ -44,3 +44,5 @@ urllib3
 vine
 wcwidth
 whitenoise
+
+dbt-copilot-python
