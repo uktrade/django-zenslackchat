@@ -192,7 +192,8 @@ MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {}
-DATABASES["default"] = dj_database_url.config()
+# DATABASES["default"] = dj_database_url.config()
+DATABASES = {"default": dj_database_url.config(engine="django.db.backends.postgresql")}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
