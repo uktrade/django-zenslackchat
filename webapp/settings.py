@@ -25,6 +25,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from zenslackchat import botlogging
 
+from dbt_copilot_python.database import database_url_from_env
+from dbt_copilot_python.utility import is_copilot
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -193,7 +196,16 @@ MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {}
 # DATABASES["default"] = dj_database_url.config()
-DATABASES = {"default": dj_database_url.config(engine="django.db.backends.postgresql")}
+# Database
+
+DATABASE_CREDENTIALS = os.environ.get("DATABASE_CREDENTIALS", default=None)
+if is_copilot():
+    DATABASES = {"default": dj_database_url.parse(database_url_from_env("DATABASE_CREDENTIALS"))}
+else:
+    if DATABASE_CREDENTIALS:
+        db_url = "{engine}://{username}:{password}@{host}:{port}/{dbname}".format(**DATABASE_CREDENTIALS)
+        os.environ["DATABASE_URL"] = db_url
+    DATABASES = {"default": dj_database_url.config()}
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
