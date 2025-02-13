@@ -4,8 +4,6 @@ from django.urls import path
 
 from . import eventsview, views, zendesk_webhooks
 
-from .healthcheck import healthcheck_status
-
 urlpatterns = [
     path("", views.index, name="index"),
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
@@ -13,7 +11,6 @@ urlpatterns = [
     path("slack/oauth/", views.slack_oauth, name="slack_oauth"),
     path("slack/events/", eventsview.Events.as_view(), name="slack_events"),
     path("zendesk/oauth/", views.zendesk_oauth, name="zendesk_oauth"),
-    path('healthcheck', healthcheck_status, name='status'),
     path(
         "zendesk/webhook/",
         zendesk_webhooks.CommentsWebHook.as_view(),
