@@ -142,6 +142,7 @@ PAAS_FQDN = os.environ.get(
 # Who can connect:
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ["*"]
+PAAS_FQDN = ["*"]
 # PAAS_FQDN = os.environ.get("PAAS_FQDN", "").strip()
 # if PAAS_FQDN:
 #     ALLOWED_HOSTS.insert(0, PAAS_FQDN)
