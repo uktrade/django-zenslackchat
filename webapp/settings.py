@@ -135,9 +135,9 @@ PAGERDUTY_ESCALATION_POLICY_ID = os.environ.get(
 
 # Used to work out our external URI for redirects. Also used as the entry in
 # ALLOWED_HOSTS.
-PAAS_FQDN = os.environ.get(
-    "PAAS_FQDN", "The fully qualified domain name of the PaaS webapp"
-)
+# PAAS_FQDN = os.environ.get(
+#     "PAAS_FQDN", "The fully qualified domain name of the PaaS webapp"
+# )
 
 # Who can connect:
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
