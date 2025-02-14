@@ -24,5 +24,5 @@ urlpatterns = [
     path('', include('zenslackchat.urls')),
     path('admin/', admin.site.urls),
     path('auth/', include('authbroker_client.urls', namespace='authbroker')),
-    path('healthcheck', healthcheck_status, name='status'),
+    path("healthcheck/", healthcheck_status, name='status'),
 ]
