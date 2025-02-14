@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include
 
-from ..webapp.healthcheck import healthcheck_statusß
+from .healthcheck import healthcheck_status
 
 
 urlpatterns = [
