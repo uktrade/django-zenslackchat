@@ -26,6 +26,7 @@ export PAGERDUTY_CLIENT_IDENTIFIER=
 export PAGERDUTY_CLIENT_SECRET=
 export PAGERDUTY_REDIRECT_URI=
 export PAGERDUTY_ESCALATION_POLICY_ID=
+export CSRF_TRUSTED_ORIGINS=zenslackchat.app
 
 # Add commands below to run inside the container after all the other buildpacks have been applied
 echo "Running collectstatic"
