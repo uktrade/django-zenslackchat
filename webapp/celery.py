@@ -48,5 +48,6 @@ def run_daily_summary():
     client = SlackApp.client()
     client.chat_postMessage(channel=channel_id, text=text)
 
+
 # Set up healthcheck.
 app = healthcheck.setup(app)
