@@ -5,6 +5,8 @@ from celery.schedules import crontab
 
 from zenslackchat import botlogging
 
+from dbt_copilot_python.celery_health_check import healthcheck
+
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webapp.settings')
 
@@ -45,3 +47,7 @@ def run_daily_summary():
 
     client = SlackApp.client()
     client.chat_postMessage(channel=channel_id, text=text)
+
+
+# Set up healthcheck.
+app = healthcheck.setup(app)
