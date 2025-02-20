@@ -15,6 +15,7 @@ django-environ
 django-ipware
 django-log-formatter-ecs
 django-staff-sso-client
+djangorestframework
 django
 docopt
 geckoboard-py
