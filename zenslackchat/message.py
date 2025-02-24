@@ -272,12 +272,22 @@ def handler(
                 )
                 app_token = PagerDutyApp.client()
 
-                message_who_is_on_call(
-                    PagerDutyApp.on_call(app_token=app_token),
-                    slack_client,
-                    chat_id,
-                    channel_id,
-                )
+                #  :returns: dict(primary='First Lastname', secondary='First Lastname')
+                if settings.USE_ATLASSIAN:
+                    print("Getting rota from Confluence.")
+                    message_who_is_on_call(
+                        {"primary": "Peter Parker", "secondary": "Bruce Banister"},
+                        slack_client,
+                        chat_id,
+                        channel_id,
+                    )
+                else:
+                    message_who_is_on_call(
+                        PagerDutyApp.on_call(app_token=app_token),
+                        slack_client,
+                        chat_id,
+                        channel_id,
+                    )
 
                 # Is this an issue created out of hours?
                 OutOfHoursInformation.inform_if_out_of_hours(

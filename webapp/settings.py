@@ -28,6 +28,9 @@ from zenslackchat import botlogging
 from dbt_copilot_python.database import database_url_from_env
 from dbt_copilot_python.utility import is_copilot
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -253,18 +256,18 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
 
-# Redis & Celery
-if "redis" in VCAP_SERVICES:
-    REDIS_URL = VCAP_SERVICES["redis"][0]["credentials"]["uri"]
-    REDIS_CELERY_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
+# # Redis & Celery
+# if "redis" in VCAP_SERVICES:
+#     REDIS_URL = VCAP_SERVICES["redis"][0]["credentials"]["uri"]
+#     REDIS_CELERY_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
 
-else:
-    REDIS_URL = os.environ["REDIS_URL"]
-    REDIS_CELERY_URL = REDIS_URL
+# else:
+#     REDIS_URL = os.environ["REDIS_URL"]
+#     REDIS_CELERY_URL = REDIS_URL
 
-CELERY_BROKER_URL = REDIS_CELERY_URL
-# no results as I'm just running a report once a day and it should just work.
-# result_backend = REDIS_CELERY_URL
+# CELERY_BROKER_URL = REDIS_CELERY_URL
+# # no results as I'm just running a report once a day and it should just work.
+# # result_backend = REDIS_CELERY_URL
 accept_content = ["application/json"]
 task_serializer = "json"
 result_serializer = "json"
@@ -295,3 +298,29 @@ AUTHBROKER_SCOPES = "read write"
 
 # CSRF variable required for Django 4
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
+
+# Atlassian 
+USE_ATLASSIAN = os.environ.get("USE_ATLASSIAN", default=False)
+
+# Atlassian OAuth 2.0 Credentials
+CLIENT_ID = os.environ.get("CLIENT_ID", default=None)
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", default=None)
+REDIRECT_URI = "http://localhost:8000/callback/"  # Special value for manual input
+AUTH_URL = "https://auth.atlassian.com/authorize"
+TOKEN_URL = "https://auth.atlassian.com/oauth/token"
+# SCOPE = ["read:confluence-content.all"]
+ATLASSIAN_BASE_URL = os.environ.get("ATLASSIAN_BASE_URL", default=None)
+CLOUD_ID = os.environ.get("CLOUD_ID", default=None)
+ATLASSIAN_PAGE_ID = os.environ.get("ATLASSIAN_PAGE_ID", default=None)
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+SESSION_COOKIE_AGE = 3600
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# API_BASE_URL = f"https://api.atlassian.com/ex/confluence/{cloudId}/wiki/rest/api/content/"
+
+# Basic Auth Atlassian creds.
+ATLASSIAN_USERNAME = os.environ.get("ATLASSIAN_USERNAME", default=None)
+ATLASSIAN_API_TOKEN = os.environ.get("ATLASSIAN_API_TOKEN", default=None)

@@ -2,19 +2,20 @@
 import json
 import logging
 import pprint
-
 import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.template import loader
 from rest_framework import status
 from rest_framework.response import Response
-
+from urllib.parse import urlencode
 from webapp.celery import run_daily_summary
 from zenslackchat.models import SlackApp, ZendeskApp
+from bs4 import BeautifulSoup
+from datetime import datetime
 
 
 def slack_oauth(request):
@@ -148,6 +149,125 @@ def zendesk_oauth(request):
 #     log.debug("Created local PagerDutyApp instance OK.")
 
 #     return HttpResponse("PagerDutyApp Added OK")
+
+def get_oncall_support(content):
+    """Extract today's Primary and Secondary on-call support from an HTML table."""
+    soup = BeautifulSoup(content, "html.parser")
+
+    today = datetime.today()
+    primary, secondary = None, None
+
+    # Loop through table rows
+    for row in soup.find_all("tr"):
+        cols = row.find_all("td")
+        if len(cols) >= 5:  # Ensure it has necessary columns
+            date_range = cols[0].get_text(strip=True)
+
+            try:
+                # Extract start and end dates
+                start_date_str, end_date_str = date_range.split(" - ")
+                start_date = datetime.strptime(start_date_str, "%d/%m/%y")
+                end_date = datetime.strptime(end_date_str, "%d/%m/%y")
+
+                # Check if today falls within the date range
+                if start_date <= today <= end_date:
+                    primary = cols[1].get_text(strip=True)
+                    secondary = cols[3].get_text(strip=True)
+                    break  # Stop once today's entry is found
+
+            except ValueError:
+                continue  # Skip invalid date formats
+
+    return primary, secondary
+
+
+# Only for dev
+# os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+
+def confluence_logout(request):
+    request.session.pop("oauth_token", None)
+    return redirect("/")
+
+
+def set_oauth_session(request, token_data):
+    request.session["oauth_token"] = token_data
+
+
+# Store OAuth credentials in session
+def start_oauth(request):
+    params = {
+        "audience": "api.atlassian.com",
+        "client_id": settings.CLIENT_ID,
+        "scope": "read:confluence-content.all read:confluence-space.summary",
+        "response_type": "code",
+        "redirect_uri": "http://localhost:8000/callback/",
+        "prompt": "consent"
+    }
+    auth_url = f"https://auth.atlassian.com/authorize?{urlencode(params, safe=':/')}"
+    return redirect(auth_url)
+
+
+def callback(request):
+    code = request.GET.get("code")
+    if not code:
+        return JsonResponse({"error": "Authorization failed: No code provided"})
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": settings.CLIENT_ID,
+        "client_secret": settings.CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": "http://localhost:8000/callback/"
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    response = requests.post("https://auth.atlassian.com/oauth/token", json=data, headers=headers)
+    token_data = response.json()
+
+    if "access_token" not in token_data:
+        return JsonResponse({"error": "Failed to retrieve access token", "details": token_data}, status=400)
+    set_oauth_session(request, token_data)
+    return redirect("/confluence/fetch_page/")
+
+
+# Fetch Confluence Page Content
+def fetch_page(request):
+    access_token = request.session.get('oauth_token')['access_token']
+    print("Session data:", request.session.items())
+
+    if not access_token:
+        return redirect("/confluence/start_oauth/")  # Re-authenticate if no token
+
+    headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
+
+    # For debug get scope and atlassian domain id
+    response = requests.get("https://api.atlassian.com/oauth/token/accessible-resources", headers=headers)
+    print(response.json())
+
+    cloud_id = settings.CLOUD_ID
+    page_id = settings.PAGE_ID
+    url = f"https://api.atlassian.com/ex/confluence/{cloud_id}/rest/api/content/{page_id}?expand=body.storage"
+
+    response = requests.get(url, headers=headers)
+    print(f"{access_token}")
+    # breakpoint()
+    if response.status_code != 200:
+        return HttpResponse(f"Error fetching page: {response.text}", status=400)
+
+    if response.status_code == 200:
+        data = response.json()
+        content = data["body"]["storage"]["value"]  # HTML format
+
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+
+    # get the On call staff
+    primary, secondary = get_oncall_support(content)
+    print(f"Primary: {primary}")
+    print(f"Secondary: {secondary}")
+
+    return HttpResponse(f"<h1>Confluence Page Content:</h1>{content}")
 
 
 @login_required
