@@ -266,10 +266,12 @@ def handler(
 
             else:
                 # Store all the details and notify:
+                log.debug("open ticket")
                 ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
                 message_issue_zendesk_url(
                     slack_client, zendesk_uri, ticket.id, chat_id, channel_id
                 )
+                log.debug("get PD login")
                 app_token = PagerDutyApp.client()
 
                 #  :returns: dict(primary='First Lastname', secondary='First Lastname')
