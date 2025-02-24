@@ -41,28 +41,32 @@ def get_oncall_support(content):
     return primary, secondary
 
 
-# API Endpoint
-url = f"{settings.ATLASSIAN_BASE_URL}/rest/api/content/{settings.ATLASSIAN_PAGE_ID}?expand=body.storage"
+def call_atlassian():
+    # API Endpoint
+    url = f"{settings.ATLASSIAN_BASE_URL}/rest/api/content/{settings.ATLASSIAN_PAGE_ID}?expand=body.storage"
 
-# Request headers
-headers = {
-    "Accept": "application/json"
-}
+    # Request headers
+    headers = {
+        "Accept": "application/json"
+    }
 
-# Make the request
-response = requests.get(
-            url,
-            headers=headers,
-            auth=HTTPBasicAuth(settings.ATLASSIAN_USERNAME, settings.ATLASSIAN_API_TOKEN)
-        )
+    # Make the request
+    response = requests.get(
+                url,
+                headers=headers,
+                auth=HTTPBasicAuth(settings.ATLASSIAN_USERNAME, settings.ATLASSIAN_API_TOKEN)
+            )
 
-# Parse response
-if response.status_code == 200:
-    data = response.json()
-    content = data["body"]["storage"]["value"]  # HTML format
-else:
-    print(f"Error: {response.status_code} - {response.text}")
+    # Parse response
+    if response.status_code == 200:
+        data = response.json()
+        content = data["body"]["storage"]["value"]  # HTML format
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
 
-primary, secondary = get_oncall_support(content)
-print(f"Primary: {primary}")
-print(f"Secondary: {secondary}")
+    primary, secondary = get_oncall_support(content)
+
+    # print(f"Primary: {primary}")
+    # print(f"Secondary: {secondary}")
+    oncall = {"primary": primary, "secondary": secondary}
+    return oncall

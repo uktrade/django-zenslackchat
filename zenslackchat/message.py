@@ -34,6 +34,7 @@ from zenslackchat.zendesk_api import (
     get_ticket,
     zendesk_ticket_url,
 )
+from zenslackchat.attlassian_api import call_atlassian
 
 # See https://api.slack.com/events/message for subtypes. (we allow bot_message)
 IGNORED_SUBTYPES = [
@@ -278,8 +279,10 @@ def handler(
                 log.debug(f"{slack_client}, {chat_id}, {channel_id}")
                 if settings.USE_ATLASSIAN:
                     log.debug("Getting rota from Confluence.")
+                    oncall = call_atlassian()
+                    # {"primary": "Peter Parker", "secondary": "Bruce Banister"},
                     message_who_is_on_call(
-                        {"primary": "Peter Parker", "secondary": "Bruce Banister"},
+                        oncall,
                         slack_client,
                         chat_id,
                         channel_id,
