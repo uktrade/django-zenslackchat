@@ -273,8 +273,10 @@ def handler(
                 app_token = PagerDutyApp.client()
 
                 #  :returns: dict(primary='First Lastname', secondary='First Lastname')
+                log.debug("Rota section")
+                log.debug(f"{slack_client}, {chat_id}, {channel_id}")
                 if settings.USE_ATLASSIAN:
-                    print("Getting rota from Confluence.")
+                    log.debug("Getting rota from Confluence.")
                     message_who_is_on_call(
                         {"primary": "Peter Parker", "secondary": "Bruce Banister"},
                         slack_client,
@@ -282,6 +284,7 @@ def handler(
                         channel_id,
                     )
                 else:
+                    log.debug("Getting rota from PD.")
                     message_who_is_on_call(
                         PagerDutyApp.on_call(app_token=app_token),
                         slack_client,
