@@ -280,6 +280,7 @@ def handler(
                 if settings.USE_ATLASSIAN:
                     log.debug("Getting rota from Confluence.")
                     oncall = call_atlassian()
+                    log.debug(f"{oncall}")
                     # {"primary": "Peter Parker", "secondary": "Bruce Banister"},
                     message_who_is_on_call(
                         oncall,
