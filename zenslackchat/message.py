@@ -272,7 +272,6 @@ def handler(
                     slack_client, zendesk_uri, ticket.id, chat_id, channel_id
                 )
                 log.debug("get PD login")
-                app_token = PagerDutyApp.client()
 
                 #  :returns: dict(primary='First Lastname', secondary='First Lastname')
                 log.debug("Rota section")
@@ -287,6 +286,7 @@ def handler(
                     )
                 else:
                     log.debug("Getting rota from PD.")
+                    app_token = PagerDutyApp.client()
                     message_who_is_on_call(
                         PagerDutyApp.on_call(app_token=app_token),
                         slack_client,
