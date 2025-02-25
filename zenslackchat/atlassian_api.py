@@ -53,7 +53,7 @@ def call_atlassian():
     headers = {
         "Accept": "application/json"
     }
-    log.debug("atlassian login")
+    log.debug("Atlassian login")
     # Make the request
     response = requests.get(
                 url,
@@ -69,12 +69,8 @@ def call_atlassian():
         print(f"Error: {response.status_code} - {response.text}")
 
     primary, secondary = get_oncall_support(content)
-    log.debug(f"{primary} {secondary}")
-
-    # print(f"Primary: {primary}")
-    # print(f"Secondary: {secondary}")
     oncall = {"primary": primary, "secondary": secondary}
-    log.debug(f"{oncall}")
+
     return oncall
 
 # oncall = call_atlassian()
