@@ -18,6 +18,7 @@ def get_oncall_support(content):
     soup = BeautifulSoup(content, "html.parser")
 
     today = datetime.today()
+    today = today.replace(hour=0, minute=0, second=0, microsecond=0)
     primary, secondary = None, None
 
     # Loop through table rows
@@ -75,3 +76,6 @@ def call_atlassian():
     oncall = {"primary": primary, "secondary": secondary}
     log.debug(f"{oncall}")
     return oncall
+
+# oncall = call_atlassian()
+# print(oncall)
