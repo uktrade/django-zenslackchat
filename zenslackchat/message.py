@@ -34,7 +34,7 @@ from zenslackchat.zendesk_api import (
     get_ticket,
     zendesk_ticket_url,
 )
-from zenslackchat.attlassian_api import call_atlassian
+from zenslackchat.atlassian_api import call_atlassian
 
 # See https://api.slack.com/events/message for subtypes. (we allow bot_message)
 IGNORED_SUBTYPES = [

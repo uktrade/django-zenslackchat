@@ -4,7 +4,10 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import os
 import sys
+import logging
 from django.conf import settings
+
+log = logging.getLogger(__name__)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'webapp.settings')
@@ -49,7 +52,7 @@ def call_atlassian():
     headers = {
         "Accept": "application/json"
     }
-
+    log.debug("atlassian login")
     # Make the request
     response = requests.get(
                 url,
@@ -65,8 +68,10 @@ def call_atlassian():
         print(f"Error: {response.status_code} - {response.text}")
 
     primary, secondary = get_oncall_support(content)
+    log.debug(f"{primary} {secondary}")
 
     # print(f"Primary: {primary}")
     # print(f"Secondary: {secondary}")
     oncall = {"primary": primary, "secondary": secondary}
+    log.debug(f"{oncall}")
     return oncall
