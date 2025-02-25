@@ -256,18 +256,18 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 STATIC_URL = "/static/"
 
-# # Redis & Celery
-# if "redis" in VCAP_SERVICES:
-#     REDIS_URL = VCAP_SERVICES["redis"][0]["credentials"]["uri"]
-#     REDIS_CELERY_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
+# Redis & Celery
+if "redis" in VCAP_SERVICES:
+    REDIS_URL = VCAP_SERVICES["redis"][0]["credentials"]["uri"]
+    REDIS_CELERY_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
 
-# else:
-#     REDIS_URL = os.environ["REDIS_URL"]
-#     REDIS_CELERY_URL = REDIS_URL
+else:
+    REDIS_URL = os.environ["REDIS_URL"]
+    REDIS_CELERY_URL = REDIS_URL
 
-# CELERY_BROKER_URL = REDIS_CELERY_URL
-# # no results as I'm just running a report once a day and it should just work.
-# # result_backend = REDIS_CELERY_URL
+CELERY_BROKER_URL = REDIS_CELERY_URL
+# no results as I'm just running a report once a day and it should just work.
+# result_backend = REDIS_CELERY_URL
 accept_content = ["application/json"]
 task_serializer = "json"
 result_serializer = "json"
