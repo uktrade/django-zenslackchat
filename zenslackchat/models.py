@@ -250,7 +250,21 @@ class ZenSlackChat(models.Model):
             links.append(f"- {link}")
         links = "\n".join(links)
 
-        report = f"""
+        if settings.USE_ATLASSIAN:
+            report = f"""
+📊 Daily Platform Issue Report
+
+Closed 🤘: {closed}
+
+Unresolved 🔥: {open}
+{links}
+
+Cheers,
+
+🤖 PlatformZenSlackChat
+        """.strip()
+        else:
+            report = f"""
 📊 Daily WebOps SRE Issue Report
 
 Closed 🤘: {closed}

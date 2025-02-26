@@ -23,6 +23,7 @@ from markdown import markdown
 
 from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import zendesk_ticket_url
+from webapp import settings
 
 
 def message_who_is_on_call(on_call, slack_client, chat_id, channel_id):
@@ -31,12 +32,20 @@ def message_who_is_on_call(on_call, slack_client, chat_id, channel_id):
     This will only message if the PagerDutyApp / OAuth set up has been done.
 
     """
-    if on_call != {}:
-        message = (
-            f"📧 Primary on call: {on_call['primary']}\n"
-            f"ℹ️ Secondary on call: {on_call['secondary']}."
-        )
-        post_message(slack_client, chat_id, channel_id, message)
+    if settings.USE_ATLASSIAN:
+        if on_call != {}:
+            message = (
+                f"📧 Primary support: {on_call['primary']}\n"
+                f"ℹ️ Secondary support: {on_call['secondary']}."
+            )
+            post_message(slack_client, chat_id, channel_id, message)
+    else:
+        if on_call != {}:
+            message = (
+                f"📧 Primary on call: {on_call['primary']}\n"
+                f"ℹ️ Secondary on call: {on_call['secondary']}."
+            )
+            post_message(slack_client, chat_id, channel_id, message)
 
 
 def message_issue_zendesk_url(
