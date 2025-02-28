@@ -14,6 +14,7 @@ from zenslackchat import slack_api
 from zenslackchat.slack_api import post_message
 from zenslackchat.atlassian_api import call_atlassian
 
+
 def utcnow():
     return datetime.now(timezone.utc)
 

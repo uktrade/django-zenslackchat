@@ -300,7 +300,7 @@ AUTHBROKER_SCOPES = "read write"
 # CSRF variable required for Django 4
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
 
-# Atlassian 
+# Atlassian
 USE_ATLASSIAN = os.environ.get("USE_ATLASSIAN", default=False)
 
 # Atlassian OAuth 2.0 Credentials

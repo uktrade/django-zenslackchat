@@ -56,10 +56,10 @@ def call_atlassian():
     log.debug("Atlassian login")
     # Make the request
     response = requests.get(
-                url,
-                headers=headers,
-                auth=HTTPBasicAuth(settings.ATLASSIAN_USERNAME, settings.ATLASSIAN_API_TOKEN)
-            )
+        url,
+        headers=headers,
+        auth=HTTPBasicAuth(settings.ATLASSIAN_USERNAME, settings.ATLASSIAN_API_TOKEN)
+    )
 
     # Parse response
     if response.status_code == 200:
