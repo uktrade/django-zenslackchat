@@ -34,7 +34,7 @@ from zenslackchat.zendesk_api import (
     get_ticket,
     zendesk_ticket_url,
 )
-from zenslackchat.atlassian_api import call_atlassian
+#from zenslackchat.atlassian_api import call_atlassian
 
 # See https://api.slack.com/events/message for subtypes. (we allow bot_message)
 IGNORED_SUBTYPES = [
@@ -273,23 +273,23 @@ def handler(
                     slack_client, zendesk_uri, ticket.id, chat_id, channel_id
                 )
 
-                if settings.USE_ATLASSIAN:
-                    oncall = call_atlassian()
-                    log.debug(f"People on call: {oncall}")
-                    message_who_is_on_call(
-                        oncall,
-                        slack_client,
-                        chat_id,
-                        channel_id,
-                    )
-                else:
-                    app_token = PagerDutyApp.client()
-                    message_who_is_on_call(
-                        PagerDutyApp.on_call(app_token=app_token),
-                        slack_client,
-                        chat_id,
-                        channel_id,
-                    )
+                # if settings.USE_ATLASSIAN:
+                #     oncall = call_atlassian()
+                #     log.debug(f"People on call: {oncall}")
+                #     message_who_is_on_call(
+                #         oncall,
+                #         slack_client,
+                #         chat_id,
+                #         channel_id,
+                #     )
+                # else:
+                app_token = PagerDutyApp.client()
+                message_who_is_on_call(
+                    PagerDutyApp.on_call(app_token=app_token),
+                    slack_client,
+                    chat_id,
+                    channel_id,
+                )
 
                 # Is this an issue created out of hours?
                 OutOfHoursInformation.inform_if_out_of_hours(
