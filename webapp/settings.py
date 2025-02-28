@@ -28,6 +28,7 @@ from zenslackchat import botlogging
 from dbt_copilot_python.database import database_url_from_env
 from dbt_copilot_python.utility import is_copilot
 
+# for local dev.
 # from dotenv import load_dotenv
 # load_dotenv()
 

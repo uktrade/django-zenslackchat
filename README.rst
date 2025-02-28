@@ -35,6 +35,17 @@ This bot can connect to Pager Duty and recover an escalation policy from
 which it then gets the primary and secondary contact names. If configured, who
 is on call will be posted to the slack channel after an issue is raised.
 
+The bot has been updated to work as a SRE bot and a Platform bot.  Now the bot can be 
+used in the sre-requests and platform-requests channels.
+
+This can be achieved by deploying the django app for a second time, plus creating a second slackbot
+and finally setting these VARS:
+   USE_ATLASSIAN
+   ATLASSIAN_PAGE_ID 
+   ATLASSIAN_USERNAME
+   ATLASSIAN_API_TOKEN 
+   ATLASSIAN_BASE_URL
+
 .. contents::
 
 
@@ -553,6 +564,39 @@ For PagerDuty OAuth you need to set the follow::
    export PAGERDUTY_CLIENT_SECRET=<oauth secret>
    export PAGERDUTY_REDIRECT_URI=https://..host../pagerduty/oauth/
    export PAGERDUTY_ESCALATION_POLICY_ID=<policy id string>
+
+
+Platform bot
+------------
+
+USE_ATLASSIAN
+~~~~~~~~~~~~~
+
+If set to True, this switches the bot from being a SRE bot to a Platform bot.
+
+ATLASSIAN_PAGE_ID
+~~~~~~~~~~~~~~~~~
+
+ID of the confluence page the support rota is on.  This can be seen by visiting the page and grabbing the ID from the URI.
+
+
+ATLASSIAN_USERNAME
+~~~~~~~~~~~~~~~~~~
+
+The email address of the user that created the Atlassian basic auth token
+
+
+ATLASSIAN_API_TOKEN
+~~~~~~~~~~~~~~~~~~~
+
+Go here to get token: https://id.atlassian.com/manage-profile/security/api-tokens
+When you create an API basic auth token, the value is presented to you during creation.
+
+
+ATLASSIAN_BASE_URL: 
+~~~~~~~~~~~~~~~~~~~
+
+This will be `https://<sitename>.atlassian.net/wiki`
 
 
 Development Environment Variables
