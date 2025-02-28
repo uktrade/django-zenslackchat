@@ -49,15 +49,16 @@ def message_issue_zendesk_url(
     if settings.USE_ATLASSIAN:
         message = f"""
 Thanks for raising this. We're looking into your issue and will aim to provide an update within the next 3 hours (during working hours)
+
 Your new support request is {url}
 
 To help us help you faster, please ensure you have provided the following details in your request:
-- Service names
-- Git repo names
-- AWS accounts
-- Links to errors
-- Steps to reproduce
-- Platform-helper version in use
+    - Service names
+    - Git repo names
+    - AWS accounts
+    - Links to errors
+    - Steps to reproduce
+    - Platform-helper version in use
         """
     else:
         message = f"Hello, your new support request is {url}"

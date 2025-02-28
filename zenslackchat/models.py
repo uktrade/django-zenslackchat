@@ -256,32 +256,33 @@ class ZenSlackChat(models.Model):
 Welcome to DBT Platform, this space is for raising any support requests or issues you encounter with the platform.
 
 Today's Primary/Secondary Support:
-  Primary: {on_call['primary']}
-  Secondary: {on_call['secondary']}
+    Primary: {on_call['primary']}
+    Secondary: {on_call['secondary']}
 
 Please check Platform Docs before contacting support: https://platform.readme.trade.gov.uk/
 
 To help us help you faster, please include:
-- Service names
-- Git repo names
-- AWS accounts
-- Links to errors
-- Steps to reproduce
-- Platform-helper version in use
+    - Service names
+    - Git repo names
+    - AWS accounts
+    - Links to errors
+    - Steps to reproduce
+    - Platform-helper version in use
 ```
 Example:
 I am seeing the error in the attached screenshot.
 
 Steps to reproduce:
-- run `platform-helper pipeline generate`
-```
+    - run `platform-helper pipeline generate`
 Service: Demodjango
 Git repo: uktrade/demodjango, uktrade/demodjango-deploy
 AWS account: platform-sandbox
 Error: http://...
 Platform Helper: 13.1.0
+```
 
 If this relates to earlier issue, include a link to the previous ticket.
+
 
 📊 Daily Platform Issue Report
 
