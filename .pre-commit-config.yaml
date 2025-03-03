@@ -1,0 +1,41 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+      - id: autoflake
+        require_serial: true
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-toml
+      - id: name-tests-test
+        args: ["--django"]
+        exclude: report/tests/mock_test_data.py
+      - id: debug-statements
+      - id: fix-encoding-pragma
+      - id: mixed-line-ending
+        fix: [--auto]
+      - id: check-json
+  - repo: https://github.com/python-poetry/poetry
+    rev: "2.1.1"
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+      - id: poetry-export
+        args:
+          ["--without=dev", "-f", "requirements.txt", "-o", "requirements.txt"]
+      - id: poetry-export
+        args:
+          [
+            "--with=dev",
+            "-f",
+            "requirements.txt",
+            "-o",
+            "requirements-test.txt",
+          ]

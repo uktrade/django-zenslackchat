@@ -1,15 +1,33 @@
-version: "3.4"
 services:
-  postgres:
-    image: "postgres:11.10"
+  zenslackbot:
+    image: python:3.11
+    container_name: zenslackbot
+    hostname: zenslackbot
+    env_file:
+      - .devcontainer/.env
+      - .devcontainer/db.env
     environment:
-      POSTGRES_PASSWORD: service
-      POSTGRES_USER: service
+      - DATABASE_URL=postgres://zenslackbot_db/zenslackbot
+      - REDIS_URL=redis://zenslackbot_rds:6379
+    stdin_open: true
+    tty: true
+    links:
+      - zenslackbot_db
+      - zenslackbot_rds
+    depends_on:
+      - zenslackbot_db
+      - zenslackbot_rds
+  zenslackbot_db:
+    image: postgres:14.8
+    container_name: zenslackbot_db
+    hostname: zenslackbot_db
+    env_file:
+      - .devcontainer/db.env
     ports:
-      - "5432:5432"
-  redis:
-    image: "redis:5-alpine"
+      - 5432:5432
+  zenslackbot_rds:
+    image: redis:5-alpine
+    container_name: zenslackbot_rds
+    hostname: zenslackbot_rds
     ports:
-      - "6379:6379"
-    
-      
+      - 6379:6379

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Django settings for webapp project.
 
@@ -9,26 +10,34 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-import os
-import sys
+
+import binascii
 import json
 import logging
-import binascii
+import os
+import sys
 from pathlib import Path
 
+import dj_database_url
 import environ
 import sentry_sdk
-import dj_database_url
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from zenslackchat import botlogging
+
+from dbt_copilot_python.database import database_url_from_env
+from dbt_copilot_python.utility import is_copilot
+
+# for local dev.
+# from dotenv import load_dotenv
+# load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 LOGGING = botlogging.config
 
-VCAP_SERVICES = json.loads(os.environ.get('VCAP_SERVICES', "{}"))
+VCAP_SERVICES = json.loads(os.environ.get("VCAP_SERVICES", "{}"))
 
 DEBUG = False
 if os.environ.get("DEBUG_ENABLED", "0").strip() == "1":
@@ -46,156 +55,167 @@ if os.environ.get("DISABLE_MESSAGE_PROCESSING", "0").strip() == "1":
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 SECRET_KEY = os.environ.get(
-    'WEBAPP_SECRET_KEY',
+    "WEBAPP_SECRET_KEY",
     # generate random one if not given for working development
-    binascii.hexlify(os.urandom(64)).decode()
+    binascii.hexlify(os.urandom(64)).decode(),
 )
 
 # Slack & Bot credentials:
-SLACK_CLIENT_ID = os.environ.get('SLACK_CLIENT_ID', 'YOUR CLIENT ID')
-SLACK_CLIENT_SECRET = os.environ.get(
-    'SLACK_CLIENT_SECRET', 'YOUR CLIENT SECRET'
-)
-SLACK_BOT_USER_TOKEN = os.environ.get(
-    'SLACK_BOT_USER_TOKEN', 'YOUR BOT USER TOKEN'
-)
+SLACK_CLIENT_ID = os.environ.get("SLACK_CLIENT_ID", "YOUR CLIENT ID")
+SLACK_CLIENT_SECRET = os.environ.get("SLACK_CLIENT_SECRET", "YOUR CLIENT SECRET")
+SLACK_BOT_USER_TOKEN = os.environ.get("SLACK_BOT_USER_TOKEN", "YOUR BOT USER TOKEN")
 SLACK_VERIFICATION_TOKEN = os.environ.get(
-    'SLACK_VERIFICATION_TOKEN', 'YOUR VERIFICATION TOKEN'
+    "SLACK_VERIFICATION_TOKEN", "YOUR VERIFICATION TOKEN"
 )
 # where to exchange the request token for an access token:
 SLACK_OAUTH_URI = os.environ.get(
-    'SLACK_OAUTH_URI', 'https://slack.com/api/oauth.access'
+    "SLACK_OAUTH_URI", "https://slack.com/api/oauth.access"
 )
 # The base uri on which '/channel_id/message_id/' is added to form the direct
 # link to the message on Slack:
 SLACK_WORKSPACE_URI = os.environ.get(
-    'SLACK_WORKSPACE_URI', 'https://<YOUR WORKSPACE>.slack.com/archives'
+    "SLACK_WORKSPACE_URI", "https://<YOUR WORKSPACE>.slack.com/archives"
 )
 
 
 # The channel events we listen for and ignore all other events.
-SRE_SUPPORT_CHANNEL = os.environ.get(
-    'SRE_SUPPORT_CHANNEL', 'YOUR SUPPORT CHANNEL ID'
-)
+SRE_SUPPORT_CHANNEL = os.environ.get("SRE_SUPPORT_CHANNEL", "YOUR SUPPORT CHANNEL ID")
+
+# A list of bots that are allowed to create Zendesk tickets.
+ALLOWED_BOT_IDS = [
+    allowed_bot_id
+    for allowed_bot_id in os.environ.get("ALLOWED_BOT_IDS", "").split(",")
+    if allowed_bot_id
+]
 
 ZENDESK_CLIENT_IDENTIFIER = os.environ.get(
-    'ZENDESK_CLIENT_IDENTIFIER', 'YOUR ZENDESK CLIENT UNIQUE IDENTIFIER'
+    "ZENDESK_CLIENT_IDENTIFIER", "YOUR ZENDESK CLIENT UNIQUE IDENTIFIER"
 )
 ZENDESK_CLIENT_SECRET = os.environ.get(
-    'ZENDESK_CLIENT_SECRET', 'YOUR ZENDESK CLIENT SECRET'
+    "ZENDESK_CLIENT_SECRET", "YOUR ZENDESK CLIENT SECRET"
 )
-ZENDESK_SUBDOMAIN = os.environ.get(
-    'ZENDESK_SUBDOMAIN', 'YOUR ZENDESK SUBDOMAIN'
-)
+ZENDESK_SUBDOMAIN = os.environ.get("ZENDESK_SUBDOMAIN", "YOUR ZENDESK SUBDOMAIN")
 ZENDESK_REDIRECT_URI = os.environ.get(
-    'ZENDESK_REDIRECT_URI', 'YOUR URI FOR http(s)://<our host>/zendesk/oauth'
+    "ZENDESK_REDIRECT_URI", "YOUR URI FOR http(s)://<our host>/zendesk/oauth"
 )
 ZENDESK_TICKET_URI = os.environ.get(
-    'ZENDESK_TICKET_URI', 'https://<YOUR SUBDOMAIN>.zendesk.com/agent/tickets'
+    "ZENDESK_TICKET_URI", "https://<YOUR SUBDOMAIN>.zendesk.com/agent/tickets"
 )
 ZENDESK_USER_ID = os.environ.get(
-    'ZENDESK_USER_ID', '<The user id to assign new zendesk tickets to>'
+    "ZENDESK_USER_ID", "<The user id to assign new zendesk tickets to>"
 )
 ZENDESK_GROUP_ID = os.environ.get(
-    'ZENDESK_GROUP_ID', '<The group id new zendesk tickets belong to>'
+    "ZENDESK_GROUP_ID", "<The group id new zendesk tickets belong to>"
 )
-ZENDESK_WEBHOOK_USER = os.environ.get(
-    'ZENDESK_WEBHOOK_USER', '<some random username>'
-)
+ZENDESK_WEBHOOK_USER = os.environ.get("ZENDESK_WEBHOOK_USER", "<some random username>")
 ZENDESK_WEBHOOK_TOKEN = os.environ.get(
-    'ZENDESK_WEBHOOK_TOKEN', '<shared secret random string>'
+    "ZENDESK_WEBHOOK_TOKEN", "<shared secret random string>"
 )
 ZENDESK_AGENT_EMAIL = os.environ.get(
-    'ZENDESK_AGENT_EMAIL', '<email of zenslackchat agent>'
+    "ZENDESK_AGENT_EMAIL", "<email of zenslackchat agent>"
+)
+
+PD_AUTHORIZE_END_POINT = os.environ.get(
+    "PD_AUTHORIZE_END_POINT", "https://identity.pagerduty.com/oauth/authorize"
+)
+
+PD_TOKEN_END_POINT = os.environ.get(
+    "PD_TOKEN_END_POINT", "https://identity.pagerduty.com/oauth/token"
 )
 
 
-PAGERDUTY_OAUTH_URI = os.environ.get(
-    'PAGERDUTY_OAUTH_URI', 'https://app.pagerduty.com/oauth/token'
-)
 PAGERDUTY_CLIENT_IDENTIFIER = os.environ.get(
-    'PAGERDUTY_CLIENT_IDENTIFIER', 'YOUR PAGER DUTY CLIENT UNIQUE IDENTIFIER'
+    "PAGERDUTY_CLIENT_IDENTIFIER", "YOUR PAGER DUTY CLIENT UNIQUE IDENTIFIER"
 )
 PAGERDUTY_CLIENT_SECRET = os.environ.get(
-    'PAGERDUTY_CLIENT_SECRET', 'YOUR PAGER DUTY CLIENT SECRET'
+    "PAGERDUTY_CLIENT_SECRET", "YOUR PAGER DUTY CLIENT SECRET"
 )
 PAGERDUTY_REDIRECT_URI = os.environ.get(
-    'PAGERDUTY_REDIRECT_URI', 'URI FOR http(s)://<our host>/pagerduty/oauth'
+    "PAGERDUTY_REDIRECT_URI", "URI FOR http(s)://<our host>/pagerduty/oauth"
 )
 PAGERDUTY_ESCALATION_POLICY_ID = os.environ.get(
-    'PAGERDUTY_ESCALATION_POLICY_ID', 'PagerDuty Policy ID'
+    "PAGERDUTY_ESCALATION_POLICY_ID", "PagerDuty Policy ID"
 )
 
 # Used to work out our external URI for redirects. Also used as the entry in
 # ALLOWED_HOSTS.
-PAAS_FQDN = os.environ.get(
-    'PAAS_FQDN', 'The fully qualified domain name of the PaaS webapp'
-)
+# PAAS_FQDN = os.environ.get(
+#     "PAAS_FQDN", "The fully qualified domain name of the PaaS webapp"
+# )
 
 # Who can connect:
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1"
-]
-PAAS_FQDN = os.environ.get("PAAS_FQDN", "").strip()
-if PAAS_FQDN:
-    ALLOWED_HOSTS.insert(0, PAAS_FQDN)
+# ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
+PAAS_FQDN = ["*"]
+# PAAS_FQDN = os.environ.get("PAAS_FQDN", "").strip()
+# if PAAS_FQDN:
+#     ALLOWED_HOSTS.insert(0, PAAS_FQDN)
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'zenslackchat.apps.ZenSlackChatConfig',
-    'authbroker_client',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "zenslackchat.apps.ZenSlackChatConfig",
+    "authbroker_client",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'webapp.urls'
+ROOT_URLCONF = "webapp.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'webapp.wsgi.application'
+WSGI_APPLICATION = "webapp.wsgi.application"
 
-MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {}
-DATABASES['default'] = dj_database_url.config()
+# DATABASES["default"] = dj_database_url.config()
+# Database
+
+DATABASE_CREDENTIALS = os.environ.get("DATABASE_CREDENTIALS", default=None)
+if is_copilot():
+    DATABASES = {"default": dj_database_url.parse(database_url_from_env("DATABASE_CREDENTIALS"))}
+else:
+    if DATABASE_CREDENTIALS:
+        db_url = "{engine}://{username}:{password}@{host}:{port}/{dbname}".format(**DATABASE_CREDENTIALS)
+        os.environ["DATABASE_URL"] = db_url
+    DATABASES = {"default": dj_database_url.config()}
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'authbroker_client.backends.AuthbrokerBackend',
+    "django.contrib.auth.backends.ModelBackend",
+    "authbroker_client.backends.AuthbrokerBackend",
 ]
 
 # Password validation
@@ -203,65 +223,63 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = "/"
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-gb'
+LANGUAGE_CODE = "en-gb"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_L10N = True
+# USE_L10N = True
 
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_URL = "/static/"
 
 # Redis & Celery
-if 'redis' in VCAP_SERVICES:
-    REDIS_URL = VCAP_SERVICES['redis'][0]['credentials']['uri']
-    REDIS_CELERY_URL = f'{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED'
+if "redis" in VCAP_SERVICES:
+    REDIS_URL = VCAP_SERVICES["redis"][0]["credentials"]["uri"]
+    REDIS_CELERY_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
 
 else:
-    REDIS_URL = os.environ['REDIS_URL']
+    REDIS_URL = os.environ["REDIS_URL"]
     REDIS_CELERY_URL = REDIS_URL
 
 CELERY_BROKER_URL = REDIS_CELERY_URL
 # no results as I'm just running a report once a day and it should just work.
 # result_backend = REDIS_CELERY_URL
-accept_content = ['application/json']
-task_serializer = 'json'
-result_serializer = 'json'
+accept_content = ["application/json"]
+task_serializer = "json"
+result_serializer = "json"
 task_always_eager = False
 
 # Set the name for the app in logging:
-DLFE_APP_NAME = 'ZenSlackChat'
+DLFE_APP_NAME = "ZenSlackChat"
 
-ENV_FILE = os.path.join(BASE_DIR, '.env')
+ENV_FILE = os.path.join(BASE_DIR, ".env")
 if os.path.exists(ENV_FILE):
-    logging.getLogger(__name__).warning(
-        "Using .env file to override configuration."
-    )
+    logging.getLogger(__name__).warning("Using .env file to override configuration.")
     environ.Env.read_env(ENV_FILE)
 
 # Sentry set up:
@@ -278,3 +296,32 @@ AUTHBROKER_URL = os.environ.get("AUTHBROKER_URL")
 AUTHBROKER_CLIENT_ID = os.environ.get("AUTHBROKER_CLIENT_ID")
 AUTHBROKER_CLIENT_SECRET = os.environ.get("AUTHBROKER_CLIENT_SECRET")
 AUTHBROKER_SCOPES = "read write"
+
+# CSRF variable required for Django 4
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
+
+# Atlassian
+USE_ATLASSIAN = os.environ.get("USE_ATLASSIAN", default=False)
+
+# Atlassian OAuth 2.0 Credentials
+CLIENT_ID = os.environ.get("CLIENT_ID", default=None)
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", default=None)
+REDIRECT_URI = "http://localhost:8000/callback/"  # Special value for manual input
+AUTH_URL = "https://auth.atlassian.com/authorize"
+TOKEN_URL = "https://auth.atlassian.com/oauth/token"
+# SCOPE = ["read:confluence-content.all"]
+ATLASSIAN_BASE_URL = os.environ.get("ATLASSIAN_BASE_URL", default=None)
+CLOUD_ID = os.environ.get("CLOUD_ID", default=None)
+ATLASSIAN_PAGE_ID = os.environ.get("ATLASSIAN_PAGE_ID", default=None)
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+SESSION_COOKIE_AGE = 3600
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# API_BASE_URL = f"https://api.atlassian.com/ex/confluence/{cloudId}/wiki/rest/api/content/"
+
+# Basic Auth Atlassian creds.
+ATLASSIAN_USERNAME = os.environ.get("ATLASSIAN_USERNAME", default=None)
+ATLASSIAN_API_TOKEN = os.environ.get("ATLASSIAN_API_TOKEN", default=None)

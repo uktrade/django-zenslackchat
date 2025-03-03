@@ -1,19 +1,18 @@
+# -*- coding: utf-8 -*-
 import logging
-from datetime import timezone
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 
 import requests
 import requests.adapters
-from zenpy import Zenpy
-from slack import WebClient
+from django.conf import settings
 from django.db import models
-from pdpyras import APISession
+from slack import WebClient
+from zenpy import Zenpy
 
-from webapp import settings
 from zenslackchat import slack_api
 from zenslackchat.slack_api import post_message
+from zenslackchat.atlassian_api import call_atlassian
 
 
 def utcnow():
@@ -32,6 +31,7 @@ class ZenSlackChat(models.Model):
     the conversation will be ignored.
 
     """
+
     # The channel which the slack message happening:
     # e.g. C019JUGAGTS
     channel_id = models.CharField(max_length=22)
@@ -56,7 +56,7 @@ class ZenSlackChat(models.Model):
     closed = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        unique_together = (('channel_id', 'chat_id'),)
+        unique_together = (("channel_id", "chat_id"),)
 
     @classmethod
     def open(cls, channel_id, chat_id, ticket_id=None, opened=None):
@@ -73,16 +73,12 @@ class ZenSlackChat(models.Model):
         :returns: A ZenSlackChat instance.
 
         """
-        kwargs = dict(
-            channel_id=channel_id,
-            chat_id=chat_id,
-            ticket_id=ticket_id
-        )
+        kwargs = dict(channel_id=channel_id, chat_id=chat_id, ticket_id=ticket_id)
 
         if opened:
-            kwargs['opened'] = opened
+            kwargs["opened"] = opened
         else:
-            kwargs['opened'] = utcnow()
+            kwargs["opened"] = utcnow()
 
         issue = cls(**kwargs)
         issue.save()
@@ -133,8 +129,7 @@ class ZenSlackChat(models.Model):
 
         except cls.DoesNotExist:
             raise NotFoundError(
-                f"Nothing found for chat_id:<{chat_id}> and "
-                f"ticket_id:<{ticket_id}>"
+                f"Nothing found for chat_id:<{chat_id}> and " f"ticket_id:<{ticket_id}>"
             )
 
         return found
@@ -176,9 +171,7 @@ class ZenSlackChat(models.Model):
         :returns: An empty list or list of ZenSlackChat instances.
 
         """
-        return list(
-            cls.objects.filter(active=True).order_by('-opened').all()
-        )
+        return list(cls.objects.filter(active=True).order_by("-opened").all())
 
     @classmethod
     def daily_summary(cls, workspace_uri, when=None):
@@ -202,25 +195,39 @@ class ZenSlackChat(models.Model):
             yesterday = utcnow() - timedelta(days=1)
 
         day_begin = datetime(
-            yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, 0,
-            tzinfo=timezone.utc
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+            0,
+            0,
+            0,
+            0,
+            tzinfo=timezone.utc,
         )
 
         day_end = datetime(
-            yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, 999,
-            tzinfo=timezone.utc
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+            23,
+            59,
+            59,
+            999,
+            tzinfo=timezone.utc,
         )
 
         returned = dict(open=[], closed=0)
 
         for issue in cls.open_issues():
-            returned['open'].append(slack_api.message_url(
-                workspace_uri,
-                issue.channel_id,
-                issue.chat_id,
-            ))
+            returned["open"].append(
+                slack_api.message_url(
+                    workspace_uri,
+                    issue.channel_id,
+                    issue.chat_id,
+                )
+            )
 
-        returned['closed'] = cls.objects.filter(
+        returned["closed"] = cls.objects.filter(
             closed__range=(day_begin, day_end)
         ).count()
 
@@ -235,16 +242,60 @@ class ZenSlackChat(models.Model):
         :returns: A plain text report that could be sent to interested parties.
 
         """
-        closed = report['closed']
+        closed = report["closed"]
 
-        open = len(report['open'])
+        open = len(report["open"])
 
         links = []
-        for link in report['open']:
+        for link in report["open"]:
             links.append(f"- {link}")
         links = "\n".join(links)
 
-        report = f"""
+        if settings.USE_ATLASSIAN:
+            on_call = call_atlassian()
+            report = f"""
+Welcome to DBT Platform, this space is for raising any support requests or issues you encounter with the platform.
+
+Today's Primary/Secondary Support:
+    Primary: {on_call['primary']}
+    Secondary: {on_call['secondary']}
+
+Please check Platform Docs before contacting support: https://platform.readme.trade.gov.uk/
+
+To help us help you faster, please include:
+    - Service names
+    - Git repo names
+    - AWS accounts
+    - Links to errors
+    - Steps to reproduce
+    - Platform-helper version in use
+```
+Example:
+I am seeing the error in the attached screenshot.
+
+Steps to reproduce:
+    - run `platform-helper pipeline generate`
+Service: Demodjango
+Git repo: uktrade/demodjango, uktrade/demodjango-deploy
+AWS account: platform-sandbox
+Error: http://...
+Platform Helper: 13.1.0
+```
+
+If this relates to earlier issue, include a link to the previous ticket.
+
+
+📊 Daily Platform Issue Report
+
+Closed 🤘: {closed}
+
+Unresolved 🔥: {open}
+{links}
+
+🤖 PlatformZenSlackChat
+        """.strip()
+        else:
+            report = f"""
 📊 Daily WebOps SRE Issue Report
 
 Closed 🤘: {closed}
@@ -265,6 +316,7 @@ class SlackApp(models.Model):
     completion of the OAuth process.
 
     """
+
     team_name = models.CharField(max_length=200)
     team_id = models.CharField(max_length=20)
     bot_user_id = models.CharField(max_length=20)
@@ -280,7 +332,7 @@ class SlackApp(models.Model):
 
         """
         # use the latest token
-        app = cls.objects.order_by('-created_at').first()
+        app = cls.objects.order_by("-created_at").first()
         if settings.DEBUG:
             logging.getLogger(__name__).debug(
                 f"Bot Access Token:{app.bot_access_token}"
@@ -290,8 +342,8 @@ class SlackApp(models.Model):
 
 
 class CustomHeaderAdapter(requests.adapters.HTTPAdapter):
-    """Allow custom request headers for Zenpy requests.
-    """
+    """Allow custom request headers for Zenpy requests."""
+
     def add_headers(self, request, **kwargs):
         """Add in custom X-On-Behalf-Of for zenslackchat.
 
@@ -304,7 +356,7 @@ class CustomHeaderAdapter(requests.adapters.HTTPAdapter):
 
         """
         headers = request.headers
-        headers['X-On-Behalf-Of'] = settings.ZENDESK_AGENT_EMAIL
+        headers["X-On-Behalf-Of"] = settings.ZENDESK_AGENT_EMAIL
         request.headers = headers
 
 
@@ -313,6 +365,7 @@ class ZendeskApp(models.Model):
     completion of the OAuth process.
 
     """
+
     access_token = models.CharField(max_length=512)
     token_type = models.CharField(max_length=50)
     scope = models.CharField(max_length=50)
@@ -327,7 +380,7 @@ class ZendeskApp(models.Model):
 
         """
         # use the latest token
-        app = cls.objects.order_by('-created_at').first()
+        app = cls.objects.order_by("-created_at").first()
         if settings.DEBUG:
             logging.getLogger(__name__).debug(
                 f"Zendesk Access Token:{app.access_token}"
@@ -335,7 +388,7 @@ class ZendeskApp(models.Model):
 
         session = requests.Session()
         adapter = CustomHeaderAdapter(**Zenpy.http_adapter_kwargs())
-        session.mount('https://', adapter)
+        session.mount("https://", adapter)
 
         return Zenpy(
             subdomain=settings.ZENDESK_SUBDOMAIN,
@@ -349,6 +402,7 @@ class PagerDutyApp(models.Model):
     completion of the OAuth process.
 
     """
+
     access_token = models.CharField(max_length=512)
     token_type = models.CharField(max_length=50)
     scope = models.CharField(max_length=50)
@@ -365,51 +419,73 @@ class PagerDutyApp(models.Model):
         """
         log = logging.getLogger(__name__)
 
-        # use the latest token
-        app = cls.objects.order_by('-created_at').first()
-        if app and settings.DEBUG:
-            log.debug(
-                f"PagerDuty Access Token:{app.access_token}"
-            )
+        pager_duty_params = {
+            "client_id": settings.PAGERDUTY_CLIENT_IDENTIFIER,
+            "client_secret": settings.PAGERDUTY_CLIENT_SECRET,
+            "scope": "as_account-us.uktrade schedules.read oncalls.read escalation_policies.read",
+            "grant_type": "client_credentials",
+        }
 
-        session = None
-        if app:
-            session = APISession(app.access_token, auth_type='oauth2')
+        token_request = requests.post(
+            settings.PD_TOKEN_END_POINT,
+            data=pager_duty_params,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
 
-        return session
+        if token_request.status_code != 200:
+            log.debug(f"PagerDuty Token:[Error] {token_request.json()}")
+
+        token_request.raise_for_status()
+
+        return token_request.json()
 
     @classmethod
-    def on_call(cls):
+    def get(cls, app_token, path, query={}):
+        log = logging.getLogger(__name__)
+
+        api_url = f"https://api.pagerduty.com/{path}"
+
+        headers = {
+            "Authorization": f"{app_token['token_type'].title()} {app_token['access_token']}",
+            "Accept": "application/vnd.pagerduty+json;version=2",
+        }
+
+        response = requests.get(api_url, headers=headers, params=query)
+
+        if response.status_code != 200:
+            log.debug(f"PageDuty Error: {response.status_code} {response.reason}")
+            return {}
+
+        return response.json()
+
+    @classmethod
+    def on_call(cls, app_token):
         """Return the primary and secondary on call contacts.
 
         :returns: dict(primary='First Lastname', secondary='First Lastname')
 
         """
-        session = cls.client()
-
-        if not session:
-            logging.getLogger(__name__).error(
-                "No OAuth PagerDutyApp is configured. I'm unable to get who "
-                "is the primary and secondary on call engineers."
-            )
-            return {}
 
         policy_id = settings.PAGERDUTY_ESCALATION_POLICY_ID
 
-        path = f'/oncalls?escalation_policy_ids[]={policy_id}'
-        data = session.get(path).json()
+        query_params = {
+            "escalation_policy_ids[]": policy_id,
+        }
 
+        data = cls.get(app_token=app_token, path="oncalls", query=query_params)
+
+        if not data:
+            return {}
         # level 1 is the person on call, 2 is the secondary backup
-        priority = sorted(data['oncalls'], key=itemgetter('escalation_level'))
-        primary, secondary = [i['user']['summary'] for i in priority][:2]
+        priority = sorted(data["oncalls"], key=itemgetter("escalation_level"))
+        primary, secondary = [i["user"]["summary"] for i in priority][:2]
 
         return dict(primary=primary, secondary=secondary)
 
 
 class OutOfHoursInformation(models.Model):
-    """Store who to contact out of hours
+    """Store who to contact out of hours"""
 
-    """
     office_hours_begin = models.TimeField(default="09:00")
 
     office_hours_end = models.TimeField(default="17:00")
@@ -426,7 +502,7 @@ class OutOfHoursInformation(models.Model):
         revert back to the previous message.
 
         """
-        return cls.objects.order_by('-created_at').first()
+        return cls.objects.order_by("-created_at").first()
 
     @classmethod
     def help_text(cls):
@@ -437,7 +513,7 @@ class OutOfHoursInformation(models.Model):
 
         """
         oohi = cls.help()
-        text = oohi.message if oohi else 'No Out Of Hours Message Set!'
+        text = oohi.message if oohi else "No Out Of Hours Message Set!"
 
         return text
 
@@ -464,15 +540,25 @@ class OutOfHoursInformation(models.Model):
         else:
             ohb = oohi.office_hours_begin
             begin = datetime(
-                date.year, date.month, date.day,
-                ohb.hour, ohb.minute, ohb.second, ohb.microsecond
+                date.year,
+                date.month,
+                date.day,
+                ohb.hour,
+                ohb.minute,
+                ohb.second,
+                ohb.microsecond,
             )
             begin = begin.replace(tzinfo=timezone.utc)
 
             ohe = oohi.office_hours_end
             end = datetime(
-                date.year, date.month, date.day,
-                ohe.hour, ohe.minute, ohe.second, ohe.microsecond
+                date.year,
+                date.month,
+                date.day,
+                ohe.hour,
+                ohe.minute,
+                ohe.second,
+                ohe.microsecond,
             )
             end = end.replace(tzinfo=timezone.utc)
 
@@ -499,13 +585,9 @@ class OutOfHoursInformation(models.Model):
         """
         msg = message
         if message is None:
-            msg = 'No Out Of Hours Message Set!'
+            msg = "No Out Of Hours Message Set!"
 
-        oohi = cls(
-            office_hours_begin=hours[0],
-            office_hours_end=hours[1],
-            message=msg
-        )
+        oohi = cls(office_hours_begin=hours[0], office_hours_end=hours[1], message=msg)
         oohi.save()
 
         # https://code.djangoproject.com/ticket/27825#comment:2
@@ -525,18 +607,11 @@ class OutOfHoursInformation(models.Model):
         is_ooh = cls.is_out_of_hours(now)
 
         if is_ooh:
-            post_message(
-                slack_client,
-                chat_id,
-                channel_id,
-                cls.help_text()
-            )
+            post_message(slack_client, chat_id, channel_id, cls.help_text())
 
         return is_ooh
 
     def __str__(self) -> str:
         return (
-            f"{self.office_hours_begin}-"
-            f"{self.office_hours_end} "
-            f"{self.message}"
+            f"{self.office_hours_begin}-" f"{self.office_hours_end} " f"{self.message}"
         )
