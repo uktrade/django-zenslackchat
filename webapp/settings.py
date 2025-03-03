@@ -28,6 +28,10 @@ from zenslackchat import botlogging
 from dbt_copilot_python.database import database_url_from_env
 from dbt_copilot_python.utility import is_copilot
 
+# for local dev.
+# from dotenv import load_dotenv
+# load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -295,3 +299,29 @@ AUTHBROKER_SCOPES = "read write"
 
 # CSRF variable required for Django 4
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS").split(",")
+
+# Atlassian
+USE_ATLASSIAN = os.environ.get("USE_ATLASSIAN", default=False)
+
+# Atlassian OAuth 2.0 Credentials
+CLIENT_ID = os.environ.get("CLIENT_ID", default=None)
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", default=None)
+REDIRECT_URI = "http://localhost:8000/callback/"  # Special value for manual input
+AUTH_URL = "https://auth.atlassian.com/authorize"
+TOKEN_URL = "https://auth.atlassian.com/oauth/token"
+# SCOPE = ["read:confluence-content.all"]
+ATLASSIAN_BASE_URL = os.environ.get("ATLASSIAN_BASE_URL", default=None)
+CLOUD_ID = os.environ.get("CLOUD_ID", default=None)
+ATLASSIAN_PAGE_ID = os.environ.get("ATLASSIAN_PAGE_ID", default=None)
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+SESSION_COOKIE_AGE = 3600
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# API_BASE_URL = f"https://api.atlassian.com/ex/confluence/{cloudId}/wiki/rest/api/content/"
+
+# Basic Auth Atlassian creds.
+ATLASSIAN_USERNAME = os.environ.get("ATLASSIAN_USERNAME", default=None)
+ATLASSIAN_API_TOKEN = os.environ.get("ATLASSIAN_API_TOKEN", default=None)

@@ -23,6 +23,7 @@ from markdown import markdown
 
 from zenslackchat.slack_api import post_message
 from zenslackchat.zendesk_api import zendesk_ticket_url
+from webapp import settings
 
 
 def message_who_is_on_call(on_call, slack_client, chat_id, channel_id):
@@ -31,7 +32,7 @@ def message_who_is_on_call(on_call, slack_client, chat_id, channel_id):
     This will only message if the PagerDutyApp / OAuth set up has been done.
 
     """
-    if on_call != {}:
+    if on_call != {} and not settings.USE_ATLASSIAN:
         message = (
             f"📧 Primary on call: {on_call['primary']}\n"
             f"ℹ️ Secondary on call: {on_call['secondary']}."
@@ -44,7 +45,24 @@ def message_issue_zendesk_url(
 ):
     """Post to slack where the Zendesk URL of the issue."""
     url = zendesk_ticket_url(zendesk_uri, ticket_id)
-    message = f"Hello, your new support request is {url}"
+
+    if settings.USE_ATLASSIAN:
+        message = f"""
+Thanks for raising this. We're looking into your issue and will aim to provide an update within the next 3 hours (during working hours)
+
+Your new support request is {url}
+
+To help us help you faster, please ensure you have provided the following details in your request:
+    - Service names
+    - Git repo names
+    - AWS accounts
+    - Links to errors
+    - Steps to reproduce
+    - Platform-helper version in use
+        """
+    else:
+        message = f"Hello, your new support request is {url}"
+
     post_message(slack_client, chat_id, channel_id, message)
 
 

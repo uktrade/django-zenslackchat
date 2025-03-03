@@ -23,4 +23,8 @@ urlpatterns = [
     ),
     # path('pagerduty/oauth/', views.pagerduty_oauth, name='pagerduty_oauth'),
     path("trigger/report/daily", views.trigger_daily_report, name="daily_report"),
+    path("confluence/start_oauth/", views.start_oauth, name="start_oauth"),
+    path("callback/", views.callback, name="callback"),
+    path("confluence/fetch_page/", views.fetch_page, name="fetch_page"),
+    path("confluence/logout/", views.confluence_logout, name="fetch_page"),
 ]

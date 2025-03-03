@@ -1,6 +1,9 @@
 [tool.poetry]
 name = "django-zenslackchat"
 version = "1.0.0"
+description = ""
+authors = []
+license = "MIT"
 readme = "README.rst"
 
 [tool.pytest.ini_options]

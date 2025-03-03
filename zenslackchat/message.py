@@ -266,12 +266,23 @@ def handler(
 
             else:
                 # Store all the details and notify:
+                log.debug("open ticket")
                 ZenSlackChat.open(channel_id, chat_id, ticket_id=ticket.id)
                 message_issue_zendesk_url(
                     slack_client, zendesk_uri, ticket.id, chat_id, channel_id
                 )
-                app_token = PagerDutyApp.client()
 
+                # if settings.USE_ATLASSIAN:
+                #     oncall = call_atlassian()
+                #     log.debug(f"People on call: {oncall}")
+                #     message_who_is_on_call(
+                #         oncall,
+                #         slack_client,
+                #         chat_id,
+                #         channel_id,
+                #     )
+                # else:
+                app_token = PagerDutyApp.client()
                 message_who_is_on_call(
                     PagerDutyApp.on_call(app_token=app_token),
                     slack_client,

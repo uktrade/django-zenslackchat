@@ -12,6 +12,7 @@ from zenpy import Zenpy
 
 from zenslackchat import slack_api
 from zenslackchat.slack_api import post_message
+from zenslackchat.atlassian_api import call_atlassian
 
 
 def utcnow():
@@ -250,7 +251,51 @@ class ZenSlackChat(models.Model):
             links.append(f"- {link}")
         links = "\n".join(links)
 
-        report = f"""
+        if settings.USE_ATLASSIAN:
+            on_call = call_atlassian()
+            report = f"""
+Welcome to DBT Platform, this space is for raising any support requests or issues you encounter with the platform.
+
+Today's Primary/Secondary Support:
+    Primary: {on_call['primary']}
+    Secondary: {on_call['secondary']}
+
+Please check Platform Docs before contacting support: https://platform.readme.trade.gov.uk/
+
+To help us help you faster, please include:
+    - Service names
+    - Git repo names
+    - AWS accounts
+    - Links to errors
+    - Steps to reproduce
+    - Platform-helper version in use
+```
+Example:
+I am seeing the error in the attached screenshot.
+
+Steps to reproduce:
+    - run `platform-helper pipeline generate`
+Service: Demodjango
+Git repo: uktrade/demodjango, uktrade/demodjango-deploy
+AWS account: platform-sandbox
+Error: http://...
+Platform Helper: 13.1.0
+```
+
+If this relates to earlier issue, include a link to the previous ticket.
+
+
+📊 Daily Platform Issue Report
+
+Closed 🤘: {closed}
+
+Unresolved 🔥: {open}
+{links}
+
+🤖 PlatformZenSlackChat
+        """.strip()
+        else:
+            report = f"""
 📊 Daily WebOps SRE Issue Report
 
 Closed 🤘: {closed}
