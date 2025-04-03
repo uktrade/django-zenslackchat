@@ -48,12 +48,12 @@ def test_message_issue_zendesk_url_tools(post_message, db, log):
 
     message_issue_zendesk_url(slack_client, zendesk_uri, ticket_id, chat_id, channel_id)
 
-    # Verify the what should be sent to slack:
+    # Verify what should be sent to slack:
     post_message.assert_called_with(
         slack_client,
         "slack-chat-id",
         "slack-channel-id",
-        "Hello, your new support request is https://z.e.n.d.e.s.k/ticket-id",
+        "Hello, your new support request is https://z.e.n.d.e.s.k/ticket-id.",
     )
 
 
