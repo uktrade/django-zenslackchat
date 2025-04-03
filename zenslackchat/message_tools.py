@@ -48,9 +48,11 @@ def message_issue_zendesk_url(
 
     if settings.USE_ATLASSIAN:
         message = f"""
-Thanks for raising this. We're looking into your issue and will aim to provide an update within the next 3 hours (during working hours)
+Thanks for raising this. We're looking into your issue and will aim to provide an update within the next 3 working hours.
 
-Your new support request is {url}
+If your request relates to something urgent, please make sure we know that and explain the context.
+
+Your new support request is {url}.
 
 To help us help you faster, please ensure you have provided the following details in your request:
     - Service names
@@ -61,7 +63,7 @@ To help us help you faster, please ensure you have provided the following detail
     - Platform-helper version in use
         """
     else:
-        message = f"Hello, your new support request is {url}"
+        message = f"Hello, your new support request is {url}."
 
     post_message(slack_client, chat_id, channel_id, message)
 
