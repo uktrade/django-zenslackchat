@@ -133,6 +133,12 @@ Don't edit requirements.txt directly. Any changes will be lost when the file is
 regenerated.
 
 
+Deployment
+----------
+
+Note that this repository's deployment code does not follow the regular naming convention and will be found at https://github.com/uktrade/platform-tools-deploy.
+
+
 Zendesk Set-up
 --------------
 
